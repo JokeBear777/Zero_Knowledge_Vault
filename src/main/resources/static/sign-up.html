@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>회원가입</title>
+</head>
+<body>
+
+<h2>OAuth 신규 가입</h2>
+
+<div>
+    이메일: <span id="email-display"></span>
+</div>
+
+<form id="signup-form">
+    <input type="text" id="name" placeholder="이름">
+    <input type="text" id="mobile" placeholder="전화번호">
+    <button type="submit">회원가입</button>
+</form>
+
+<script>
+    async function loadOAuthInfo() {
+        const res = await fetch("/api/oauth-info");
+
+        if (!res.ok) {
+            alert("OAuth 정보가 없습니다.");
+            window.location.href = "/login.html";
+            return;
+        }
+
+        const data = await res.json();
+        document.getElementById("email-display").innerText = data.email;
+        document.getElementById("name").value = data.name || "";
+        document.getElementById("mobile").value = data.mobile || "";
+    }
+
+    loadOAuthInfo();
+
+    document.getElementById("signup-form")
+        .addEventListener("submit", async function (e) {
+
+            e.preventDefault();
+
+            const formData = {
+                name: document.getElementById("name").value,
+                mobile: document.getElementById("mobile").value
+            };
+
+            const res = await fetch("/api/sign-up", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formData)
+            });
+
+            if (res.status === 201) {
+                alert("회원가입 완료!");
+                window.location.href = "/login.html";
+            } else {
+                alert("회원가입 실패");
+            }
+        });
+</script>
+
+</body>
+</html>
+
+

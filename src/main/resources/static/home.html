@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Dynamic Password - Main</title>
+</head>
+<body>
+<h1>Dynamic Password HOME</h1>
+<script>
+    window.onload = function () {
+        loadUserInfo();
+    };
+
+    async function loadUserInfo() {
+        const token = localStorage.getItem("accessToken");
+
+        if (!token) {
+            window.location.href = "/login.html";
+            return;
+        }
+
+        const res = await fetch("/api/member/me", {
+            headers: {
+                "Authorization": "Bearer " + token
+            }
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            document.getElementById("user-info").innerText =
+                "환영합니다: " + data.email;
+        } else {
+            localStorage.removeItem("accessToken");
+            window.location.href = "/login.html";
+        }
+    }
+</script>
+</body>
+</html>

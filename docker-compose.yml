@@ -1,0 +1,43 @@
+services:
+
+  redis:
+    image: redis:8.0
+    container_name: zkv-redis
+    ports:
+      - "6381:6379"
+    restart: always
+    networks:
+      - zkv-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  mysql:
+    image: mysql:8.0
+    container_name: zkv-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: Zero_Knowledge_Vault
+      MYSQL_USER: zkv
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3309:3306"
+    restart: always
+    volumes:
+      - zkv_mysql_data:/var/lib/mysql
+    networks:
+      - zkv-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  zkv_mysql_data:
+
+networks:
+  zkv-net:
+    driver: bridge
