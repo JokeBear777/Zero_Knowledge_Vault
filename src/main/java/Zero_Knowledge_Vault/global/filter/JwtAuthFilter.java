@@ -1,6 +1,7 @@
 package Zero_Knowledge_Vault.global.filter;
 import Zero_Knowledge_Vault.domain.member.entity.Member;
 import Zero_Knowledge_Vault.domain.member.service.MemberService;
+import Zero_Knowledge_Vault.global.security.AuthLevel;
 import Zero_Knowledge_Vault.global.security.jwt.JwtUtil;
 import Zero_Knowledge_Vault.global.security.jwt.SecurityUserDto;
 import jakarta.servlet.FilterChain;
@@ -61,11 +62,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         if (!jwtUtil.verifyToken(accessToken)) {
-            throw new JwtException("Access token is expired");
+            throw new JwtException("Access token is invalid or expired");
         }
 
         if (jwtUtil.verifyToken(accessToken)) {
             String email = jwtUtil.getUid(accessToken);
+            String authLevelStr = jwtUtil.getAuthLevel(accessToken);
+            AuthLevel authLevel = AuthLevel.valueOf(authLevelStr);
+
             Member findMember =  memberService.findByEmail(email)
                     .orElseThrow(IllegalStateException::new);
             SecurityUserDto userDto = SecurityUserDto.builder()
@@ -73,6 +77,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     .email(findMember.getEmail())
                     .mobile(findMember.getMobile())
                     .role(findMember.getMemberRole())
+                    .authLevel(authLevel)
                     .build();
 
             Authentication auth = getAuthentication(userDto);
@@ -85,7 +90,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
 
     public Authentication getAuthentication(SecurityUserDto member) {
+
+
         return new UsernamePasswordAuthenticationToken(member, "",
-                List.of(new SimpleGrantedAuthority(member.getRole().toString())));
+                List.of(
+                        new SimpleGrantedAuthority(member.getRole().toString()),
+                        new SimpleGrantedAuthority(member.getAuthLevel().toString())
+                )
+        );
     }
 }

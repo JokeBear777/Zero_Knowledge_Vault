@@ -1,6 +1,7 @@
 package Zero_Knowledge_Vault.global.security.oauth2.handler;
 
 import Zero_Knowledge_Vault.domain.member.dto.OAuthSignupInfo;
+import Zero_Knowledge_Vault.global.security.AuthLevel;
 import Zero_Knowledge_Vault.global.security.jwt.GeneratedToken;
 import Zero_Knowledge_Vault.global.security.jwt.JwtUtil;
 import jakarta.servlet.ServletException;
@@ -42,7 +43,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
                 .getAuthority();
 
         if(isExist) {
-            GeneratedToken token = jwtUtil.generateToken(email, role);
+            GeneratedToken token = jwtUtil.generateToken(email, role, AuthLevel.PRE_AUTH.toString());
 
             String redirectUrl = UriComponentsBuilder
                     .fromUriString("/?token=" + token.getAccessToken())

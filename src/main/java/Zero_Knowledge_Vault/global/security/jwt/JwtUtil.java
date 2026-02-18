@@ -15,7 +15,6 @@ import java.util.Date;
 @RequiredArgsConstructor
 public class JwtUtil {
     private final JwtProperties jwtProperties;
-    //private final RefreshTokenService tokenService; //애플리케이션의 의도에 맞게 리프레시 토큰은 넣지 않음, 추후 넣을 수도 있음
     private Key secretKey;
 
     @PostConstruct
@@ -23,17 +22,18 @@ public class JwtUtil {
         secretKey = jwtProperties.getSecretKey();
     }
 
-    public GeneratedToken generateToken(String email ,String role) {
-        String accessToken = generateAccessToken(email, role);
+    public GeneratedToken generateToken(String email ,String role, String auth) {
+        String accessToken = generateAccessToken(email, role, auth);
 
         return new GeneratedToken(accessToken);
     }
 
-    public String generateAccessToken(String email,String role) {
+    public String generateAccessToken(String email,String role, String auth) {
         long tokenPeriod = jwtProperties.getExpired();
         Claims claims = Jwts.claims().setSubject(email);
         //claims.put("role", "ROLE_" + role);
         claims.put("role", role);
+        claims.put("auth_level", auth);
 
         Date now = new Date();
         return
@@ -84,6 +84,13 @@ public class JwtUtil {
                 .setSigningKey(secretKey)
                 .build().parseClaimsJws(token).getBody().get("role",String.class);
     }
+
+    public String getAuthLevel(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(secretKey)
+                .build().parseClaimsJws(token).getBody().get("auth_level",String.class);
+    }
+
 
 
 }

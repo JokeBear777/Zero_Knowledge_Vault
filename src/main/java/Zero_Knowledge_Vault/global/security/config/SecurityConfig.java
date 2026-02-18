@@ -50,19 +50,24 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/",
-                                "/index.html",
-                                "/login.html",
-                                "/sign-up.html",
-                                "/home.html",
-                                "/css/**",
-                                "/js/**",
-                                "/images/**",
-                                "/favicon.ico",
-                                "/.well-known/**"
+                                "/", "/index.html", "/login.html",
+                                "/sign-up.html", "/home.html",
+                                "/css/**", "/js/**", "/images/**",
+                                "/favicon.ico", "/.well-known/**"
                         ).permitAll()
-                        .requestMatchers("/oauth2/**", "/auth/**", "/login/oauth2/**").permitAll()
-                        .requestMatchers("/sign-up/**", "/api/sign-up", "/api/oauth-info","/api/**").permitAll()
+
+                        .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
+
+                        .requestMatchers("/api/sign-up", "/api/oauth-info").permitAll()
+
+                        // Unlock 단계
+                        .requestMatchers("/api/vault/unlock/**")
+                        .hasAuthority("PRE_AUTH")
+
+                        // Vault 실제 접근
+                        .requestMatchers("/api/vault/**")
+                        .hasAuthority("VAULT_AUTH")
+
                         .anyRequest().authenticated()
                 )
 
