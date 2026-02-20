@@ -1,7 +1,7 @@
 package Zero_Knowledge_Vault.domain.member.dto;
 
 
-import Zero_Knowledge_Vault.global.security.jwt.SecurityUserDto;
+import Zero_Knowledge_Vault.infra.security.jwt.CustomUserPrincipal;
 
 public record MeResponseDto(
         Long userId,
@@ -10,7 +10,7 @@ public record MeResponseDto(
         String authLevel
 ) {
 
-    public static MeResponseDto from(SecurityUserDto user) {
+    public static MeResponseDto from(CustomUserPrincipal user) {
         return new MeResponseDto(
                 user.getUserId(),
                 user.getEmail(),

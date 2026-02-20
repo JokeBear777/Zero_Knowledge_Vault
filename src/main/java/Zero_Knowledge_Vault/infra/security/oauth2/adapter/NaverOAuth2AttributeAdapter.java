@@ -1,4 +1,4 @@
-package Zero_Knowledge_Vault.global.security.oauth2.adapter;
+package Zero_Knowledge_Vault.infra.security.oauth2.adapter;
 
 import lombok.Getter;
 import org.springframework.stereotype.Component;

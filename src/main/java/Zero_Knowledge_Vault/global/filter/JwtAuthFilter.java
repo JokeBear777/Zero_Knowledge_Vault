@@ -1,9 +1,11 @@
 package Zero_Knowledge_Vault.global.filter;
 import Zero_Knowledge_Vault.domain.member.entity.Member;
 import Zero_Knowledge_Vault.domain.member.service.MemberService;
-import Zero_Knowledge_Vault.global.security.AuthLevel;
-import Zero_Knowledge_Vault.global.security.jwt.JwtUtil;
-import Zero_Knowledge_Vault.global.security.jwt.SecurityUserDto;
+import Zero_Knowledge_Vault.domain.member.type.MemberRole;
+import Zero_Knowledge_Vault.infra.security.AuthLevel;
+import Zero_Knowledge_Vault.infra.security.jwt.JwtUtil;
+import Zero_Knowledge_Vault.infra.security.jwt.CustomUserPrincipal;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -66,17 +68,22 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         if (jwtUtil.verifyToken(accessToken)) {
-            String email = jwtUtil.getUid(accessToken);
-            String authLevelStr = jwtUtil.getAuthLevel(accessToken);
-            AuthLevel authLevel = AuthLevel.valueOf(authLevelStr);
 
-            Member findMember =  memberService.findByEmail(email)
+            Claims claims = jwtUtil.parse(accessToken);
+
+            Long memberId = jwtUtil.getUid(claims);
+            String email = jwtUtil.getEmail(claims);
+            MemberRole memberRole = jwtUtil.getRole(claims);
+            AuthLevel authLevel = jwtUtil.getAuthLevel(claims);
+
+            /*
+            Member findMember =  memberService.findById(memberId)
                     .orElseThrow(IllegalStateException::new);
-            SecurityUserDto userDto = SecurityUserDto.builder()
-                    .userId(findMember.getMemberId())
-                    .email(findMember.getEmail())
-                    .mobile(findMember.getMobile())
-                    .role(findMember.getMemberRole())
+             */
+            CustomUserPrincipal userDto = CustomUserPrincipal.builder()
+                    .userId(memberId)
+                    .email(email)
+                    .role(memberRole)
                     .authLevel(authLevel)
                     .build();
 
@@ -89,7 +96,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
 
-    public Authentication getAuthentication(SecurityUserDto member) {
+    public Authentication getAuthentication(CustomUserPrincipal member) {
 
 
         return new UsernamePasswordAuthenticationToken(member, "",

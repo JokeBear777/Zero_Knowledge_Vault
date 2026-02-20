@@ -1,9 +1,11 @@
-package Zero_Knowledge_Vault.global.security.oauth2.handler;
+package Zero_Knowledge_Vault.infra.security.oauth2.handler;
 
 import Zero_Knowledge_Vault.domain.member.dto.OAuthSignupInfo;
-import Zero_Knowledge_Vault.global.security.AuthLevel;
-import Zero_Knowledge_Vault.global.security.jwt.GeneratedToken;
-import Zero_Knowledge_Vault.global.security.jwt.JwtUtil;
+import Zero_Knowledge_Vault.domain.member.entity.Member;
+import Zero_Knowledge_Vault.domain.member.service.MemberService;
+import Zero_Knowledge_Vault.infra.security.AuthLevel;
+import Zero_Knowledge_Vault.infra.security.jwt.GeneratedToken;
+import Zero_Knowledge_Vault.infra.security.jwt.JwtUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,6 +25,7 @@ import java.io.IOException;
 public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final JwtUtil jwtUtil;
+    private final MemberService memberService;
 
     @Override
     public void onAuthenticationSuccess(
@@ -37,13 +40,16 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
         boolean isExist = Boolean.TRUE.equals(oAuth2User.getAttribute("isExist"));
 
-        String role = oAuth2User.getAuthorities().stream()
-                .findFirst()
-                .orElseThrow(IllegalAccessError::new)
-                .getAuthority();
-
         if(isExist) {
-            GeneratedToken token = jwtUtil.generateToken(email, role, AuthLevel.PRE_AUTH.toString());
+            Member member = memberService.findByEmail(email)
+                    .orElseThrow(IllegalAccessError::new);
+
+            GeneratedToken token = jwtUtil.generateToken(
+                    member.getMemberId(),
+                    email,
+                    member.getMemberRole().toString(),
+                    AuthLevel.PRE_AUTH.toString()
+            );
 
             String redirectUrl = UriComponentsBuilder
                     .fromUriString("/?token=" + token.getAccessToken())

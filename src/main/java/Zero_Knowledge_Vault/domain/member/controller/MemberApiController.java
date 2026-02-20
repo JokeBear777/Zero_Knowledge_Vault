@@ -2,7 +2,7 @@ package Zero_Knowledge_Vault.domain.member.controller;
 
 import Zero_Knowledge_Vault.domain.member.dto.MeResponseDto;
 import Zero_Knowledge_Vault.domain.member.service.MemberService;
-import Zero_Knowledge_Vault.global.security.jwt.SecurityUserDto;
+import Zero_Knowledge_Vault.infra.security.jwt.CustomUserPrincipal;
 import Zero_Knowledge_Vault.global.util.dto.RedirectResponseData;
 import Zero_Knowledge_Vault.global.util.dto.StatusResponseDto;
 import lombok.RequiredArgsConstructor;
@@ -23,9 +23,9 @@ public class MemberApiController {
 
     @DeleteMapping("/me")
     public ResponseEntity<?> deActiveAccount(
-            @AuthenticationPrincipal SecurityUserDto securityUserDto
+            @AuthenticationPrincipal CustomUserPrincipal customUserPrincipal
     ) {
-        memberService.deActiveAccount(securityUserDto);
+        memberService.deActiveAccount(customUserPrincipal);
         RedirectResponseData redirectResponseData = new RedirectResponseData(
                 "Account deactivated. Redirect to login page.",
                 "/"
@@ -35,7 +35,7 @@ public class MemberApiController {
 
     @GetMapping("/me")
     public ResponseEntity<?> me(
-            @AuthenticationPrincipal SecurityUserDto user
+            @AuthenticationPrincipal CustomUserPrincipal user
     ) {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)

@@ -5,10 +5,9 @@ import Zero_Knowledge_Vault.domain.member.dto.SignUpRequestDto;
 import Zero_Knowledge_Vault.domain.member.entity.Member;
 import Zero_Knowledge_Vault.domain.member.repository.MemberRepository;
 import Zero_Knowledge_Vault.domain.member.type.MemberRole;
-import Zero_Knowledge_Vault.global.security.jwt.SecurityUserDto;
+import Zero_Knowledge_Vault.infra.security.jwt.CustomUserPrincipal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +24,10 @@ public class MemberService {
     public Optional<Member> findByEmail(String email) {
 
         return memberRepository.findByEmail(email);
+    }
+
+    public Optional<Member> findById(Long id) {
+        return memberRepository.findById(id);
     }
 
     @Transactional
@@ -66,8 +69,8 @@ public class MemberService {
     }
 
     @Transactional
-    public void deActiveAccount(SecurityUserDto securityUserDto) {
-        Member member = memberRepository.findByEmail(securityUserDto.getEmail())
+    public void deActiveAccount(CustomUserPrincipal customUserPrincipal) {
+        Member member = memberRepository.findByEmail(customUserPrincipal.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("Member not found"));
 
         // 멤버가 클럽에 가입되어잇는지 확인, 추후 추가한다

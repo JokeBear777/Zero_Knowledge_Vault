@@ -1,6 +1,8 @@
-package Zero_Knowledge_Vault.global.security.jwt;
+package Zero_Knowledge_Vault.infra.security.jwt;
 
-import Zero_Knowledge_Vault.global.security.config.JwtProperties;
+import Zero_Knowledge_Vault.domain.member.type.MemberRole;
+import Zero_Knowledge_Vault.infra.security.AuthLevel;
+import Zero_Knowledge_Vault.infra.security.config.JwtProperties;
 import io.jsonwebtoken.*;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -22,16 +24,17 @@ public class JwtUtil {
         secretKey = jwtProperties.getSecretKey();
     }
 
-    public GeneratedToken generateToken(String email ,String role, String auth) {
-        String accessToken = generateAccessToken(email, role, auth);
+    public GeneratedToken generateToken(Long memberId, String email, String memberRole, String authLevel) {
+        String accessToken = generateAccessToken(memberId, email, memberRole, authLevel);
 
         return new GeneratedToken(accessToken);
     }
 
-    public String generateAccessToken(String email,String role, String auth) {
+    public String generateAccessToken(Long memberId, String email ,String role, String auth) {
         long tokenPeriod = jwtProperties.getExpired();
-        Claims claims = Jwts.claims().setSubject(email);
+        Claims claims = Jwts.claims().setSubject(String.valueOf(memberId));
         //claims.put("role", "ROLE_" + role);
+        claims.put("email", email);
         claims.put("role", role);
         claims.put("auth_level", auth);
 
@@ -73,23 +76,41 @@ public class JwtUtil {
         }
     }
 
-    public String getUid(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(secretKey)
-                .build().parseClaimsJws(token).getBody().getSubject();
+    public Long getUid(Claims claims) {
+        return
+                Long.parseLong(
+                    claims.getSubject())
+                ;
     }
 
-    public String getRole(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(secretKey)
-                .build().parseClaimsJws(token).getBody().get("role",String.class);
+    public MemberRole getRole(Claims claims) {
+        return
+                MemberRole.valueOf(
+                        claims.get("role",String.class)
+                );
     }
 
-    public String getAuthLevel(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(secretKey)
-                .build().parseClaimsJws(token).getBody().get("auth_level",String.class);
+    public AuthLevel getAuthLevel(Claims claims) {
+        return
+                AuthLevel.valueOf(
+                    claims.get("auth_level",String.class)
+                );
     }
+
+    public String getEmail(Claims claims) {
+        return claims.get("email",String.class);
+    }
+
+    public Claims parse(String token) {
+        try {
+            return Jwts.parserBuilder()
+                    .setSigningKey(secretKey)
+                    .build().parseClaimsJws(token).getBody();
+        } catch (JwtException e) {
+            throw new JwtException("Invalid or expired token");
+        }
+    }
+
 
 
 

@@ -1,4 +1,4 @@
-package Zero_Knowledge_Vault.global.security;
+package Zero_Knowledge_Vault.infra.security;
 
 public enum AuthLevel {
     PRE_AUTH,

@@ -1,4 +1,4 @@
-package Zero_Knowledge_Vault.global.security.jwt;
+package Zero_Knowledge_Vault.infra.security.jwt;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

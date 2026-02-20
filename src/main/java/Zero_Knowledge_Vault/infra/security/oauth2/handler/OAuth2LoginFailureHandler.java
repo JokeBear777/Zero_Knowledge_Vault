@@ -1,4 +1,4 @@
-package Zero_Knowledge_Vault.global.security.oauth2.handler;
+package Zero_Knowledge_Vault.infra.security.oauth2.handler;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

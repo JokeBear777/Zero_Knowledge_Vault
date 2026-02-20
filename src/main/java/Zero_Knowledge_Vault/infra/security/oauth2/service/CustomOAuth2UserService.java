@@ -1,9 +1,9 @@
-package Zero_Knowledge_Vault.global.security.oauth2.service;
+package Zero_Knowledge_Vault.infra.security.oauth2.service;
 
 import Zero_Knowledge_Vault.domain.member.entity.Member;
 import Zero_Knowledge_Vault.domain.member.service.MemberService;
 import Zero_Knowledge_Vault.domain.member.type.MemberRole;
-import Zero_Knowledge_Vault.global.security.oauth2.adapter.OAuth2AdapterRegistry;
+import Zero_Knowledge_Vault.infra.security.oauth2.adapter.OAuth2AdapterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;

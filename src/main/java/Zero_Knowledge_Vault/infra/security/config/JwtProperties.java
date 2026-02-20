@@ -1,4 +1,4 @@
-package Zero_Knowledge_Vault.global.security.config;
+package Zero_Knowledge_Vault.infra.security.config;
 
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;

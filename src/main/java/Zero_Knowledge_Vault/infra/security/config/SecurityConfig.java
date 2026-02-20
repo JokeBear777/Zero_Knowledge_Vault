@@ -1,11 +1,11 @@
-package Zero_Knowledge_Vault.global.security.config;
+package Zero_Knowledge_Vault.infra.security.config;
 
 
 import Zero_Knowledge_Vault.global.filter.JwtAuthFilter;
 import Zero_Knowledge_Vault.global.filter.JwtExceptionFilter;
-import Zero_Knowledge_Vault.global.security.oauth2.handler.OAuth2LoginFailureHandler;
-import Zero_Knowledge_Vault.global.security.oauth2.handler.OAuth2LoginSuccessHandler;
-import Zero_Knowledge_Vault.global.security.oauth2.service.CustomOAuth2UserService;
+import Zero_Knowledge_Vault.infra.security.oauth2.handler.OAuth2LoginFailureHandler;
+import Zero_Knowledge_Vault.infra.security.oauth2.handler.OAuth2LoginSuccessHandler;
+import Zero_Knowledge_Vault.infra.security.oauth2.service.CustomOAuth2UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
