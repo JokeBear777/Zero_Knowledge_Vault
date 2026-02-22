@@ -53,7 +53,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
         if(findMember.isEmpty()) {
             attributes.put("isExist",false);
-            List<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority(MemberRole.GUEST.toString()));
+            List<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority(MemberRole.ROLE_GUEST.toString()));
             return new DefaultOAuth2User(authorities, attributes, "email");
         }
 

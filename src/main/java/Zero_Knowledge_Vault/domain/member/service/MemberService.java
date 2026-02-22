@@ -57,7 +57,7 @@ public class MemberService {
                 .email(oAuthSignupInfo.email())
                 .name(dto.getName())
                 .mobile(dto.getMobile())
-                .memberRole(MemberRole.USER)
+                .memberRole(MemberRole.ROLE_USER)
                 .build();
 
         memberRepository.save(member);
@@ -77,6 +77,6 @@ public class MemberService {
         //
         //
 
-        member.setMemberRole(MemberRole.INACTIVE);
+        member.setMemberRole(MemberRole.ROLE_INACTIVE);
     }
 }
