@@ -3,6 +3,7 @@ package Zero_Knowledge_Vault.infra.security.oauth2.handler;
 import Zero_Knowledge_Vault.domain.member.dto.OAuthSignupInfo;
 import Zero_Knowledge_Vault.domain.member.entity.Member;
 import Zero_Knowledge_Vault.domain.member.service.MemberService;
+import Zero_Knowledge_Vault.global.util.CookieUtil;
 import Zero_Knowledge_Vault.infra.security.AuthLevel;
 import Zero_Knowledge_Vault.infra.security.jwt.GeneratedToken;
 import Zero_Knowledge_Vault.infra.security.jwt.JwtUtil;
@@ -44,18 +45,23 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             Member member = memberService.findByEmail(email)
                     .orElseThrow(IllegalAccessError::new);
 
-            GeneratedToken token = jwtUtil.generateToken(
+            GeneratedToken accessToken = jwtUtil.generateToken(
                     member.getMemberId(),
                     email,
                     member.getMemberRole().toString(),
                     AuthLevel.PRE_AUTH.toString()
             );
 
+            /*
             String redirectUrl = UriComponentsBuilder
                     .fromUriString("/?token=" + token.getAccessToken())
                     .build().toUriString();
 
             getRedirectStrategy().sendRedirect(request, response, redirectUrl);
+            */
+            CookieUtil.setAccessToken(response, accessToken.getAccessToken(), 60 * 10);
+
+            response.sendRedirect("/home.html");
         }
 
         if(!isExist) {

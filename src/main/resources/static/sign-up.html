@@ -20,7 +20,9 @@
 
 <script>
     async function loadOAuthInfo() {
-        const res = await fetch("/api/oauth-info");
+        const res = await fetch("/api/oauth-info", {
+            credentials: "include"
+        });
 
         if (!res.ok) {
             alert("OAuth 정보가 없습니다.");
@@ -49,6 +51,7 @@
             const res = await fetch("/api/sign-up", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                credentials: "include",
                 body: JSON.stringify(formData)
             });
 

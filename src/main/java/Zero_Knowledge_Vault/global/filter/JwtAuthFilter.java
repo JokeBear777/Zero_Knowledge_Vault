@@ -2,6 +2,7 @@ package Zero_Knowledge_Vault.global.filter;
 import Zero_Knowledge_Vault.domain.member.entity.Member;
 import Zero_Knowledge_Vault.domain.member.service.MemberService;
 import Zero_Knowledge_Vault.domain.member.type.MemberRole;
+import Zero_Knowledge_Vault.global.util.CookieUtil;
 import Zero_Knowledge_Vault.infra.security.AuthLevel;
 import Zero_Knowledge_Vault.infra.security.jwt.JwtUtil;
 import Zero_Knowledge_Vault.infra.security.jwt.CustomUserPrincipal;
@@ -37,7 +38,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        String accessToken = request.getHeader("Authorization");
+        //String accessToken = request.getHeader("Authorization");
+        String accessToken = CookieUtil.getAccessToken(request);
 
         if (!StringUtils.hasText(accessToken)) {
             filterChain.doFilter(request, response);
