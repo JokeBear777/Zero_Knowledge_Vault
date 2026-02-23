@@ -2,16 +2,75 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Dynamic Password - Main</title>
+    <title>Dynamic Password</title>
 </head>
 <body>
+
 <h1>Dynamic Password</h1>
 
-<div id="user-info"></div>
+<p>안전한 원격 데이터 저장소 서비스 입니다.</p>
 
-<button onclick="goLogin()">로그인</button>
-<button onclick="logout()">로그아웃</button>
+<div id="content">
+    <p>상태 확인 중...</p>
+</div>
 
-<script src="/js/auth.js"></script>
+<script>
+    window.onload = init;
+
+    async function init() {
+
+        const content = document.getElementById("content");
+
+        try {
+            const res = await fetch("/api/member/me", {
+                credentials: "include"
+            });
+
+            if (!res.ok) {
+                showLogin(content);
+                return;
+            }
+
+            const data = await res.json();
+
+            if (data.pakeStatus === "NOT_REGISTERED") {
+                window.location.href = "/setup-mp.html";
+                return;
+            }
+
+            if (data.pakeStatus === "DISABLED") {
+                window.location.href = "/account-disabled.html";
+                return;
+            }
+
+            if (data.pakeStatus === "ROTATING") {
+                window.location.href = "/rotate-mp.html";
+                return;
+            }
+
+            if (data.authLevel === "PRE_AUTH") {
+                window.location.href = "/unlock.html";
+                return;
+            }
+
+            window.location.href = "/dashboard.html";
+
+        } catch (e) {
+            showLogin(content);
+        }
+    }
+
+    function showLogin(content) {
+        content.innerHTML = `
+        <p>로그인이 필요합니다.</p>
+        <button onclick="goLogin()">네이버 로그인</button>
+    `;
+    }
+
+    function goLogin() {
+        window.location.href = "/oauth2/authorization/naver";
+    }
+</script>
+
 </body>
 </html>

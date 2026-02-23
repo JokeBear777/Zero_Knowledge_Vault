@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h2>Vault Unlock</h2>
+<input type="password" id="mp">
+<button onclick="unlock()">Unlock</button>
+
+<script>
+    async function unlock() {
+        const mp = document.getElementById("mp").value;
+
+        const res = await fetch("/api/vault/unlock", {
+            method: "POST",
+            credentials: "include",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({mp})
+        });
+
+        if (res.ok) {
+            window.location.href = "/dashboard.html";
+        } else {
+            alert("Unlock 실패");
+        }
+    }
+</script>
+</body>
+</html>

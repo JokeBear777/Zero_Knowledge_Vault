@@ -1,7 +1,9 @@
 package Zero_Knowledge_Vault.domain.member.service;
 
 import Zero_Knowledge_Vault.domain.auth.entity.MemberAuthPake;
+import Zero_Knowledge_Vault.domain.auth.repository.MemberAuthPakeQueryRepository;
 import Zero_Knowledge_Vault.domain.auth.repository.MemberAuthPakeRepository;
+import Zero_Knowledge_Vault.domain.auth.type.PakeAuthStatus;
 import Zero_Knowledge_Vault.domain.member.dto.MeResponseDto;
 import Zero_Knowledge_Vault.domain.member.dto.OAuthSignupInfo;
 import Zero_Knowledge_Vault.domain.member.dto.SignUpRequestDto;
@@ -25,6 +27,7 @@ public class MemberService {
 
     private final MemberRepository memberRepository;
     private final MemberAuthPakeRepository memberAuthPakeRepository;
+    private final MemberAuthPakeQueryRepository memberAuthPakeQueryRepository;
 
     public Optional<Member> findByEmail(String email) {
 
@@ -87,8 +90,12 @@ public class MemberService {
 
     public MeResponseDto getMeStatus(CustomUserPrincipal user) {
 
-        boolean pakeRegistered = memberAuthPakeRepository.existsById(user.getUserId());
+        var pake = memberAuthPakeQueryRepository.findActivePake(user.getUserId());
 
-        return MeResponseDto.from(user, pakeRegistered);
+        PakeAuthStatus status = pake
+                .map(MemberAuthPake::getStatus)
+                .orElse(PakeAuthStatus.NOT_REGISTERED);
+
+        return MeResponseDto.from(user, status);
     }
 }

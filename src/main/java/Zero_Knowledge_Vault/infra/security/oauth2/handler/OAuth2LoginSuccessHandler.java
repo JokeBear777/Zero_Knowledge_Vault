@@ -61,7 +61,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             */
             CookieUtil.setAccessToken(response, accessToken.getAccessToken(), 60 * 10);
 
-            response.sendRedirect("/home.html");
+            response.sendRedirect("/dashboard.html");
         }
 
         if(!isExist) {

@@ -1,6 +1,5 @@
 package Zero_Knowledge_Vault.domain.auth.service;
 
-import Zero_Knowledge_Vault.domain.auth.dto.PakeStateResponseDto;
 import Zero_Knowledge_Vault.domain.auth.dto.RegisterAuthRequest;
 import Zero_Knowledge_Vault.domain.auth.policy.AuthPolicy;
 import Zero_Knowledge_Vault.domain.auth.repository.MemberAuthPakeRepository;
@@ -22,8 +21,5 @@ public class AuthRegistrationService {
 
     }
 
-    public PakeStateResponseDto getState(Long memberId) {
-        return new PakeStateResponseDto(memberAuthPakeRepository.existsById(memberId));
-    }
 
 }

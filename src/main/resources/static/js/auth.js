@@ -5,13 +5,10 @@ async function checkLogin() {
 
     if (!res.ok) {
         window.location.href = "/login.html";
+        return null;
     }
-}
 
-window.onload = checkLogin;
-
-function goLogin() {
-    window.location.href = "/oauth2/authorization/naver";
+    return await res.json();
 }
 
 async function logout() {
@@ -20,6 +17,5 @@ async function logout() {
         credentials: "include"
     });
 
-    alert("로그아웃 완료");
     window.location.href = "/login.html";
 }
