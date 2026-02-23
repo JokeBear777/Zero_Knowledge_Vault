@@ -37,13 +37,10 @@ public class MemberApiController {
     public ResponseEntity<?> me(
             @AuthenticationPrincipal CustomUserPrincipal user
     ) {
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("인증되지 않은 사용자");
-        }
 
+        MeResponseDto dto =  memberService.getMeStatus(user);
         return ResponseEntity.ok(
-                MeResponseDto.from(user)
+                dto
         );
     }
 }

@@ -1,7 +1,7 @@
 package Zero_Knowledge_Vault.domain.auth.entity;
 
 import Zero_Knowledge_Vault.domain.auth.converter.KdfParamsConverter;
-import Zero_Knowledge_Vault.domain.auth.type.AuthStatus;
+import Zero_Knowledge_Vault.domain.auth.type.PakeAuthStatus;
 import Zero_Knowledge_Vault.domain.auth.type.KdfAlgorithm;
 import Zero_Knowledge_Vault.domain.auth.vo.KdfParams;
 import Zero_Knowledge_Vault.domain.auth.type.PakeAlgorithm;
@@ -78,7 +78,7 @@ public class MemberAuthPake {
      */
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
-    private AuthStatus status;
+    private PakeAuthStatus status;
 
     /**
      * 프로토콜/스키마 버전
@@ -100,7 +100,7 @@ public class MemberAuthPake {
             this.authVersion = 1;
         }
         if (this.status == null) {
-            this.status = AuthStatus.ACTIVE;
+            this.status = PakeAuthStatus.ACTIVE;
         }
     }
 

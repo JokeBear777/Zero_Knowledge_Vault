@@ -1,5 +1,8 @@
 package Zero_Knowledge_Vault.domain.member.service;
 
+import Zero_Knowledge_Vault.domain.auth.entity.MemberAuthPake;
+import Zero_Knowledge_Vault.domain.auth.repository.MemberAuthPakeRepository;
+import Zero_Knowledge_Vault.domain.member.dto.MeResponseDto;
 import Zero_Knowledge_Vault.domain.member.dto.OAuthSignupInfo;
 import Zero_Knowledge_Vault.domain.member.dto.SignUpRequestDto;
 import Zero_Knowledge_Vault.domain.member.entity.Member;
@@ -8,6 +11,7 @@ import Zero_Knowledge_Vault.domain.member.type.MemberRole;
 import Zero_Knowledge_Vault.infra.security.jwt.CustomUserPrincipal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.aspectj.bridge.MessageWriter;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +24,7 @@ import java.util.Optional;
 public class MemberService {
 
     private final MemberRepository memberRepository;
+    private final MemberAuthPakeRepository memberAuthPakeRepository;
 
     public Optional<Member> findByEmail(String email) {
 
@@ -78,5 +83,12 @@ public class MemberService {
         //
 
         member.setMemberRole(MemberRole.ROLE_INACTIVE);
+    }
+
+    public MeResponseDto getMeStatus(CustomUserPrincipal user) {
+
+        boolean pakeRegistered = memberAuthPakeRepository.existsById(user.getUserId());
+
+        return MeResponseDto.from(user, pakeRegistered);
     }
 }

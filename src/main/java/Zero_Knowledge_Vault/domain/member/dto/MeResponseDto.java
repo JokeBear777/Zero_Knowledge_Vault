@@ -7,15 +7,17 @@ public record MeResponseDto(
         Long userId,
         String email,
         String role,
-        String authLevel
+        String authLevel,
+        boolean pakeRegistered
 ) {
 
-    public static MeResponseDto from(CustomUserPrincipal user) {
+    public static MeResponseDto from(CustomUserPrincipal user, boolean pakeRegistered) {
         return new MeResponseDto(
                 user.getUserId(),
                 user.getEmail(),
                 user.getRole().toString(),
-                user.getAuthLevel().toString()
+                user.getAuthLevel().toString(),
+                pakeRegistered
         );
     }
 }

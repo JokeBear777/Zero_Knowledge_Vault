@@ -1,6 +1,6 @@
 package Zero_Knowledge_Vault.domain.auth.type;
 
-public enum AuthStatus {
+public enum PakeAuthStatus {
     ACTIVE,
     ROTATING,
     DISABLED
