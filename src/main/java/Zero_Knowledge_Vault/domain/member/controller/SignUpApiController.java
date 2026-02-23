@@ -4,7 +4,9 @@ import Zero_Knowledge_Vault.domain.member.dto.OAuthSignupInfo;
 import Zero_Knowledge_Vault.domain.member.dto.SignUpRequestDto;
 import Zero_Knowledge_Vault.domain.member.service.MemberService;
 import Zero_Knowledge_Vault.global.exception.custom.OAuthSignupSessionNotFoundException;
+import Zero_Knowledge_Vault.global.util.CookieUtil;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -57,5 +59,13 @@ public class SignUpApiController {
         }
 
         return ResponseEntity.ok(info);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletResponse response) {
+
+        CookieUtil.clearAccessToken(response);
+
+        return ResponseEntity.ok().build();
     }
 }

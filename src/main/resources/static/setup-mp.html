@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h2>Master Password 설정</h2>
+<input type="password" id="newMp">
+<button onclick="registerMp()">등록</button>
+<script>
+    async function registerMp() {
+        const mp = document.getElementById("newMp").value;
+
+        await fetch("/api/pake/register", {
+            method: "POST",
+            credentials: "include",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({mp})
+        });
+
+        window.location.href = "/dashboard.html";
+    }
+</script>
+</body>
+</html>

@@ -1,9 +1,12 @@
 package Zero_Knowledge_Vault.global.filter;
 import Zero_Knowledge_Vault.domain.member.entity.Member;
 import Zero_Knowledge_Vault.domain.member.service.MemberService;
-import Zero_Knowledge_Vault.global.security.AuthLevel;
-import Zero_Knowledge_Vault.global.security.jwt.JwtUtil;
-import Zero_Knowledge_Vault.global.security.jwt.SecurityUserDto;
+import Zero_Knowledge_Vault.domain.member.type.MemberRole;
+import Zero_Knowledge_Vault.global.util.CookieUtil;
+import Zero_Knowledge_Vault.infra.security.AuthLevel;
+import Zero_Knowledge_Vault.infra.security.jwt.JwtUtil;
+import Zero_Knowledge_Vault.infra.security.jwt.CustomUserPrincipal;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,29 +31,15 @@ import java.util.List;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
-    private final MemberService memberService;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain)
+            throws ServletException, IOException {
 
-        log.info("doFilterInternal start");
-
-        String path = request.getServletPath();
-        log.info("Request path: {}", path);
-        // 모두 허용 URL 처리
-        if (path.startsWith("/login")
-                || path.startsWith("/error")
-                || path.startsWith("/oauth2-login")
-                || path.startsWith("/sign-up")
-                || path.startsWith("/js")
-                || path.startsWith("/css")
-                || path.startsWith("/favicon")) {
-
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        String accessToken = request.getHeader("Authorization");
+        //String accessToken = request.getHeader("Authorization");
+        String accessToken = CookieUtil.getAccessToken(request);
 
         if (!StringUtils.hasText(accessToken)) {
             filterChain.doFilter(request, response);
@@ -58,45 +47,34 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         if (accessToken.startsWith("Bearer ")) {
-            accessToken = accessToken.substring(7).trim();
+            accessToken = accessToken.substring(7);
         }
 
         if (!jwtUtil.verifyToken(accessToken)) {
-            throw new JwtException("Access token is invalid or expired");
+            throw new JwtException("Invalid or expired token");
         }
 
-        if (jwtUtil.verifyToken(accessToken)) {
-            String email = jwtUtil.getUid(accessToken);
-            String authLevelStr = jwtUtil.getAuthLevel(accessToken);
-            AuthLevel authLevel = AuthLevel.valueOf(authLevelStr);
+        Claims claims = jwtUtil.parse(accessToken);
 
-            Member findMember =  memberService.findByEmail(email)
-                    .orElseThrow(IllegalStateException::new);
-            SecurityUserDto userDto = SecurityUserDto.builder()
-                    .userId(findMember.getMemberId())
-                    .email(findMember.getEmail())
-                    .mobile(findMember.getMobile())
-                    .role(findMember.getMemberRole())
-                    .authLevel(authLevel)
-                    .build();
+        CustomUserPrincipal principal = CustomUserPrincipal.builder()
+                .userId(jwtUtil.getUid(claims))
+                .email(jwtUtil.getEmail(claims))
+                .role(jwtUtil.getRole(claims))
+                .authLevel(jwtUtil.getAuthLevel(claims))
+                .build();
 
-            Authentication auth = getAuthentication(userDto);
-            SecurityContextHolder.getContext().setAuthentication(auth);
-            log.info("verification is success");
-        }
+        Authentication authentication =
+                new UsernamePasswordAuthenticationToken(
+                        principal,
+                        null,
+                        List.of(
+                                new SimpleGrantedAuthority(principal.getRole().toString()),
+                                new SimpleGrantedAuthority(principal.getAuthLevel().toString())
+                        )
+                );
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
 
         filterChain.doFilter(request, response);
-    }
-
-
-    public Authentication getAuthentication(SecurityUserDto member) {
-
-
-        return new UsernamePasswordAuthenticationToken(member, "",
-                List.of(
-                        new SimpleGrantedAuthority(member.getRole().toString()),
-                        new SimpleGrantedAuthority(member.getAuthLevel().toString())
-                )
-        );
     }
 }

@@ -1,14 +1,14 @@
 package Zero_Knowledge_Vault.domain.member.type;
 
 public enum MemberRole {
-    ADMIN,
-    USER,
-    GUEST,
-    INACTIVE;
+    ROLE_ADMIN,
+    ROLE_USER,
+    ROLE_GUEST,
+    ROLE_INACTIVE;
 
 
     @Override
     public String toString() {
-        return "ROLE_" + name();
+        return name();
     }
 }
