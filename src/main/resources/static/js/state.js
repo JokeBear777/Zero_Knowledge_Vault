@@ -3,22 +3,22 @@ async function checkMemberState() {
     const data = await checkLogin();
     if (!data) return;
 
-    if (data.pakeStatus === "NOT_REGISTERED") {
+    if (data.pakeAuthStatus === "NOT_REGISTERED") {
         window.location.href = "/setup-mp.html";
         return;
     }
 
-    if (data.pakeStatus === "DISABLED") {
+    if (data.pakeAuthStatus === "DISABLED") {
         window.location.href = "/account-disabled.html";
         return;
     }
 
-    if (data.pakeStatus === "ROTATING") {
+    if (data.pakeAuthStatus === "ROTATING") {
         window.location.href = "/rotate-mp.html";
         return;
     }
 
-    if (data.authLevel === "PRE_AUTH") {
+    if (data.authAuthLevel === "PRE_AUTH") {
         window.location.href = "/unlock.html";
         return;
     }

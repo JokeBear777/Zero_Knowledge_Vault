@@ -1,26 +1,318 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Master Password 설정</title>
+    <style>
+        body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; padding: 24px; }
+        .row { margin: 12px 0; }
+        input { padding: 10px; width: 360px; max-width: 100%; }
+        button { padding: 10px 14px; cursor: pointer; }
+        .hint { color: #666; font-size: 13px; line-height: 1.5; }
+        .err { color: #b00020; white-space: pre-wrap; }
+        .ok  { color: #0b7a0b; white-space: pre-wrap; }
+        code { background: #f6f6f6; padding: 2px 6px; border-radius: 6px; }
+    </style>
+
+    <!--
+      Argon2id (WASM) 필요하면 아래 CDN 하나만 추가하면 됨.
+      - 서버 정책이 ARGON2ID면 브라우저가 WebCrypto로 못 돌리니까 wasm이 필요.
+      - 로컬/사내 배포라면 CDN 말고 파일로 내려받아 번들링/정적서빙 추천.
+
+      주의: 네가 "백에 맞춰서"라고 했으니, 백에서 kdfAlgorithm을 PBKDF2_SHA256로 내려주면
+            아래 스크립트는 없어도 동작함.
+    -->
+    <script src="https://cdn.jsdelivr.net/npm/argon2-browser/dist/argon2-bundled.min.js"></script>
 </head>
+
 <body>
 <h2>Master Password 설정</h2>
-<input type="password" id="newMp">
-<button onclick="registerMp()">등록</button>
-<script>
-    async function registerMp() {
-        const mp = document.getElementById("newMp").value;
 
-        await fetch("/api/pake/register", {
-            method: "POST",
-            credentials: "include",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({mp})
+<div class="row">
+    <input type="password" id="newMp" placeholder="새 Master Password" autocomplete="new-password" />
+</div>
+
+<div class="row">
+    <button id="btn" type="button">등록</button>
+</div>
+
+<p class="hint">
+    서버로 <b>MP를 보내지 않습니다</b>. 브라우저에서 <code>verifier</code>를 계산해 전송합니다.<br/>
+    DeviceSecret은 브라우저 로컬에 저장됩니다(데모로 <code>localStorage</code> 사용).<br/><br/>
+
+    <b>백엔드 init 응답(예상)</b><br/>
+    <code>{
+        saltAuth(base64),
+        groupId,
+        N(hex or dec) or (N,g 생략 가능),
+        g,
+        hashAlgorithm,
+        kdfAlgorithm: "ARGON2ID" | "PBKDF2_SHA256",
+        kdfParams: { memory, iterations, parallelism } or { iterations }
+        }</code>
+</p>
+
+<div id="status" class="row"></div>
+
+<script>
+    // =========================================================
+    // Encoding utils
+    // =========================================================
+    const enc = new TextEncoder();
+
+    function bytesToHex(bytes) {
+        return Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    function hexToBytes(hex) {
+        const clean = hex.startsWith("0x") ? hex.slice(2) : hex;
+        if (clean.length % 2 !== 0) throw new Error("hex 길이가 홀수야");
+        const out = new Uint8Array(clean.length / 2);
+        for (let i = 0; i < out.length; i++) {
+            out[i] = parseInt(clean.slice(i * 2, i * 2 + 2), 16);
+        }
+        return out;
+    }
+
+    function base64ToBytes(b64) {
+        const bin = atob(b64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        return bytes;
+    }
+
+    function bytesToBase64(bytes) {
+        let bin = "";
+        for (const b of bytes) bin += String.fromCharCode(b);
+        return btoa(bin);
+    }
+
+    // =========================================================
+    // DeviceSecret (demo storage)
+    // =========================================================
+    const DEVICE_SECRET_KEY = "zkv_device_secret_v1";
+
+    function getOrCreateDeviceSecretBase64() {
+        let ds = localStorage.getItem(DEVICE_SECRET_KEY);
+        if (ds) return ds;
+
+        const bytes = new Uint8Array(32); // 256-bit
+        crypto.getRandomValues(bytes);
+        ds = bytesToBase64(bytes);
+        localStorage.setItem(DEVICE_SECRET_KEY, ds);
+        return ds;
+    }
+
+    // =========================================================
+    // BigInt modPow: v = g^x mod N
+    // =========================================================
+    function modPow(base, exponent, modulus) {
+        if (modulus === 1n) return 0n;
+        let result = 1n;
+        base = base % modulus;
+        while (exponent > 0n) {
+            if (exponent & 1n) result = (result * base) % modulus;
+            exponent >>= 1n;
+            base = (base * base) % modulus;
+        }
+        return result;
+    }
+
+    function parseNToBigInt(Nstr) {
+        const s = String(Nstr).trim();
+        if (!s) throw new Error("N이 비어있음");
+        if (s.startsWith("0x") || /^[0-9a-fA-F]+$/.test(s)) {
+            return BigInt(s.startsWith("0x") ? s : "0x" + s);
+        }
+        return BigInt(s); // decimal
+    }
+
+    // =========================================================
+    // KDFs
+    // =========================================================
+    // PBKDF2(SHA-256): WebCrypto 기본 지원
+    async function kdfPbkdf2Sha256({ passwordStr, saltBytes, iterations, outBits = 256 }) {
+        const keyMaterial = await crypto.subtle.importKey(
+            "raw",
+            enc.encode(passwordStr),
+            { name: "PBKDF2" },
+            false,
+            ["deriveBits"]
+        );
+
+        const bits = await crypto.subtle.deriveBits(
+            {
+                name: "PBKDF2",
+                hash: "SHA-256",
+                salt: saltBytes,
+                iterations
+            },
+            keyMaterial,
+            outBits
+        );
+
+        return new Uint8Array(bits);
+    }
+
+    // Argon2id: wasm 라이브러리 필요 (argon2-browser)
+    async function kdfArgon2id({ passwordStr, saltBytes, params }) {
+        if (typeof argon2 === "undefined") {
+            throw new Error("kdfAlgorithm=ARGON2ID 인데 argon2 wasm이 로드되지 않았어. argon2-browser 스크립트를 추가해줘.");
+        }
+
+        // 서버 params 예시:
+        // { memory: 65536, iterations: 3, parallelism: 1 }
+        const memKiB = Number(params?.memory ?? 65536);
+        const time = Number(params?.iterations ?? 3);
+        const parallelism = Number(params?.parallelism ?? 1);
+
+        const res = await argon2.hash({
+            pass: passwordStr,
+            salt: saltBytes,                 // Uint8Array
+            type: argon2.ArgonType.Argon2id,
+            mem: memKiB,                     // KiB
+            time: time,
+            parallelism: parallelism,
+            hashLen: 32                      // 256-bit
         });
 
-        window.location.href = "/dashboard.html";
+        // res.hash: Uint8Array
+        return new Uint8Array(res.hash);
     }
+
+    // 정책 기반 KDF 선택
+    async function deriveX({ P, saltAuthB64, kdfAlgorithm, kdfParams }) {
+        const saltBytes = base64ToBytes(saltAuthB64);
+
+        if (kdfAlgorithm === "ARGON2ID") {
+            return await kdfArgon2id({ passwordStr: P, saltBytes, params: kdfParams });
+        }
+
+        if (kdfAlgorithm === "PBKDF2_SHA256") {
+            const iterations = Number(kdfParams?.iterations ?? 200000);
+            return await kdfPbkdf2Sha256({ passwordStr: P, saltBytes, iterations, outBits: 256 });
+        }
+
+        throw new Error(`지원하지 않는 kdfAlgorithm: ${kdfAlgorithm}`);
+    }
+
+    // =========================================================
+    // API calls (백에 맞춰서)
+    // =========================================================
+    async function initPake() {
+        // ✅ 네 백엔드가 GET /api/pake/register 로 init 응답을 주는 구조
+        const res = await fetch("/api/pake/register", {
+            method: "GET",
+            credentials: "include"
+        });
+
+        if (!res.ok) {
+            const text = await res.text().catch(() => "");
+            throw new Error(`initPake failed: ${res.status} ${res.statusText}\n${text}`);
+        }
+        return await res.json();
+    }
+
+    async function registerVerifier({ verifierHex, saltAuth }) {
+        // ✅ POST는 verifier + saltAuth만 보냄 (MP 절대 전송 X)
+        const res = await fetch("/api/pake/register", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                verifier: verifierHex, // hex string
+                saltAuth               // base64
+            })
+        });
+
+        if (!res.ok) {
+            const text = await res.text().catch(() => "");
+            throw new Error(`register failed: ${res.status} ${res.statusText}\n${text}`);
+        }
+    }
+
+    // =========================================================
+    // UI
+    // =========================================================
+    function setStatus(msg, ok = true) {
+        const el = document.getElementById("status");
+        el.className = ok ? "ok" : "err";
+        el.textContent = msg;
+    }
+
+    // =========================================================
+    // Main flow
+    // =========================================================
+    async function registerMpFlow() {
+        const btn = document.getElementById("btn");
+        btn.disabled = true;
+
+        try {
+            const mp = document.getElementById("newMp").value;
+            if (!mp || mp.length < 8) throw new Error("MP는 최소 8자 이상으로 설정해줘.");
+
+            setStatus("1) init (salt/group/kdf 정책) 요청 중...");
+            const init = await initPake();
+
+            // 필수
+            const saltAuth = init.saltAuth;
+            if (!saltAuth) throw new Error("서버 응답에 saltAuth가 없어.");
+
+            // KDF 정책 (서버가 결정)
+            const kdfAlgorithm = init.kdfAlgorithm;
+            const kdfParams = init.kdfParams ?? {};
+            if (!kdfAlgorithm) throw new Error("서버 응답에 kdfAlgorithm이 없어. (예: ARGON2ID / PBKDF2_SHA256)");
+
+            // SRP group
+            // 1) N,g를 내려주는 방식이면 그대로 사용
+            // 2) groupId만 내려주는 방식이면, 클라에 group 테이블을 하드코딩해야 함.
+            const NStr = init.N;
+            const gStr = init.g;
+
+            if (!NStr || !gStr) {
+                // groupId만 내려주는 구조라면 여기서 groupId로 N,g를 찾아야 함.
+                // 지금은 "백이 N,g 내려준다" 기준으로 구현.
+                throw new Error("서버 응답에 N/g가 없어. groupId 방식이면 클라에 그룹 테이블 하드코딩 로직을 추가해야 해.");
+            }
+
+            const N = parseNToBigInt(NStr);
+            const g = BigInt(String(gStr));
+
+            // DeviceSecret
+            const deviceSecretB64 = getOrCreateDeviceSecretBase64();
+
+            // P = MP || DeviceSecret  (구분자 포함 권장)
+            const P = `${mp}||${deviceSecretB64}`;
+
+            // x = KDF(P, salt_auth)
+            setStatus(`2) KDF 수행 중... (${kdfAlgorithm})`);
+            const xBytes = await deriveX({ P, saltAuthB64: saltAuth, kdfAlgorithm, kdfParams });
+
+            const xHex = bytesToHex(xBytes);
+            const x = BigInt("0x" + xHex);
+
+            // v = g^x mod N
+            setStatus("3) verifier 계산 중... (v = g^x mod N)");
+            const v = modPow(g, x, N);
+
+            // POST verifier
+            setStatus("4) verifier 등록 요청 중...");
+            await registerVerifier({
+                verifierHex: v.toString(16),
+                saltAuth
+            });
+
+            setStatus("완료! 대시보드로 이동합니다.");
+            window.location.href = "/dashboard.html";
+        } catch (e) {
+            setStatus(String(e?.message ?? e), false);
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    document.getElementById("btn").addEventListener("click", registerMpFlow);
 </script>
 </body>
 </html>

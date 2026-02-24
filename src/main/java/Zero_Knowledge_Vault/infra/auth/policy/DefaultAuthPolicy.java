@@ -16,7 +16,7 @@ public class DefaultAuthPolicy implements AuthPolicy {
 
     @Override
     public String groupId() {
-        return "RFC5054_2048";
+        return "RFC5054_4096";
     }
 
     @Override
@@ -31,5 +31,10 @@ public class DefaultAuthPolicy implements AuthPolicy {
                 3,       // iterations
                 1        // parallelism
         );
+    }
+
+    @Override
+    public int version() {
+        return 1;
     }
 }
