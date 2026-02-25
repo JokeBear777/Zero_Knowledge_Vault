@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Builder
+@Builder(access = AccessLevel.PRIVATE)
 public class MemberAuthPake {
 
     /**
@@ -49,14 +49,14 @@ public class MemberAuthPake {
      * 인증용 salt
      */
     @Lob
-    @Column(name = "salt_auth", nullable = false)
+    @Column(name = "salt_auth", nullable = false, columnDefinition = "VARBINARY(32)")
     private byte[] saltAuth;
 
     /**
      * SRP verifier (g^x mod N)
      */
     @Lob
-    @Column(name = "verifier", nullable = false)
+    @Column(name = "verifier", nullable = false, columnDefinition = "LONGBLOB")
     private byte[] verifier;
 
     /**
@@ -107,5 +107,29 @@ public class MemberAuthPake {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public static MemberAuthPake register(
+            Member member,
+            PakeAlgorithm algorithm,
+            String groupId,
+            byte[] salt,
+            byte[] verifier,
+            KdfAlgorithm kdfAlgorithm,
+            KdfParams kdfParams,
+            PakeAuthStatus pakeAuthStatus,
+            int authVersion
+    ) {
+        return MemberAuthPake.builder()
+                .member(member)
+                .algorithm(algorithm)
+                .groupId(groupId)
+                .saltAuth(salt)
+                .verifier(verifier)
+                .kdfAlgorithm(kdfAlgorithm)
+                .kdfParams(kdfParams)
+                .status(pakeAuthStatus)
+                .authVersion(authVersion)
+                .build();
     }
 }

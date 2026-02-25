@@ -14,4 +14,6 @@ public interface AuthPolicy {
 
     KdfParams kdfParams();
 
+    int version();
+
 }
