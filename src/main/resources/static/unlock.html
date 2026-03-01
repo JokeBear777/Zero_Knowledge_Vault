@@ -13,7 +13,7 @@
     async function unlock() {
         const mp = document.getElementById("mp").value;
 
-        const res = await fetch("/api/vault/unlock", {
+        const res = await fetch("/api/pake/auth/init", {
             method: "POST",
             credentials: "include",
             headers: {"Content-Type": "application/json"},

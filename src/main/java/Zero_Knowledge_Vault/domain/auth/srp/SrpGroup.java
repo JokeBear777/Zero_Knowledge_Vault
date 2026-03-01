@@ -1,4 +1,4 @@
-package Zero_Knowledge_Vault.infra.security.srp;
+package Zero_Knowledge_Vault.domain.auth.srp;
 
 import java.math.BigInteger;
 

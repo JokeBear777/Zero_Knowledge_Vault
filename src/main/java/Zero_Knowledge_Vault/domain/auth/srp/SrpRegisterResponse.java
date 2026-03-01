@@ -1,8 +1,8 @@
-package Zero_Knowledge_Vault.infra.security.srp;
+package Zero_Knowledge_Vault.domain.auth.srp;
 
 import Zero_Knowledge_Vault.domain.auth.vo.KdfParams;
 
-public record SrpInitResponse(
+public record SrpRegisterResponse(
         String saltAuth,
         String N,
         String g,

@@ -4,8 +4,8 @@ import Zero_Knowledge_Vault.domain.auth.dto.PakeRegisterRequest;
 import Zero_Knowledge_Vault.domain.auth.dto.PakeRegisterResponse;
 import Zero_Knowledge_Vault.domain.auth.service.AuthRegistrationService;
 import Zero_Knowledge_Vault.infra.security.jwt.CustomUserPrincipal;
-import Zero_Knowledge_Vault.infra.security.srp.SrpInitResponse;
-import Zero_Knowledge_Vault.infra.security.srp.SrpService;
+import Zero_Knowledge_Vault.domain.auth.srp.SrpRegisterResponse;
+import Zero_Knowledge_Vault.domain.auth.srp.SrpService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/pake")
 @RequiredArgsConstructor
-public class MemberAuthPakeApiController {
+public class MemberPakeApiController {
 
     private final AuthRegistrationService authRegistrationService;
     private final SrpService srpService;
@@ -35,8 +35,9 @@ public class MemberAuthPakeApiController {
     public ResponseEntity<?> getPakeInit(
             @AuthenticationPrincipal CustomUserPrincipal userPrincipal
     ) {
-        SrpInitResponse res = srpService.initialize();
+        SrpRegisterResponse res = srpService.initialize();
         return ResponseEntity.ok(res);
     }
+
 
 }
