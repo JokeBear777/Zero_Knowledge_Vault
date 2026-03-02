@@ -45,4 +45,6 @@ public class CookieUtil {
                 .findFirst()
                 .orElse(null);
     }
+
+    public static void setElevationToken(HttpServletResponse response, String token ,long elevation) {}
 }

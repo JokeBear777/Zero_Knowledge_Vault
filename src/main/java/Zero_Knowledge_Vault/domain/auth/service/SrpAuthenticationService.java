@@ -1,8 +1,6 @@
 package Zero_Knowledge_Vault.domain.auth.service;
 
-import Zero_Knowledge_Vault.domain.auth.dto.PakeAuthInitRequest;
-import Zero_Knowledge_Vault.domain.auth.dto.SrpAuthInitResponse;
-import Zero_Knowledge_Vault.domain.auth.dto.SrpChallenge;
+import Zero_Knowledge_Vault.domain.auth.dto.*;
 import Zero_Knowledge_Vault.domain.auth.entity.MemberAuthPake;
 import Zero_Knowledge_Vault.domain.auth.policy.AuthPolicy;
 import Zero_Knowledge_Vault.domain.auth.policy.SrpPolicy;
@@ -71,6 +69,33 @@ public class SrpAuthenticationService {
                 authPolicy.kdfAlgorithm().toString(),
                 authPolicy.kdfParams()
         );
+    }
+
+    public ProveResult prove(
+            Long memberId,
+            String authSessionId,
+            String clientM1Hex
+    ) {
+
+        SrpSession session = srpSessionStore.findValid(authSessionId)
+                .orElseThrow(() -> new IllegalArgumentException("SRP session not found"));
+
+        if (!session.userId().equals(memberId)) {
+            throw new SecurityException("SRP session not owned by caller");
+        }
+
+        MemberAuthPake memberAuthPake = memberAuthPakeRepository.findByMemberId(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("Member not found"));
+
+        String m2Hex = srpService.verify(
+                new BigInteger(1, memberAuthPake.getVerifier()),
+                session,
+                clientM1Hex
+        );
+
+        //String elevationToken = elevationTokenService.issue(memberId, /*ttl=*/300);
+
+        return new ProveResult(null, m2Hex, 300);
     }
 
 }

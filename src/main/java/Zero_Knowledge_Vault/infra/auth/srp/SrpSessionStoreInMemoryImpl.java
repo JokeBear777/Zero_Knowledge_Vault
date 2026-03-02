@@ -2,6 +2,7 @@ package Zero_Knowledge_Vault.infra.auth.srp;
 
 import Zero_Knowledge_Vault.domain.auth.srp.SrpSession;
 import Zero_Knowledge_Vault.domain.auth.srp.SrpSessionStore;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -47,4 +48,9 @@ public class SrpSessionStoreInMemoryImpl implements SrpSessionStore {
         map.remove(id);
     }
 
+
+    @Scheduled(fixedDelay = 60000)
+    public void cleanupExpired() {
+        map.values().removeIf(SrpSession::isExpired);
+    }
 }
