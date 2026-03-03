@@ -1,5 +1,6 @@
 package Zero_Knowledge_Vault.infra.security.oauth2.handler;
 
+import Zero_Knowledge_Vault.domain.auth.service.AuthTokenService;
 import Zero_Knowledge_Vault.domain.member.dto.OAuthSignupInfo;
 import Zero_Knowledge_Vault.domain.member.entity.Member;
 import Zero_Knowledge_Vault.domain.member.service.MemberService;
@@ -27,6 +28,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
     private final JwtUtil jwtUtil;
     private final MemberService memberService;
+    private final AuthTokenService authTokenService;
 
     @Override
     public void onAuthenticationSuccess(
@@ -45,12 +47,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             Member member = memberService.findByEmail(email)
                     .orElseThrow(IllegalAccessError::new);
 
-            GeneratedToken accessToken = jwtUtil.generateToken(
-                    member.getMemberId(),
-                    email,
-                    member.getMemberRole().toString(),
-                    AuthLevel.PRE_AUTH.toString()
-            );
+            GeneratedToken accessToken = authTokenService.issuePreAuth(member);
 
             /*
             String redirectUrl = UriComponentsBuilder

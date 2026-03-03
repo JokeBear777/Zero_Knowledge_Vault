@@ -2,6 +2,7 @@ package Zero_Knowledge_Vault.domain.auth.controller;
 
 import Zero_Knowledge_Vault.domain.auth.dto.*;
 import Zero_Knowledge_Vault.domain.auth.service.SrpAuthenticationService;
+import Zero_Knowledge_Vault.global.util.CookieUtil;
 import Zero_Knowledge_Vault.infra.security.jwt.CustomUserPrincipal;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +41,12 @@ public class PakeAuthApiController {
     ) {
         ProveResult result =
             srpAuthenticationService.prove(customUserPrincipal.getUserId(), request.authSessionId(), request.M1());
+
+        CookieUtil.setAccessToken(
+                response,
+                result.elevationToken(),
+                (int) result.expiresInSeconds()
+        );
 
         return ResponseEntity.ok().build();
     }

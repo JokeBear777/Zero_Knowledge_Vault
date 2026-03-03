@@ -2,6 +2,7 @@ package Zero_Knowledge_Vault.domain.auth.srp;
 
 import java.util.Optional;
 
+// TODO: consider refactoring to BigInteger at interface level
 public interface SrpSessionStore {
 
     SrpSession create(

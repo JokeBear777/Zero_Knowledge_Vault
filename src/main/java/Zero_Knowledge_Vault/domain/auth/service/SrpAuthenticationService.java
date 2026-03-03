@@ -10,7 +10,10 @@ import Zero_Knowledge_Vault.domain.auth.srp.SrpGroup;
 import Zero_Knowledge_Vault.domain.auth.srp.SrpService;
 import Zero_Knowledge_Vault.domain.auth.srp.SrpSession;
 import Zero_Knowledge_Vault.domain.auth.srp.SrpSessionStore;
+import Zero_Knowledge_Vault.domain.member.entity.Member;
+import Zero_Knowledge_Vault.domain.member.service.MemberService;
 import Zero_Knowledge_Vault.infra.security.jwt.CustomUserPrincipal;
+import Zero_Knowledge_Vault.infra.security.jwt.GeneratedToken;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -31,6 +34,8 @@ public class SrpAuthenticationService {
     private final SrpSessionPolicy srpSessionPolicy;
     private final AuthPolicy authPolicy;
     private final SrpPolicy srpPolicy;
+    private final AuthTokenService authTokenService;
+    private final MemberService memberService;
 
 
     public SrpAuthInitResponse initPake(PakeAuthInitRequest request, CustomUserPrincipal customUserPrincipal) {
@@ -76,6 +81,9 @@ public class SrpAuthenticationService {
             String authSessionId,
             String clientM1Hex
     ) {
+        Member member = memberService.findById(memberId)
+                .orElseThrow(IllegalAccessError::new);
+
 
         SrpSession session = srpSessionStore.findValid(authSessionId)
                 .orElseThrow(() -> new IllegalArgumentException("SRP session not found"));
@@ -93,9 +101,9 @@ public class SrpAuthenticationService {
                 clientM1Hex
         );
 
-        //String elevationToken = elevationTokenService.issue(memberId, /*ttl=*/300);
+        GeneratedToken elevationToken = authTokenService.issueStepUp(member);
 
-        return new ProveResult(null, m2Hex, 300);
+        return new ProveResult(elevationToken.getAccessToken(), m2Hex, 300);
     }
 
 }
