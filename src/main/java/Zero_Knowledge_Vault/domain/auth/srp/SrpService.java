@@ -4,6 +4,7 @@ import Zero_Knowledge_Vault.domain.auth.dto.SrpChallenge;
 import Zero_Knowledge_Vault.domain.auth.policy.AuthPolicy;
 import Zero_Knowledge_Vault.domain.auth.policy.SrpPolicy;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigInteger;
@@ -14,6 +15,7 @@ import java.util.Arrays;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SrpService {
 
     private final SrpParameterGenerator generator;
@@ -30,7 +32,6 @@ public class SrpService {
                 salt,
                 SrpGroup.N.toString(16),
                 SrpGroup.g.toString(),
-                authPolicy.pakeAlgorithm().toString(),
                 authPolicy.kdfAlgorithm().toString(),
                 authPolicy.kdfParams()
         );
@@ -72,7 +73,6 @@ public class SrpService {
     }
 
     public String verify(BigInteger v, SrpSession session, String clientM1Hex) {
-
         BigInteger N = SrpGroup.N;
 
         BigInteger A = parseHexToBigInt(session.AHex());
@@ -93,6 +93,11 @@ public class SrpService {
         byte[] K = hashSessionKey(S);
 
         String expectedM1Hex = computeM1Hex(A, B, K);
+
+        log.info("Server S: {}", S.toString(16));
+        log.info("Server K: {}", bytesToHex(K));
+        log.info("Server M1: {}", expectedM1Hex);
+        log.info("Client M1: {}", clientM1Hex);
 
         if (!constantTimeEqualsHex(expectedM1Hex, clientM1Hex)) {
             srpSessionStore.delete(session.id());

@@ -36,7 +36,7 @@ public class PakeAuthApiController {
     @PostMapping("/prove")
     public ResponseEntity<?> prove(
             @AuthenticationPrincipal CustomUserPrincipal customUserPrincipal,
-            SrpAuthProveRequest request,
+            @RequestBody SrpAuthProveRequest request,
             HttpServletResponse response
     ) {
         ProveResult result =

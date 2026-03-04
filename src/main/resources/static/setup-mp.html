@@ -201,7 +201,7 @@
     // API calls (백에 맞춰서)
     // =========================================================
     async function initPake() {
-        // ✅ 네 백엔드가 GET /api/pake/register 로 init 응답을 주는 구조
+        // 네 백엔드가 GET /api/pake/register 로 init 응답을 주는 구조
         const res = await fetch("/api/pake/register", {
             method: "GET",
             credentials: "include"
@@ -215,8 +215,18 @@
     }
 
     async function registerVerifier({ verifierHex, saltAuth }) {
-        // ✅ POST는 verifier + saltAuth만 보냄 (MP 절대 전송 X)
+        // POST는 verifier + saltAuth만 보냄 (MP 절대 전송 X)
+
+        /*
+        console.log("client verifierHex:", verifierHex.toString(16));
+        console.log("saltAuth used:", saltAuth);
+        console.log("setup origin:", location.origin);
+        console.log("setup deviceSecret:", localStorage.getItem("zkv_device_secret_v1"));
+        console.log("setup saltAuth:", saltAuth);
+        */
+
         const res = await fetch("/api/pake/register", {
+
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
@@ -255,6 +265,11 @@
             setStatus("1) init (salt/group/kdf 정책) 요청 중...");
             const init = await initPake();
 
+            /*
+            console.log("init raw:", init);
+            console.log("init keys:", Object.keys(init));
+
+             */
             // 필수
             const saltAuth = init.saltAuth;
             if (!saltAuth) throw new Error("서버 응답에 saltAuth가 없어.");

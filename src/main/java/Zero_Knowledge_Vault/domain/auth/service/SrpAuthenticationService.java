@@ -64,15 +64,26 @@ public class SrpAuthenticationService {
                 srpSessionPolicy.ttlSeconds()
         );
 
+        /*
+        //test 용
+        log.info("DB verifier bytes len={}", memberAuthPake.getVerifier().length);
+        log.info("DB verifier (hex)={}", new BigInteger(1, memberAuthPake.getVerifier()).toString(16));
+        log.info("saltAuth(base64)={}", Base64.getEncoder().encodeToString(memberAuthPake.getSaltAuth()));
+        log.info("INIT kdf_auth(DB)={}", memberAuthPake.getKdfAlgorithm());
+        log.info("INIT kdf_params(DB)={}", memberAuthPake.getKdfParams());
+        log.info("INIT kdf_auth(policy)={}", authPolicy.kdfAlgorithm());
+        log.info("INIT kdf_params(policy)={}", authPolicy.kdfParams());
+
+         */
 
         return new SrpAuthInitResponse(
                 srpSession.id(),
                 saltAuthBase64,
                 srpSession.BHex(),
-                authPolicy.groupId(),
+                memberAuthPake.getGroupId(),
                 srpPolicy.hashAlgorithm(),
-                authPolicy.kdfAlgorithm().toString(),
-                authPolicy.kdfParams()
+                memberAuthPake.getKdfAlgorithm().toString(),
+                memberAuthPake.getKdfParams()
         );
     }
 
