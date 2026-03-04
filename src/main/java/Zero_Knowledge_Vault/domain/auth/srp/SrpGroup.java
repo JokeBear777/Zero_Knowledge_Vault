@@ -1,4 +1,4 @@
-package Zero_Knowledge_Vault.infra.security.srp;
+package Zero_Knowledge_Vault.domain.auth.srp;
 
 import java.math.BigInteger;
 
@@ -45,7 +45,7 @@ public class SrpGroup {
         N = new BigInteger(raw.replaceAll("\\s+", ""), 16);
     }
 
-    public static final BigInteger g = BigInteger.valueOf(5);
+    public static final BigInteger g = BigInteger.valueOf(2);
 
     private SrpGroup() {}
 }

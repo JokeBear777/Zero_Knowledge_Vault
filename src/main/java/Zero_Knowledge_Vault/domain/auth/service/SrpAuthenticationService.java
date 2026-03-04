@@ -1,0 +1,120 @@
+package Zero_Knowledge_Vault.domain.auth.service;
+
+import Zero_Knowledge_Vault.domain.auth.dto.*;
+import Zero_Knowledge_Vault.domain.auth.entity.MemberAuthPake;
+import Zero_Knowledge_Vault.domain.auth.policy.AuthPolicy;
+import Zero_Knowledge_Vault.domain.auth.policy.SrpPolicy;
+import Zero_Knowledge_Vault.domain.auth.policy.SrpSessionPolicy;
+import Zero_Knowledge_Vault.domain.auth.repository.MemberAuthPakeRepository;
+import Zero_Knowledge_Vault.domain.auth.srp.SrpGroup;
+import Zero_Knowledge_Vault.domain.auth.srp.SrpService;
+import Zero_Knowledge_Vault.domain.auth.srp.SrpSession;
+import Zero_Knowledge_Vault.domain.auth.srp.SrpSessionStore;
+import Zero_Knowledge_Vault.domain.member.entity.Member;
+import Zero_Knowledge_Vault.domain.member.service.MemberService;
+import Zero_Knowledge_Vault.infra.security.jwt.CustomUserPrincipal;
+import Zero_Knowledge_Vault.infra.security.jwt.GeneratedToken;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigInteger;
+import java.util.Base64;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+@Transactional(readOnly = true)
+public class SrpAuthenticationService {
+
+    private final SrpSessionStore srpSessionStore;
+    private final MemberAuthPakeRepository memberAuthPakeRepository;
+    private final SrpService srpService;
+    private final SrpSessionPolicy srpSessionPolicy;
+    private final AuthPolicy authPolicy;
+    private final SrpPolicy srpPolicy;
+    private final AuthTokenService authTokenService;
+    private final MemberService memberService;
+
+
+    public SrpAuthInitResponse initPake(PakeAuthInitRequest request, CustomUserPrincipal customUserPrincipal) {
+
+        MemberAuthPake memberAuthPake = memberAuthPakeRepository.findByMemberId(customUserPrincipal.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("Member not found"));
+
+        BigInteger verifier = new BigInteger(1, memberAuthPake.getVerifier());
+        byte[] saltBytes = memberAuthPake.getSaltAuth();
+
+        String saltAuthBase64 =
+                Base64.getEncoder().encodeToString(saltBytes);
+
+        SrpChallenge srpChallenge =  srpService.generateChallenge(
+                request.A(),
+                verifier,
+                SrpGroup.N,
+                SrpGroup.g
+        );
+
+        SrpSession srpSession = srpSessionStore.create(
+                customUserPrincipal.getUserId(),
+                request.A(),
+                srpChallenge.B(),
+                srpChallenge.b(),
+                srpSessionPolicy.ttlSeconds()
+        );
+
+        /*
+        //test 용
+        log.info("DB verifier bytes len={}", memberAuthPake.getVerifier().length);
+        log.info("DB verifier (hex)={}", new BigInteger(1, memberAuthPake.getVerifier()).toString(16));
+        log.info("saltAuth(base64)={}", Base64.getEncoder().encodeToString(memberAuthPake.getSaltAuth()));
+        log.info("INIT kdf_auth(DB)={}", memberAuthPake.getKdfAlgorithm());
+        log.info("INIT kdf_params(DB)={}", memberAuthPake.getKdfParams());
+        log.info("INIT kdf_auth(policy)={}", authPolicy.kdfAlgorithm());
+        log.info("INIT kdf_params(policy)={}", authPolicy.kdfParams());
+
+         */
+
+        return new SrpAuthInitResponse(
+                srpSession.id(),
+                saltAuthBase64,
+                srpSession.BHex(),
+                memberAuthPake.getGroupId(),
+                srpPolicy.hashAlgorithm(),
+                memberAuthPake.getKdfAlgorithm().toString(),
+                memberAuthPake.getKdfParams()
+        );
+    }
+
+    public ProveResult prove(
+            Long memberId,
+            String authSessionId,
+            String clientM1Hex
+    ) {
+        Member member = memberService.findById(memberId)
+                .orElseThrow(IllegalAccessError::new);
+
+
+        SrpSession session = srpSessionStore.findValid(authSessionId)
+                .orElseThrow(() -> new IllegalArgumentException("SRP session not found"));
+
+        if (!session.userId().equals(memberId)) {
+            throw new SecurityException("SRP session not owned by caller");
+        }
+
+        MemberAuthPake memberAuthPake = memberAuthPakeRepository.findByMemberId(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("Member not found"));
+
+        String m2Hex = srpService.verify(
+                new BigInteger(1, memberAuthPake.getVerifier()),
+                session,
+                clientM1Hex
+        );
+
+        GeneratedToken elevationToken = authTokenService.issueStepUp(member);
+
+        return new ProveResult(elevationToken.getAccessToken(), m2Hex, 300);
+    }
+
+}

@@ -1,31 +1,353 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Vault Unlock</title> <!-- kdfAlgorithm=ARGON2ID 일 때 필요 -->
+    <script src="https://cdn.jsdelivr.net/npm/argon2-browser/dist/argon2-bundled.min.js"></script>
 </head>
-<body>
-<h2>Vault Unlock</h2>
-<input type="password" id="mp">
+<body><h2>Vault Unlock</h2> <input type="password" id="mp" placeholder="Master Password">
 <button onclick="unlock()">Unlock</button>
 
 <script>
-    async function unlock() {
-        const mp = document.getElementById("mp").value;
+    /* =========================
+       SRP Group (4096)
+       ========================= */
+    const N_HEX =
+        "FFFFFFFFFFFFFFFFC90FDAA22168C234" +
+        "C4C6628B80DC1CD129024E088A67CC74" +
+        "020BBEA63B139B22514A08798E3404DD" +
+        "EF9519B3CD3A431B302B0A6DF25F1437" +
+        "4FE1356D6D51C245E485B576625E7EC6" +
+        "F44C42E9A637ED6B0BFF5CB6F406B7ED" +
+        "EE386BFB5A899FA5AE9F24117C4B1FE6" +
+        "49286651ECE45B3DC2007CB8A163BF05" +
+        "98DA48361C55D39A69163FA8FD24CF5F" +
+        "83655D23DCA3AD961C62F356208552BB" +
+        "9ED529077096966D670C354E4ABC9804" +
+        "F1746C08CA18217C32905E462E36CE3B" +
+        "E39E772C180E86039B2783A2EC07A28F" +
+        "B5C55DF06F4C52C9DE2BCBF695581718" +
+        "3995497CEA956AE515D2261898FA0510" +
+        "15728E5A8AAAC42DAD33170D04507A33" +
+        "A85521ABDF1CBA64ECFB850458DBEF0A" +
+        "8AEA71575D060C7DB3970F85A6E1E4C7" +
+        "ABF5AE8CDB0933D71E8C94E04A25619D" +
+        "CEE3D2261AD2EE6BF12FFA06D98A0864" +
+        "D87602733EC86A64521F2B18177B200C" +
+        "BBE117577A615D6C770988C0BAD946E2" +
+        "08E24FA074E5AB3143DB5BFCE0FD108E" +
+        "4B82D120A92108011A723C12A787E6D7" +
+        "88719A10BDBA5B2699C327186AF4E23C" +
+        "1A946834B6150BDA2583E9CA2AD44CE8" +
+        "DBBBC2DB04DE8EF92E8EFC141FBECAA6" +
+        "287C59474E6BC05D99B2964FA090C3A2" +
+        "233BA186515BE7ED1F612970CEE2D7AF" +
+        "B81BDD762170481CD0069127D5B05AA9" +
+        "93B4EA988D8FDDC186FFB7DC90A6C08F" +
+        "4DF435C934063199FFFFFFFFFFFFFFFF";
 
-        const res = await fetch("/api/vault/unlock", {
-            method: "POST",
-            credentials: "include",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({mp})
+    const N = BigInt("0x" + N_HEX);
+    const g = 2n;
+    const PAD_HEX_LEN = N_HEX.length; // 1024 hex chars (512 bytes)
+
+    const enc = new TextEncoder();
+
+    /* =========================
+       Bytes/Hex/Base64 utils
+       ========================= */
+    function bytesToHex(bytes) {
+        return Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    function hexToBytes(hex) {
+        let h = hex.startsWith("0x") ? hex.slice(2) : hex;
+        if (h.length % 2) h = "0" + h;
+        return new Uint8Array(h.match(/.{1,2}/g).map(b => parseInt(b, 16)));
+    }
+
+    function base64ToBytes(b64) {
+        const bin = atob(b64);
+        const out = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+        return out;
+    }
+
+    function concatBytes(...arrays) {
+        const total = arrays.reduce((s, a) => s + a.length, 0);
+        const out = new Uint8Array(total);
+        let off = 0;
+        for (const a of arrays) {
+            out.set(a, off);
+            off += a.length;
+        }
+        return out;
+    }
+
+    async function sha256(bytes) {
+        const digest = await crypto.subtle.digest("SHA-256", bytes);
+        return new Uint8Array(digest);
+    }
+
+    /* =========================
+       Math helpers
+       ========================= */
+
+    // 수학적 mod (음수 제거)
+    function mod(a, n) {
+        const r = a % n;
+        return r >= 0n ? r : r + n;
+    }
+
+    // modPow (항상 0..N-1)
+    function modPow(base, exp, modn) {
+        base = mod(base, modn);
+        let result = 1n;
+        while (exp > 0n) {
+            if (exp & 1n) result = mod(result * base, modn);
+            exp >>= 1n;
+            base = mod(base * base, modn);
+        }
+        return result;
+    }
+
+    function randomBigInt(bytes = 32) {
+        const arr = new Uint8Array(bytes);
+        crypto.getRandomValues(arr);
+        return BigInt("0x" + bytesToHex(arr));
+    }
+
+    // 서버 toPaddedBytes와 동일 목적: N 바이트(512) 길이로 left pad
+    function toFullHex(bi) {
+        bi = mod(bi, N); // 혹시라도 음수/범위 밖이면 정규화
+        let hex = bi.toString(16);
+        while (hex.length < PAD_HEX_LEN) hex = "0" + hex;
+        if (hex.length > PAD_HEX_LEN) hex = hex.slice(hex.length - PAD_HEX_LEN);
+        return hex;
+    }
+
+    /* =========================
+       computeK: Java BigInteger.toByteArray() 동일하게
+       ========================= */
+    function toJavaBigIntegerByteArrayFromHexUnsigned(magHex) {
+        magHex = magHex.replace(/^0+/, "") || "0";
+        let mag = hexToBytes(magHex);
+
+        if (mag.length === 1 && mag[0] === 0) return new Uint8Array([0]);
+
+        if ((mag[0] & 0x80) !== 0) {
+            const out = new Uint8Array(mag.length + 1);
+            out[0] = 0x00;
+            out.set(mag, 1);
+            return out;
+        }
+        return mag;
+    }
+
+    function toJavaBigIntegerByteArraySmall(bi) {
+        let hex = bi.toString(16);
+        if (hex.length % 2) hex = "0" + hex;
+        const mag = hexToBytes(hex);
+        if ((mag[0] & 0x80) !== 0) {
+            const out = new Uint8Array(mag.length + 1);
+            out[0] = 0x00;
+            out.set(mag, 1);
+            return out;
+        }
+        return mag;
+    }
+
+    async function computeK_likeServer() {
+        const nBytes = toJavaBigIntegerByteArrayFromHexUnsigned(N_HEX); // N.toByteArray()
+        const gBytes = toJavaBigIntegerByteArraySmall(g);              // g.toByteArray()
+        const kBytes = await sha256(concatBytes(nBytes, gBytes));
+        return BigInt("0x" + bytesToHex(kBytes));
+    }
+
+    /* =========================
+       DeviceSecret (setup과 동일)
+       ========================= */
+    const DEVICE_SECRET_KEY = "zkv_device_secret_v1";
+
+    function getOrCreateDeviceSecretBase64() {
+        let ds = localStorage.getItem(DEVICE_SECRET_KEY);
+        if (ds) return ds;
+
+        const bytes = new Uint8Array(32);
+        crypto.getRandomValues(bytes);
+        let bin = "";
+        for (const b of bytes) bin += String.fromCharCode(b);
+        ds = btoa(bin);
+
+        localStorage.setItem(DEVICE_SECRET_KEY, ds);
+        return ds;
+    }
+
+    /* =========================
+       KDF (setup과 동일)
+       ========================= */
+    async function kdfPbkdf2Sha256({passwordStr, saltBytes, iterations, outBits = 256}) {
+        const keyMaterial = await crypto.subtle.importKey(
+            "raw",
+            enc.encode(passwordStr),
+            {name: "PBKDF2"},
+            false,
+            ["deriveBits"]
+        );
+
+        const bits = await crypto.subtle.deriveBits(
+            {name: "PBKDF2", hash: "SHA-256", salt: saltBytes, iterations},
+            keyMaterial,
+            outBits
+        );
+
+        return new Uint8Array(bits);
+    }
+
+    async function kdfArgon2id({passwordStr, saltBytes, params}) {
+        if (typeof argon2 === "undefined") {
+            throw new Error("ARGON2ID인데 argon2-browser가 로드되지 않았어.");
+        }
+        const memKiB = Number(params?.memory ?? 65536);
+        const time = Number(params?.iterations ?? 3);
+        const parallelism = Number(params?.parallelism ?? 1);
+
+        const res = await argon2.hash({
+            pass: passwordStr,
+            salt: saltBytes,
+            type: argon2.ArgonType.Argon2id,
+            mem: memKiB,
+            time,
+            parallelism,
+            hashLen: 32
         });
 
-        if (res.ok) {
-            window.location.href = "/dashboard.html";
-        } else {
-            alert("Unlock 실패");
+        return new Uint8Array(res.hash);
+    }
+
+    async function deriveX({P, saltAuthB64, kdfAlgorithm, kdfParams}) {
+        const saltBytes = base64ToBytes(saltAuthB64);
+
+        if (kdfAlgorithm === "ARGON2ID") {
+            return await kdfArgon2id({passwordStr: P, saltBytes, params: kdfParams});
+        }
+
+        if (kdfAlgorithm === "PBKDF2_SHA256") {
+            const iterations = Number(kdfParams?.iterations ?? 200000);
+            return await kdfPbkdf2Sha256({passwordStr: P, saltBytes, iterations, outBits: 256});
+        }
+
+        throw new Error("지원하지 않는 kdfAlgorithm: " + kdfAlgorithm);
+    }
+
+    /* =========================
+       Unlock SRP
+       ========================= */
+    async function unlock() {
+        try {
+            const mp = document.getElementById("mp").value;
+            if (!mp) return alert("MP 입력해");
+
+            // 1) a, A
+            const a = randomBigInt(32);
+            const A = modPow(g, a, N);
+
+            // 2) init
+            const initRes = await fetch("/api/pake/auth/init", {
+                method: "POST",
+                credentials: "include",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({A: toFullHex(A)})
+            });
+
+            if (!initRes.ok) {
+                const t = await initRes.text().catch(() => "");
+                throw new Error("init 실패: " + initRes.status + "\n" + t);
+            }
+
+            const initData = await initRes.json();
+
+            const B = BigInt("0x" + initData.B);
+            const saltAuth = initData.saltAuth;
+            const kdfAlgorithm = initData.kdfAlgorithm;
+            const kdfParams = initData.kdfParams ?? {};
+
+            if (!saltAuth || !kdfAlgorithm) throw new Error("init 응답에 saltAuth/kdfAlgorithm 누락");
+
+            // 3) P (setup과 동일)
+            const deviceSecretB64 = getOrCreateDeviceSecretBase64();
+            const P = `${mp}||${deviceSecretB64}`;
+
+            // 4) x = KDF(P, saltAuth)
+            const xBytes = await deriveX({P, saltAuthB64: saltAuth, kdfAlgorithm, kdfParams});
+            const x = BigInt("0x" + bytesToHex(xBytes));
+
+            // 5) u = H(pad(A)||pad(B))  (서버 computeU와 동일)
+            const uBytes = await sha256(concatBytes(
+                hexToBytes(toFullHex(A)),
+                hexToBytes(toFullHex(B))
+            ));
+            const u = BigInt("0x" + bytesToHex(uBytes));
+
+            // 6) k = H(N.toByteArray||g.toByteArray)
+            const k = await computeK_likeServer();
+
+            // 7) S = (B - k*g^x)^(a + u*x) mod N
+            const gx = modPow(g, x, N);
+            const kgx = mod(k * gx, N);
+            const temp = mod(B - kgx, N);
+            const exp = a + (u * x);
+            const S = modPow(temp, exp, N);
+
+            // 8) K = H(pad(S))  (서버 hashSessionKey와 동일)
+            const KBytes = await sha256(hexToBytes(toFullHex(S)));
+            const KHex = bytesToHex(KBytes);
+
+            // 9) M1 = H(pad(A)||pad(B)||K)
+            const M1Bytes = await sha256(concatBytes(
+                hexToBytes(toFullHex(A)),
+                hexToBytes(toFullHex(B)),
+                KBytes
+            ));
+            const M1Hex = bytesToHex(M1Bytes);
+
+            // 비교용 로그 (서버와 비교 가능)
+            /*
+            const gx_check = modPow(g, x, N);
+            console.log("gx_check:", toFullHex(gx_check))
+            console.log("origin:", location.origin);
+            console.log("deviceSecret exists:", !!localStorage.getItem("zkv_device_secret_v1"));
+            console.log("deviceSecret:", localStorage.getItem("zkv_device_secret_v1"));
+            console.log("Client A:", toFullHex(A));
+            console.log("Client B:", toFullHex(B));
+            console.log("Client u:", u.toString(16));
+            console.log("Client k:", k.toString(16));
+            console.log("Client S:", toFullHex(S));      // 절대 음수 나오면 안 됨
+            console.log("Client K:", KHex);              // 64 hex chars
+            console.log("Client M1:", M1Hex);
+            console.log("init kdfAlgorithm:", initData.kdfAlgorithm);
+            console.log("init kdfParams:", initData.kdfParams);
+            */
+
+            // 10) prove
+            const proveRes = await fetch("/api/pake/auth/prove", {
+                method: "POST",
+                credentials: "include",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    authSessionId: initData.authSessionId,
+                    M1: M1Hex
+                })
+            });
+
+            if (!proveRes.ok) {
+                const t = await proveRes.text().catch(() => "");
+                throw new Error("prove 실패: " + proveRes.status + "\n" + t);
+            }
+
+            window.location.href = "/vault.html";
+        } catch (e) {
+            console.error(e);
+            alert(String(e?.message ?? e));
         }
     }
 </script>
-</body>
-</html>

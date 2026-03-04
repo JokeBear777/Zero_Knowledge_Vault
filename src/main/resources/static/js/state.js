@@ -18,7 +18,7 @@ async function checkMemberState() {
         return;
     }
 
-    if (data.authAuthLevel === "PRE_AUTH") {
+    if (data.authLevel === "PRE_AUTH") {
         window.location.href = "/unlock.html";
         return;
     }
