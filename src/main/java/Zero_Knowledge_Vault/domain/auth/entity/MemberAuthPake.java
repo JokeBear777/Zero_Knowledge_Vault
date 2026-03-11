@@ -1,9 +1,9 @@
 package Zero_Knowledge_Vault.domain.auth.entity;
 
-import Zero_Knowledge_Vault.domain.auth.converter.KdfParamsConverter;
+import Zero_Knowledge_Vault.global.crypto.kdf.KdfParamsConverter;
 import Zero_Knowledge_Vault.domain.auth.type.PakeAuthStatus;
-import Zero_Knowledge_Vault.domain.auth.type.KdfAlgorithm;
-import Zero_Knowledge_Vault.domain.auth.vo.KdfParams;
+import Zero_Knowledge_Vault.global.crypto.kdf.KdfAlgorithm;
+import Zero_Knowledge_Vault.global.crypto.kdf.KdfParams;
 import Zero_Knowledge_Vault.domain.auth.type.PakeAlgorithm;
 import Zero_Knowledge_Vault.domain.member.entity.Member;
 import jakarta.persistence.*;

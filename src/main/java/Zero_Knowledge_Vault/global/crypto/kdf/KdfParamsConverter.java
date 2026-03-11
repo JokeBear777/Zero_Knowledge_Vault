@@ -1,6 +1,5 @@
-package Zero_Knowledge_Vault.domain.auth.converter;
+package Zero_Knowledge_Vault.global.crypto.kdf;
 
-import Zero_Knowledge_Vault.domain.auth.vo.KdfParams;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.AttributeConverter;

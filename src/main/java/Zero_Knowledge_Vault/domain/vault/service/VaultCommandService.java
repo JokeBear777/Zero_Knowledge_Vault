@@ -1,17 +1,17 @@
 package Zero_Knowledge_Vault.domain.vault.service;
 
+import Zero_Knowledge_Vault.domain.member.entity.Member;
 import Zero_Knowledge_Vault.domain.member.repository.MemberRepository;
-import Zero_Knowledge_Vault.domain.vault.dto.VaultItemDeleteRequest;
-import Zero_Knowledge_Vault.domain.vault.dto.VaultItemUpsertRequest;
+import Zero_Knowledge_Vault.domain.vault.dto.*;
+import Zero_Knowledge_Vault.domain.vault.entity.MemberVaultKeyMaterial;
+import Zero_Knowledge_Vault.domain.vault.entity.VaultIndex;
 import Zero_Knowledge_Vault.domain.vault.entity.VaultItem;
-import Zero_Knowledge_Vault.domain.vault.repository.VaultIndexQueryRepository;
-import Zero_Knowledge_Vault.domain.vault.repository.VaultIndexRepository;
-import Zero_Knowledge_Vault.domain.vault.repository.VaultItemQueryRepository;
-import Zero_Knowledge_Vault.domain.vault.repository.VaultItemRepository;
+import Zero_Knowledge_Vault.domain.vault.repository.*;
 import Zero_Knowledge_Vault.global.exception.custom.VaultException;
 import Zero_Knowledge_Vault.global.exception.type.VaultErrorCode;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.validator.internal.util.privilegedactions.GetResolvedMemberMethods;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,8 +30,76 @@ public class VaultCommandService {
     private final VaultItemQueryRepository vaultItemQueryRepository;
     private final VaultIndexRepository vaultIndexRepository;
     private final VaultIndexQueryRepository vaultIndexQueryRepository;
+    private final MemberVaultKeyMaterialRepository memberVaultKeyMaterialRepository;
+    private final VaultKeyService vaultKeyService;
+
+    public SetupInitResponse getSetupInitResponse(Long memberId) {
+        Optional<MemberVaultKeyMaterial> vaultKeyMaterial = memberVaultKeyMaterialRepository.findById(memberId);
+
+        if (!vaultKeyMaterial.isPresent()) {
+            return vaultKeyService.initialize();
+        }
+        else {
+            throw new VaultException(VaultErrorCode.VAULT_SETUP_ALREADY_COMPLETED);
+        }
+
+    }
+
+    @Transactional
+    public void setupVault(Long memberId, SetupVaultKeyRequest request) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("Member not found"));
+
+        byte[] saltWrap = Base64.getDecoder().decode(request.saltWrapBase64());
+        byte[] wrappedVaultKey = Base64.getDecoder().decode(request.wrappedVaultKeyBase64());
+        byte[] indexCipher = Base64.getDecoder().decode(request.indexCipherBase64());
+        byte[] commitHash = Base64.getDecoder().decode(request.commitHashBase64());
+
+        Optional<MemberVaultKeyMaterial> vaultKeyMaterial = memberVaultKeyMaterialRepository.findById(memberId);
+
+        if (vaultKeyMaterial.isPresent()) {
+            throw new VaultException(VaultErrorCode.VAULT_SETUP_ALREADY_COMPLETED);
+        }
+
+        MemberVaultKeyMaterial material = MemberVaultKeyMaterial.register(
+                member,
+                wrappedVaultKey,
+                saltWrap,
+                request.wrapKdfAlgorithm(),
+                request.wrapKdfParams()
+        );
+        memberVaultKeyMaterialRepository.save(material);
+
+        VaultIndex vaultIndex = VaultIndex.initialize(
+                memberId,
+                indexCipher,
+                commitHash,
+                LocalDateTime.now()
+        );
+        vaultIndexRepository.save(vaultIndex);
+    }
 
 
+    @Transactional
+    public void setupVaultIndex(Long memberId, SetupVaultIndexRequest request) {
+        if (vaultIndexRepository.existsById(memberId)) {
+            throw new VaultException(VaultErrorCode.VAULT_ALREADY_INITIALIZED);
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+
+        byte[] indexCipher = Base64.getDecoder().decode(request.indexCipherBase64());
+        byte[] commitHash = Base64.getDecoder().decode(request.commitHashBase64());
+
+        VaultIndex vaultIndex = VaultIndex.initialize(
+                memberId,
+                indexCipher,
+                commitHash,
+                now
+        );
+
+        vaultIndexRepository.save(vaultIndex);
+    }
 
     @Transactional
     public void upsertItem(Long memberId, VaultItemUpsertRequest request) {

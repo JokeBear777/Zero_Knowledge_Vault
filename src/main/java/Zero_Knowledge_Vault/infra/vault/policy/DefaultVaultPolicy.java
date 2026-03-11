@@ -1,31 +1,20 @@
-package Zero_Knowledge_Vault.infra.auth.policy;
+package Zero_Knowledge_Vault.infra.vault.policy;
 
-import Zero_Knowledge_Vault.domain.auth.policy.AuthPolicy;
+import Zero_Knowledge_Vault.domain.vault.policy.VaultPolicy;
 import Zero_Knowledge_Vault.global.crypto.kdf.KdfAlgorithm;
-import Zero_Knowledge_Vault.domain.auth.type.PakeAlgorithm;
 import Zero_Knowledge_Vault.global.crypto.kdf.KdfParams;
 import org.springframework.stereotype.Component;
 
 @Component
-public class DefaultAuthPolicy implements AuthPolicy {
+public class DefaultVaultPolicy implements VaultPolicy {
 
     @Override
-    public PakeAlgorithm pakeAlgorithm() {
-        return PakeAlgorithm.SRP_6A;
-    }
-
-    @Override
-    public String groupId() {
-        return "RFC5054_4096";
-    }
-
-    @Override
-    public KdfAlgorithm kdfAlgorithm() {
+    public KdfAlgorithm KdfAlgorithm() {
         return KdfAlgorithm.ARGON2ID;
     }
 
     @Override
-    public KdfParams kdfParams() {
+    public KdfParams KdfParams() {
         return new KdfParams(
                 65536,   // memory
                 3,       // iterations

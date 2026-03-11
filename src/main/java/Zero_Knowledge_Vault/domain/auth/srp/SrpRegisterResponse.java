@@ -1,6 +1,6 @@
 package Zero_Knowledge_Vault.domain.auth.srp;
 
-import Zero_Knowledge_Vault.domain.auth.vo.KdfParams;
+import Zero_Knowledge_Vault.global.crypto.kdf.KdfParams;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record SrpRegisterResponse(
