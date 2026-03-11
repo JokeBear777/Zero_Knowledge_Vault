@@ -1,6 +1,7 @@
 package Zero_Knowledge_Vault.global.exception;
 
 import Zero_Knowledge_Vault.global.exception.custom.OAuthSignupSessionNotFoundException;
+import Zero_Knowledge_Vault.global.exception.custom.VaultException;
 import Zero_Knowledge_Vault.global.util.dto.MessageStatusResponseDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -38,6 +39,15 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public void handleNoResource(NoResourceFoundException e) {
         log.info("NoResourceFoundException");
+    }
+
+    @ExceptionHandler(VaultException.class)
+    public ResponseEntity<Map<String, String>> handleConflict(VaultException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of(
+                        "code", "VAULT_CONFLICT",
+                        "message", e.getMessage()
+                ));
     }
 
 }

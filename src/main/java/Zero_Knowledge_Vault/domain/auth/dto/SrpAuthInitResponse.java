@@ -1,6 +1,6 @@
 package Zero_Knowledge_Vault.domain.auth.dto;
 
-import Zero_Knowledge_Vault.domain.auth.vo.KdfParams;
+import Zero_Knowledge_Vault.global.crypto.kdf.KdfParams;
 
 public record SrpAuthInitResponse(
         String authSessionId,   // UUID (String)
