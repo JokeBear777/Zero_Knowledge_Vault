@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
         name = "vault_item",
         uniqueConstraints = @UniqueConstraint(
                 name = "uq_vault_item_user_item",
-                columnNames = {"user_id", "item_id"}
+                columnNames = {"member_id", "item_id"}
         )
 )
 @Getter
