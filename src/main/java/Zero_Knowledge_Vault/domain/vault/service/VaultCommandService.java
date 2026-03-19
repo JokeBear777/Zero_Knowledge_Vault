@@ -34,6 +34,23 @@ public class VaultCommandService {
     private final MemberVaultKeyMaterialRepository memberVaultKeyMaterialRepository;
     private final VaultKeyService vaultKeyService;
 
+    public GetVaultItemResponse getVaultItemResponse(String itemId, Long memberId) {
+        VaultItem item = vaultItemRepository.findByMemberIdAndItemId(memberId,itemId)
+                .orElseThrow(() -> new VaultException(VaultErrorCode.ITEM_NOT_FOUND));
+        if (item.getDeletedAt() != null) {
+            throw new VaultException(VaultErrorCode.ITEM_ALREADY_DELETED);
+        }
+
+        return GetVaultItemResponse.fromEntity(item);
+    }
+
+    public GetVaultIndexResponse getVaultIndexResponse(Long memberId) {
+        VaultIndex vaultIndex = vaultIndexRepository.findByMemberId(memberId)
+                .orElseThrow(() -> new VaultException(VaultErrorCode.ITEM_NOT_FOUND));
+
+        return GetVaultIndexResponse.from(vaultIndex);
+    }
+
     public SetupInitResponse getSetupInitResponse(Long memberId) {
         Optional<MemberVaultKeyMaterial> vaultKeyMaterial =
                 memberVaultKeyMaterialRepository.findById(memberId);
