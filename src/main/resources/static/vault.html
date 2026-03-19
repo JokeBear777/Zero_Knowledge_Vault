@@ -1,10 +1,39 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Vault</title>
 </head>
 <body>
+<h1>Vault Main</h1>
 
+<script>
+    async function checkVaultState() {
+        try {
+            const response = await fetch('/api/vault/state', {
+                method: 'GET',
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                throw new Error('Vault state 조회 실패');
+            }
+
+            const data = await response.json();
+
+            if (!data.vaultKeyMaterialExists || !data.vaultIndexExists) {
+                window.location.href = '/vault-setup.html';
+                return;
+            }
+
+            console.log('Vault 사용 가능');
+        } catch (error) {
+            console.error(error);
+            alert('Vault 상태를 확인할 수 없습니다.');
+        }
+    }
+
+    checkVaultState();
+</script>
 </body>
 </html>

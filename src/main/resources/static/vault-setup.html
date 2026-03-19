@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Vault Setup</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            line-height: 1.5;
+        }
+
+        .section {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .row {
+            margin-bottom: 14px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        input[type="text"], textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+        }
+
+        textarea {
+            min-height: 90px;
+            resize: vertical;
+        }
+
+        button {
+            padding: 10px 16px;
+            cursor: pointer;
+            margin-right: 8px;
+        }
+
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+        .muted { color: #666; }
+    </style>
+</head>
+<body>
+<h1>Vault Setup</h1>
+
+<div class="section">
+    <h2>1. Setup Init</h2>
+
+    <div class="row">
+        <button type="button" id="loadInitBtn">Setup Init 불러오기</button>
+    </div>
+
+    <div class="row">
+        <label for="wrapKdfAlgorithm">wrapKdfAlgorithm</label>
+        <input type="text" id="wrapKdfAlgorithm" readonly>
+    </div>
+
+    <div class="row">
+        <label for="wrapSalt">wrapSalt</label>
+        <textarea id="wrapSalt" readonly></textarea>
+    </div>
+
+    <div class="row">
+        <label for="wrapKdfParams">wrapKdfParams (JSON)</label>
+        <textarea id="wrapKdfParams" readonly></textarea>
+    </div>
+</div>
+
+<div class="section">
+    <h2>2. 평문 입력</h2>
+
+    <div class="row">
+        <label for="wrappedVaultKeyPlain">wrappedVaultKey 평문(테스트용)</label>
+        <textarea id="wrappedVaultKeyPlain" placeholder="테스트용 평문 입력"></textarea>
+    </div>
+
+    <div class="row">
+        <label for="indexPlain">index 평문(JSON 추천)</label>
+        <textarea id="indexPlain" placeholder='예: {"items":[],"version":1}'></textarea>
+    </div>
+
+    <div class="row">
+        <button type="button" id="generateBtn">Base64 / CommitHash 생성</button>
+    </div>
+</div>
+
+<div class="section">
+    <h2>3. 서버 전송 Payload</h2>
+
+    <div class="row">
+        <label for="saltWrapBase64">saltWrapBase64</label>
+        <textarea id="saltWrapBase64"></textarea>
+    </div>
+
+    <div class="row">
+        <label for="wrappedVaultKeyBase64">wrappedVaultKeyBase64</label>
+        <textarea id="wrappedVaultKeyBase64"></textarea>
+    </div>
+
+    <div class="row">
+        <label for="wrapKdfAlgorithmInput">wrapKdfAlgorithm</label>
+        <input type="text" id="wrapKdfAlgorithmInput">
+    </div>
+
+    <div class="row">
+        <label for="wrapKdfParamsInput">wrapKdfParams (JSON)</label>
+        <textarea id="wrapKdfParamsInput"></textarea>
+    </div>
+
+    <div class="row">
+        <label for="indexCipherBase64">indexCipherBase64</label>
+        <textarea id="indexCipherBase64"></textarea>
+    </div>
+
+    <div class="row">
+        <label for="commitHashBase64">commitHashBase64</label>
+        <textarea id="commitHashBase64"></textarea>
+    </div>
+
+    <div class="row">
+        <button type="button" id="setupVaultBtn">Vault Setup 완료</button>
+    </div>
+</div>
+
+<div class="section">
+    <h2>4. 상태</h2>
+    <div id="statusMessage" class="muted">아직 작업 없음</div>
+</div>
+
+<script>
+    const statusMessage = document.getElementById('statusMessage');
+
+    function setStatus(message, type = 'muted') {
+        statusMessage.className = type;
+        statusMessage.textContent = message;
+    }
+
+    function utf8ToBytes(str) {
+        return new TextEncoder().encode(str);
+    }
+
+    function bytesToBase64(bytes) {
+        let binary = '';
+        const chunkSize = 0x8000;
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+            const chunk = bytes.subarray(i, i + chunkSize);
+            binary += String.fromCharCode(...chunk);
+        }
+        return btoa(binary);
+    }
+
+    function stringToBase64(str) {
+        return bytesToBase64(utf8ToBytes(str));
+    }
+
+    function base64ToBytes(base64) {
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+        }
+        return bytes;
+    }
+
+    async function sha256Base64FromBytes(bytes) {
+        const digest = await crypto.subtle.digest('SHA-256', bytes);
+        return bytesToBase64(new Uint8Array(digest));
+    }
+
+    async function fetchJson(url, options = {}) {
+        const response = await fetch(url, {
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            ...options
+        });
+
+        if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`HTTP ${response.status} - ${text}`);
+        }
+
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+            return await response.json();
+        }
+        return null;
+    }
+
+    async function loadSetupInit() {
+        try {
+            setStatus('Setup init 불러오는 중...');
+
+            const data = await fetchJson('/api/vault/setup/init', { method: 'GET' });
+
+            document.getElementById('wrapKdfAlgorithm').value = data.wrapKdfAlgorithm ?? '';
+            document.getElementById('wrapSalt').value = data.wrapSalt ?? '';
+            document.getElementById('wrapKdfParams').value = JSON.stringify(data.wrapKdfParams ?? {}, null, 2);
+
+            document.getElementById('saltWrapBase64').value = data.wrapSalt ?? '';
+            document.getElementById('wrapKdfAlgorithmInput').value = data.wrapKdfAlgorithm ?? '';
+            document.getElementById('wrapKdfParamsInput').value = JSON.stringify(data.wrapKdfParams ?? {}, null, 2);
+
+            setStatus('Setup init 로드 완료', 'success');
+        } catch (error) {
+            console.error(error);
+            setStatus(`Setup init 실패: ${error.message}`, 'error');
+        }
+    }
+
+    async function generateDerivedFields() {
+        try {
+            const wrappedVaultKeyPlain = document.getElementById('wrappedVaultKeyPlain').value;
+            const indexPlain = document.getElementById('indexPlain').value;
+
+            const wrappedVaultKeyBase64 = stringToBase64(wrappedVaultKeyPlain);
+            const indexCipherBase64 = stringToBase64(indexPlain);
+
+            document.getElementById('wrappedVaultKeyBase64').value = wrappedVaultKeyBase64;
+            document.getElementById('indexCipherBase64').value = indexCipherBase64;
+
+            // 규칙: commitHash = Base64(SHA-256(decoded(indexCipherBase64)))
+            const indexCipherBytes = base64ToBytes(indexCipherBase64);
+            const commitHashBase64 = await sha256Base64FromBytes(indexCipherBytes);
+
+            document.getElementById('commitHashBase64').value = commitHashBase64;
+
+            setStatus('Base64 및 commit hash 생성 완료', 'success');
+        } catch (error) {
+            console.error(error);
+            setStatus(`생성 실패: ${error.message}`, 'error');
+        }
+    }
+
+    async function setupVault() {
+        try {
+            setStatus('Vault setup 요청 중...');
+
+            let wrapKdfParams;
+            try {
+                wrapKdfParams = JSON.parse(document.getElementById('wrapKdfParamsInput').value || '{}');
+            } catch (e) {
+                throw new Error('wrapKdfParams JSON 형식이 올바르지 않습니다.');
+            }
+
+            const payload = {
+                saltWrapBase64: document.getElementById('saltWrapBase64').value.trim(),
+                wrappedVaultKeyBase64: document.getElementById('wrappedVaultKeyBase64').value.trim(),
+                wrapKdfAlgorithm: document.getElementById('wrapKdfAlgorithmInput').value.trim(),
+                wrapKdfParams: wrapKdfParams,
+                indexCipherBase64: document.getElementById('indexCipherBase64').value.trim(),
+                commitHashBase64: document.getElementById('commitHashBase64').value.trim()
+            };
+
+            await fetchJson('/api/vault/setup', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+
+            setStatus('Vault setup 성공', 'success');
+            setTimeout(() => {
+                window.location.href = '/vault.html';
+            }, 500);
+        } catch (error) {
+            console.error(error);
+            setStatus(`Vault setup 실패: ${error.message}`, 'error');
+        }
+    }
+
+    document.getElementById('loadInitBtn').addEventListener('click', loadSetupInit);
+    document.getElementById('generateBtn').addEventListener('click', generateDerivedFields);
+    document.getElementById('setupVaultBtn').addEventListener('click', setupVault);
+
+    loadSetupInit();
+</script>
+</body>
+</html>

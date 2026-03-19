@@ -11,7 +11,6 @@ import Zero_Knowledge_Vault.global.exception.custom.VaultException;
 import Zero_Knowledge_Vault.global.exception.type.VaultErrorCode;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.validator.internal.util.privilegedactions.GetResolvedMemberMethods;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +32,15 @@ public class VaultCommandService {
     private final VaultIndexQueryRepository vaultIndexQueryRepository;
     private final MemberVaultKeyMaterialRepository memberVaultKeyMaterialRepository;
     private final VaultKeyService vaultKeyService;
+
+    public GetVaultStateResponse getVaultStateResponse(
+            Long memberId
+    ) {
+        boolean isMaterialExist = memberVaultKeyMaterialRepository.existsById(memberId);
+        boolean isVaultIndexExist = vaultIndexRepository.existsById(memberId);
+
+        return new GetVaultStateResponse(isMaterialExist, isVaultIndexExist);
+    }
 
     public GetVaultItemResponse getVaultItemResponse(String itemId, Long memberId) {
         VaultItem item = vaultItemRepository.findByMemberIdAndItemId(memberId,itemId)

@@ -15,6 +15,15 @@ public class VaultCommandApiController {
 
     private final VaultCommandService vaultCommandService;
 
+    @GetMapping("/state")
+    public ResponseEntity<?> getVaultStatue(
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        GetVaultStateResponse res =  vaultCommandService.getVaultStateResponse(principal.getUserId());
+
+        return ResponseEntity.ok(res);
+    }
+
     @GetMapping("/setup/init")
     public ResponseEntity<SetupInitResponse> getSetupInit(
             @AuthenticationPrincipal CustomUserPrincipal principal
@@ -35,6 +44,7 @@ public class VaultCommandApiController {
         return ResponseEntity.ok().build();
     }
 
+    /*
     @PostMapping("/setup/index")
     public ResponseEntity<?> setUpIndex(
             @AuthenticationPrincipal CustomUserPrincipal customUserPrincipal,
@@ -44,6 +54,8 @@ public class VaultCommandApiController {
 
         return ResponseEntity.ok().build();
     }
+
+     */
 
     @GetMapping("/index")
     public ResponseEntity<?> getIndex(
