@@ -11,7 +11,7 @@ import Zero_Knowledge_Vault.global.exception.custom.VaultException;
 import Zero_Knowledge_Vault.global.exception.type.VaultErrorCode;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.validator.internal.util.privilegedactions.GetResolvedMemberMethods;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,86 +33,117 @@ public class VaultCommandService {
     private final MemberVaultKeyMaterialRepository memberVaultKeyMaterialRepository;
     private final VaultKeyService vaultKeyService;
 
-    public SetupInitResponse getSetupInitResponse(Long memberId) {
-        Optional<MemberVaultKeyMaterial> vaultKeyMaterial = memberVaultKeyMaterialRepository.findById(memberId);
+    public GetVaultStateResponse getVaultStateResponse(
+            Long memberId
+    ) {
+        boolean isMaterialExist = memberVaultKeyMaterialRepository.existsById(memberId);
+        boolean isVaultIndexExist = vaultIndexRepository.existsById(memberId);
 
-        if (!vaultKeyMaterial.isPresent()) {
-            return vaultKeyService.initialize();
+        return new GetVaultStateResponse(isMaterialExist, isVaultIndexExist);
+    }
+
+    public GetVaultItemResponse getVaultItemResponse(String itemId, Long memberId) {
+        VaultItem item = vaultItemRepository.findByMemberIdAndItemId(memberId,itemId)
+                .orElseThrow(() -> new VaultException(VaultErrorCode.ITEM_NOT_FOUND));
+        if (item.getDeletedAt() != null) {
+            throw new VaultException(VaultErrorCode.ITEM_ALREADY_DELETED);
         }
-        else {
+
+        return GetVaultItemResponse.fromEntity(item);
+    }
+
+    public GetVaultIndexResponse getVaultIndexResponse(Long memberId) {
+        VaultIndex vaultIndex = vaultIndexRepository.findByMemberId(memberId)
+                .orElseThrow(() -> new VaultException(VaultErrorCode.ITEM_NOT_FOUND));
+
+        return GetVaultIndexResponse.from(vaultIndex);
+    }
+
+    public SetupInitResponse getSetupInitResponse(Long memberId) {
+        Optional<MemberVaultKeyMaterial> vaultKeyMaterial =
+                memberVaultKeyMaterialRepository.findById(memberId);
+
+        if (vaultKeyMaterial.isPresent()) {
             throw new VaultException(VaultErrorCode.VAULT_SETUP_ALREADY_COMPLETED);
         }
 
+        return vaultKeyService.initialize();
     }
 
     @Transactional
     public void setupVault(Long memberId, SetupVaultKeyRequest request) {
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("Member not found"));
+                .orElseThrow(() -> new VaultException(VaultErrorCode.MEMBER_NOT_FOUND));
 
         byte[] saltWrap = Base64.getDecoder().decode(request.saltWrapBase64());
         byte[] wrappedVaultKey = Base64.getDecoder().decode(request.wrappedVaultKeyBase64());
         byte[] indexCipher = Base64.getDecoder().decode(request.indexCipherBase64());
         byte[] commitHash = Base64.getDecoder().decode(request.commitHashBase64());
 
-        Optional<MemberVaultKeyMaterial> vaultKeyMaterial = memberVaultKeyMaterialRepository.findById(memberId);
-
-        if (vaultKeyMaterial.isPresent()) {
+        if (memberVaultKeyMaterialRepository.findById(memberId).isPresent()) {
             throw new VaultException(VaultErrorCode.VAULT_SETUP_ALREADY_COMPLETED);
         }
 
-        MemberVaultKeyMaterial material = MemberVaultKeyMaterial.register(
-                member,
-                wrappedVaultKey,
-                saltWrap,
-                request.wrapKdfAlgorithm(),
-                request.wrapKdfParams()
-        );
-        memberVaultKeyMaterialRepository.save(material);
+        try {
+            MemberVaultKeyMaterial material = MemberVaultKeyMaterial.register(
+                    member,
+                    wrappedVaultKey,
+                    saltWrap,
+                    request.wrapKdfAlgorithm(),
+                    request.wrapKdfParams()
+            );
+            memberVaultKeyMaterialRepository.saveAndFlush(material);
 
-        VaultIndex vaultIndex = VaultIndex.initialize(
-                memberId,
-                indexCipher,
-                commitHash,
-                LocalDateTime.now()
-        );
-        vaultIndexRepository.save(vaultIndex);
+            VaultIndex vaultIndex = VaultIndex.initialize(
+                    memberId,
+                    indexCipher,
+                    commitHash,
+                    LocalDateTime.now()
+            );
+            vaultIndexRepository.saveAndFlush(vaultIndex);
+
+        } catch (DataIntegrityViolationException e) {
+            // PK/UNIQUE 제약 중복 등 setup 경쟁 상황
+            throw new VaultException(VaultErrorCode.VAULT_SETUP_ALREADY_COMPLETED);
+        }
     }
-
 
     @Transactional
     public void setupVaultIndex(Long memberId, SetupVaultIndexRequest request) {
-        if (vaultIndexRepository.existsById(memberId)) {
-            throw new VaultException(VaultErrorCode.VAULT_ALREADY_INITIALIZED);
-        }
-
         LocalDateTime now = LocalDateTime.now();
 
         byte[] indexCipher = Base64.getDecoder().decode(request.indexCipherBase64());
         byte[] commitHash = Base64.getDecoder().decode(request.commitHashBase64());
 
-        VaultIndex vaultIndex = VaultIndex.initialize(
-                memberId,
-                indexCipher,
-                commitHash,
-                now
-        );
+        try {
+            if (vaultIndexRepository.existsById(memberId)) {
+                throw new VaultException(VaultErrorCode.VAULT_ALREADY_INITIALIZED);
+            }
 
-        vaultIndexRepository.save(vaultIndex);
+            VaultIndex vaultIndex = VaultIndex.initialize(
+                    memberId,
+                    indexCipher,
+                    commitHash,
+                    now
+            );
+
+            vaultIndexRepository.saveAndFlush(vaultIndex);
+        } catch (DataIntegrityViolationException e) {
+            throw new VaultException(VaultErrorCode.VAULT_ALREADY_INITIALIZED);
+        }
     }
 
     @Transactional
     public void upsertItem(Long memberId, VaultItemUpsertRequest request) {
         LocalDateTime now = LocalDateTime.now();
 
-        byte[] itemKeyCipher = Base64.getDecoder().decode(request.itemCipherBase64());
+        byte[] itemKeyCipher = Base64.getDecoder().decode(request.itemKeyCipherBase64());
         byte[] itemCipher = Base64.getDecoder().decode(request.itemCipherBase64());
         byte[] newIndexCipher = Base64.getDecoder().decode(request.newIndexCipherBase64());
         byte[] newCommitHash = Base64.getDecoder().decode(request.newCommitHashBase64());
 
         vaultItemUpsert(memberId, itemKeyCipher, itemCipher, request, now);
         vaultIndexUpsert(memberId, newIndexCipher, newCommitHash, now, request.expectedIndexVersion());
-
     }
 
     @Transactional
@@ -137,7 +168,7 @@ public class VaultCommandService {
         );
 
         if (!deleted) {
-            throw new VaultException(VaultErrorCode.ITEM_NOT_FOUND);
+            throw new VaultException(VaultErrorCode.ITEM_VERSION_CONFLICT);
         }
 
         long indexUpdated = vaultIndexQueryRepository.updateIfVersionMatches(
@@ -151,7 +182,6 @@ public class VaultCommandService {
         if (indexUpdated == 0) {
             throw new VaultException(VaultErrorCode.INDEX_VERSION_CONFLICT);
         }
-
     }
 
     private void vaultIndexUpsert(
@@ -160,7 +190,7 @@ public class VaultCommandService {
             byte[] newCommitHash,
             LocalDateTime now,
             Long expectedIndexVersion
-            ) {
+    ) {
         long indexUpdated = vaultIndexQueryRepository.updateIfVersionMatches(
                 memberId,
                 newIndexCipher,
@@ -169,11 +199,9 @@ public class VaultCommandService {
                 now
         );
 
-        //예상 가능한 충돌 결과(서비스에서 해석)는 if로 처리, 진짜 예외적 장애를 트라이캐치 ex)db 로우레벨 장애
         if (indexUpdated == 0) {
             throw new VaultException(VaultErrorCode.INDEX_VERSION_CONFLICT);
         }
-
     }
 
     private void vaultItemUpsert(
@@ -183,11 +211,19 @@ public class VaultCommandService {
             VaultItemUpsertRequest request,
             LocalDateTime now
     ) {
-        Optional<VaultItem> existingOpt = vaultItemRepository.findByMemberIdAndItemId(memberId, request.itemId());
+        Optional<VaultItem> existingOpt =
+                vaultItemRepository.findByMemberIdAndItemId(memberId, request.itemId());
 
         if (existingOpt.isPresent()) {
+            VaultItem existing = existingOpt.get();
 
-            vaultItemQueryRepository.updateIfVersionMatches(
+            // soft delete 정책 명확화
+            // 정책 1: tombstone 상태면 복구 금지
+            if (existing.getDeletedAt() != null) {
+                throw new VaultException(VaultErrorCode.ITEM_ALREADY_DELETED);
+            }
+
+            boolean updated = vaultItemQueryRepository.updateIfVersionMatches(
                     memberId,
                     request.itemId(),
                     itemKeyCipher,
@@ -195,13 +231,20 @@ public class VaultCommandService {
                     request.expectedItemVersion(),
                     now
             );
-        }
-        else {
-            long expected = request.expectedItemVersion() == null ? 0L : request.expectedItemVersion();
-            if (expected != 0L) {
+
+            if (!updated) {
                 throw new VaultException(VaultErrorCode.ITEM_VERSION_CONFLICT);
             }
 
+            return;
+        }
+
+        long expected = request.expectedItemVersion() == null ? 0L : request.expectedItemVersion();
+        if (expected != 0L) {
+            throw new VaultException(VaultErrorCode.ITEM_VERSION_CONFLICT);
+        }
+
+        try {
             VaultItem newItem = VaultItem.createNew(
                     memberId,
                     request.itemId(),
@@ -210,9 +253,10 @@ public class VaultCommandService {
                     now
             );
 
-            vaultItemRepository.save(newItem);
+            vaultItemRepository.saveAndFlush(newItem);
+        } catch (DataIntegrityViolationException e) {
+            // 동시에 같은 (member_id, item_id) insert 시도한 경우
+            throw new VaultException(VaultErrorCode.ITEM_VERSION_CONFLICT);
         }
-
     }
-
 }
