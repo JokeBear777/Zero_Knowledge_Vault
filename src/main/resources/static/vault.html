@@ -1,39 +1,538 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Vault</title>
 </head>
 <body>
 <h1>Vault Main</h1>
+<div id="user-info"></div>
 
+<div>
+    <h2>Index</h2>
+    <button type="button" id="loadIndexBtn">Load Index</button>
+
+    <div>
+        <label for="indexPlainText">indexPlainText</label><br>
+        <textarea id="indexPlainText" rows="6" cols="120" readonly></textarea>
+    </div>
+
+    <div>
+        <label for="indexCipherBase64">indexCipherBase64</label><br>
+        <textarea id="indexCipherBase64" rows="6" cols="120" readonly></textarea>
+    </div>
+
+    <div>
+        <label for="commitHashBase64">commitHashBase64</label><br>
+        <textarea id="commitHashBase64" rows="4" cols="120" readonly></textarea>
+    </div>
+
+    <div>
+        <label for="indexVersion">version</label><br>
+        <input type="text" id="indexVersion" readonly>
+    </div>
+</div>
+
+<div>
+    <h2>Get Item</h2>
+    <div>
+        <label for="loadItemId">itemId</label><br>
+        <input type="text" id="loadItemId">
+        <button type="button" id="loadItemBtn">Load Item</button>
+    </div>
+
+    <div>
+        <label for="loadedItemId">loaded itemId</label><br>
+        <input type="text" id="loadedItemId" readonly>
+    </div>
+
+    <div>
+        <label for="loadedItemKeyPlainText">itemKeyPlainText</label><br>
+        <textarea id="loadedItemKeyPlainText" rows="4" cols="120" readonly></textarea>
+    </div>
+
+    <div id="loadedItemKeyPlainTextHint"></div>
+
+    <div>
+        <label for="loadedItemKeyCipherBase64">itemKeyCipherBase64</label><br>
+        <textarea id="loadedItemKeyCipherBase64" rows="4" cols="120" readonly></textarea>
+    </div>
+
+    <div>
+        <label for="loadedItemPlainText">itemPlainText</label><br>
+        <textarea id="loadedItemPlainText" rows="6" cols="120" readonly></textarea>
+    </div>
+
+    <div id="loadedItemPlainTextHint"></div>
+
+    <div>
+        <label for="loadedItemCipherBase64">itemCipherBase64</label><br>
+        <textarea id="loadedItemCipherBase64" rows="6" cols="120" readonly></textarea>
+    </div>
+
+    <div>
+        <label for="loadedItemVersion">version</label><br>
+        <input type="text" id="loadedItemVersion" readonly>
+    </div>
+</div>
+
+<div>
+    <h2>Upsert Item</h2>
+    <div>
+        <label for="upsertItemId">itemId</label><br>
+        <input type="text" id="upsertItemId">
+    </div>
+
+    <div>
+        <label for="upsertExpectedItemVersion">expectedItemVersion (leave empty for new item)</label><br>
+        <input type="number" id="upsertExpectedItemVersion">
+    </div>
+
+    <div>
+        <label for="upsertExpectedIndexVersion">expectedIndexVersion</label><br>
+        <input type="number" id="upsertExpectedIndexVersion">
+    </div>
+
+    <div>
+        <label for="upsertItemKeyPlainText">itemKeyPlainText</label><br>
+        <textarea id="upsertItemKeyPlainText" rows="4" cols="120"></textarea>
+    </div>
+
+    <div>
+        <label for="upsertItemPlainText">itemPlainText</label><br>
+        <textarea id="upsertItemPlainText" rows="6" cols="120"></textarea>
+    </div>
+
+    <div>
+        <label for="upsertNewIndexPlainText">newIndexPlainText</label><br>
+        <textarea id="upsertNewIndexPlainText" rows="6" cols="120"></textarea>
+    </div>
+
+    <div>
+        <label for="upsertNewIndexCipherBase64Preview">newIndexCipherBase64 (auto)</label><br>
+        <textarea id="upsertNewIndexCipherBase64Preview" rows="6" cols="120" readonly></textarea>
+    </div>
+
+    <div>
+        <label for="upsertNewCommitHashBase64Preview">newCommitHashBase64 (auto)</label><br>
+        <textarea id="upsertNewCommitHashBase64Preview" rows="4" cols="120" readonly></textarea>
+    </div>
+
+    <button type="button" id="upsertItemBtn">Upsert Item</button>
+</div>
+
+<div>
+    <h2>Delete Item</h2>
+    <div>
+        <label for="deleteItemId">itemId</label><br>
+        <input type="text" id="deleteItemId">
+    </div>
+
+    <div>
+        <label for="deleteExpectedItemVersion">expectedItemVersion</label><br>
+        <input type="number" id="deleteExpectedItemVersion">
+    </div>
+
+    <div>
+        <label for="deleteExpectedIndexVersion">expectedIndexVersion</label><br>
+        <input type="number" id="deleteExpectedIndexVersion">
+    </div>
+
+    <div>
+        <label for="deleteNewIndexPlainText">newIndexPlainText</label><br>
+        <textarea id="deleteNewIndexPlainText" rows="6" cols="120"></textarea>
+    </div>
+
+    <div>
+        <label for="deleteNewIndexCipherBase64Preview">newIndexCipherBase64 (auto)</label><br>
+        <textarea id="deleteNewIndexCipherBase64Preview" rows="6" cols="120" readonly></textarea>
+    </div>
+
+    <div>
+        <label for="deleteNewCommitHashBase64Preview">newCommitHashBase64 (auto)</label><br>
+        <textarea id="deleteNewCommitHashBase64Preview" rows="4" cols="120" readonly></textarea>
+    </div>
+
+    <button type="button" id="deleteItemBtn">Delete Item</button>
+</div>
+
+<div>
+    <h2>Status</h2>
+    <div id="statusMessage">Idle</div>
+</div>
+
+<div>
+    <h2>Response</h2>
+    <pre id="responseOutput"></pre>
+</div>
+
+<script src="/js/auth.js"></script>
+<script src="/js/state.js"></script>
 <script>
-    async function checkVaultState() {
+    const statusMessage = document.getElementById('statusMessage');
+    const responseOutput = document.getElementById('responseOutput');
+
+    function setStatus(message) {
+        statusMessage.textContent = message;
+    }
+
+    function setResponse(data) {
+        if (data == null) {
+            responseOutput.textContent = '';
+            return;
+        }
+        responseOutput.textContent = JSON.stringify(data, null, 2);
+    }
+
+    function getTrimmedValue(id) {
+        return document.getElementById(id).value.trim();
+    }
+
+    function utf8ToBytes(str) {
+        return new TextEncoder().encode(str);
+    }
+
+    function bytesToBase64(bytes) {
+        let binary = '';
+        const chunkSize = 0x8000;
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+            const chunk = bytes.subarray(i, i + chunkSize);
+            binary += String.fromCharCode(...chunk);
+        }
+        return btoa(binary);
+    }
+
+    function stringToBase64(str) {
+        return bytesToBase64(utf8ToBytes(str));
+    }
+
+    function base64ToBytes(base64) {
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+        }
+        return bytes;
+    }
+
+    function tryDecodeUtf8FromBase64(base64) {
+        if (!base64) {
+            return null;
+        }
+
         try {
-            const response = await fetch('/api/vault/state', {
-                method: 'GET',
-                credentials: 'include'
-            });
-
-            if (!response.ok) {
-                throw new Error('Vault state 조회 실패');
-            }
-
-            const data = await response.json();
-
-            if (!data.vaultKeyMaterialExists || !data.vaultIndexExists) {
-                window.location.href = '/vault-setup.html';
-                return;
-            }
-
-            console.log('Vault 사용 가능');
+            const bytes = base64ToBytes(base64);
+            return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
         } catch (error) {
-            console.error(error);
-            alert('Vault 상태를 확인할 수 없습니다.');
+            return null;
         }
     }
 
-    checkVaultState();
+    function isProbablyPrintableText(text) {
+        if (text == null || text.length === 0) {
+            return true;
+        }
+
+        for (let i = 0; i < text.length; i++) {
+            const code = text.charCodeAt(i);
+
+            const isAllowedControl =
+                code === 9 || code === 10 || code === 13;
+
+            const isPrintable =
+                code >= 32 && code !== 127;
+
+            if (!isAllowedControl && !isPrintable) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    function decodeForDisplay(base64, fieldName) {
+        if (!base64) {
+            return {
+                text: '',
+                hint: fieldName + ': empty'
+            };
+        }
+
+        const decoded = tryDecodeUtf8FromBase64(base64);
+
+        if (decoded !== null && isProbablyPrintableText(decoded)) {
+            return {
+                text: decoded,
+                hint: fieldName + ': Base64 -> UTF-8 decoded successfully'
+            };
+        }
+
+        return {
+            text: '[encrypted or binary data]',
+            hint: fieldName + ': server returned Base64 bytes, but this page has no decrypt logic'
+        };
+    }
+
+    async function sha256Base64FromBytes(bytes) {
+        const digest = await crypto.subtle.digest('SHA-256', bytes);
+        return bytesToBase64(new Uint8Array(digest));
+    }
+
+    async function buildIndexPayloadFromPlainText(plainText, cipherPreviewId, hashPreviewId) {
+        const indexBytes = utf8ToBytes(plainText);
+        const indexCipherBase64 = bytesToBase64(indexBytes);
+        const commitHashBase64 = await sha256Base64FromBytes(indexBytes);
+
+        document.getElementById(cipherPreviewId).value = indexCipherBase64;
+        document.getElementById(hashPreviewId).value = commitHashBase64;
+
+        return {
+            indexCipherBase64,
+            commitHashBase64
+        };
+    }
+
+    function parseOptionalNumber(id) {
+        const value = getTrimmedValue(id);
+        if (value === '') {
+            return null;
+        }
+
+        const parsed = Number(value);
+        if (!Number.isInteger(parsed)) {
+            throw new Error(id + ' must be an integer.');
+        }
+
+        return parsed;
+    }
+
+    function parseRequiredNumber(id) {
+        const parsed = parseOptionalNumber(id);
+        if (parsed === null) {
+            throw new Error(id + ' is required.');
+        }
+        return parsed;
+    }
+
+    async function fetchJson(url, options = {}) {
+        const response = await fetch(url, {
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            ...options
+        });
+
+        const contentType = response.headers.get('content-type') || '';
+        const isJson = contentType.includes('application/json');
+        const body = isJson ? await response.json() : await response.text();
+
+        if (!response.ok) {
+            const message = isJson
+                ? (body.message || JSON.stringify(body))
+                : body;
+            throw new Error(message || ('HTTP ' + response.status));
+        }
+
+        return body;
+    }
+
+    async function ensureVaultReady() {
+        const response = await fetchJson('/api/vault/state', {
+            method: 'GET'
+        });
+
+        if (!response.vaultKeyMaterialExists || !response.vaultIndexExists) {
+            window.location.href = '/vault-setup.html';
+            return false;
+        }
+
+        return true;
+    }
+
+    function fillIndex(data) {
+        const decodedIndex = tryDecodeUtf8FromBase64(data.indexCipherBase64 || '');
+
+        document.getElementById('indexPlainText').value = decodedIndex ?? '[encrypted or binary data]';
+        document.getElementById('indexCipherBase64').value = data.indexCipherBase64 || '';
+        document.getElementById('commitHashBase64').value = data.commitHashBase64 || '';
+        document.getElementById('indexVersion').value = data.version ?? '';
+
+        document.getElementById('upsertExpectedIndexVersion').value = data.version ?? '';
+        document.getElementById('deleteExpectedIndexVersion').value = data.version ?? '';
+    }
+
+    function fillItem(data) {
+        console.log('load item response = ', data);
+
+        const itemKeyDisplay = decodeForDisplay(data.itemKeyCipherBase64 || '', 'itemKeyCipherBase64');
+        const itemDisplay = decodeForDisplay(data.itemCipherBase64 || '', 'itemCipherBase64');
+
+        console.log('decoded itemKeyDisplay = ', itemKeyDisplay);
+        console.log('decoded itemDisplay = ', itemDisplay);
+
+        document.getElementById('loadedItemId').value = data.itemId || '';
+        document.getElementById('loadedItemKeyPlainText').value = itemKeyDisplay.text;
+        document.getElementById('loadedItemKeyPlainTextHint').textContent = itemKeyDisplay.hint;
+        document.getElementById('loadedItemKeyCipherBase64').value = data.itemKeyCipherBase64 || '';
+
+        document.getElementById('loadedItemPlainText').value = itemDisplay.text;
+        document.getElementById('loadedItemPlainTextHint').textContent = itemDisplay.hint;
+        document.getElementById('loadedItemCipherBase64').value = data.itemCipherBase64 || '';
+
+        document.getElementById('loadedItemVersion').value = data.version ?? '';
+
+        document.getElementById('upsertItemId').value = data.itemId || '';
+        document.getElementById('upsertExpectedItemVersion').value = data.version ?? '';
+        document.getElementById('deleteItemId').value = data.itemId || '';
+        document.getElementById('deleteExpectedItemVersion').value = data.version ?? '';
+
+        if (itemKeyDisplay.text !== '[encrypted or binary data]') {
+            document.getElementById('upsertItemKeyPlainText').value = itemKeyDisplay.text;
+        } else {
+            document.getElementById('upsertItemKeyPlainText').value = '';
+        }
+
+        if (itemDisplay.text !== '[encrypted or binary data]') {
+            document.getElementById('upsertItemPlainText').value = itemDisplay.text;
+        } else {
+            document.getElementById('upsertItemPlainText').value = '';
+        }
+    }
+
+    async function loadIndex() {
+        setStatus('Loading index...');
+        const data = await fetchJson('/api/vault/index', { method: 'GET' });
+        fillIndex(data);
+        setResponse(data);
+        setStatus('Index loaded');
+    }
+
+    async function loadItem() {
+        const rawItemId = getTrimmedValue('loadItemId');
+
+        if (!rawItemId) {
+            throw new Error('itemId is required.');
+        }
+
+        const encodedItemId = encodeURIComponent(rawItemId);
+
+        setStatus('Loading item...');
+        const data = await fetchJson('/api/vault/item/' + encodedItemId, { method: 'GET' });
+
+        if (!data || typeof data !== 'object') {
+            throw new Error('Invalid item response.');
+        }
+
+        fillItem(data);
+        setResponse(data);
+        setStatus('Item loaded');
+    }
+
+    async function upsertItem() {
+        const indexPayload = await buildIndexPayloadFromPlainText(
+            getTrimmedValue('upsertNewIndexPlainText'),
+            'upsertNewIndexCipherBase64Preview',
+            'upsertNewCommitHashBase64Preview'
+        );
+
+        const payload = {
+            itemId: getTrimmedValue('upsertItemId'),
+            expectedItemVersion: parseOptionalNumber('upsertExpectedItemVersion'),
+            expectedIndexVersion: parseRequiredNumber('upsertExpectedIndexVersion'),
+            itemKeyCipherBase64: stringToBase64(getTrimmedValue('upsertItemKeyPlainText')),
+            itemCipherBase64: stringToBase64(getTrimmedValue('upsertItemPlainText')),
+            newIndexCipherBase64: indexPayload.indexCipherBase64,
+            newCommitHashBase64: indexPayload.commitHashBase64
+        };
+
+        if (!payload.itemId) {
+            throw new Error('itemId is required.');
+        }
+
+        setStatus('Saving item...');
+        await fetchJson('/api/vault/item', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+
+        setResponse(payload);
+        setStatus('Item saved');
+        await loadIndex();
+    }
+
+    async function deleteItem() {
+        const indexPayload = await buildIndexPayloadFromPlainText(
+            getTrimmedValue('deleteNewIndexPlainText'),
+            'deleteNewIndexCipherBase64Preview',
+            'deleteNewCommitHashBase64Preview'
+        );
+
+        const payload = {
+            itemId: getTrimmedValue('deleteItemId'),
+            expectedItemVersion: parseRequiredNumber('deleteExpectedItemVersion'),
+            expectedIndexVersion: parseRequiredNumber('deleteExpectedIndexVersion'),
+            newIndexCipherBase64: indexPayload.indexCipherBase64,
+            newCommitHashBase64: indexPayload.commitHashBase64
+        };
+
+        if (!payload.itemId) {
+            throw new Error('itemId is required.');
+        }
+
+        setStatus('Deleting item...');
+        await fetchJson('/api/vault/item', {
+            method: 'DELETE',
+            body: JSON.stringify(payload)
+        });
+
+        setResponse(payload);
+        setStatus('Item deleted');
+        await loadIndex();
+    }
+
+    async function initializePage() {
+        try {
+            await checkMemberState();
+
+            const ready = await ensureVaultReady();
+            if (!ready) {
+                return;
+            }
+
+            await loadIndex();
+        } catch (error) {
+            console.error(error);
+            setStatus('Initialization failed: ' + error.message);
+        }
+    }
+
+    async function runAction(action) {
+        try {
+            await action();
+        } catch (error) {
+            console.error(error);
+            setStatus('Failed: ' + error.message);
+        }
+    }
+
+    document.getElementById('loadIndexBtn').addEventListener('click', function () {
+        runAction(loadIndex);
+    });
+
+    document.getElementById('loadItemBtn').addEventListener('click', function () {
+        runAction(loadItem);
+    });
+
+    document.getElementById('upsertItemBtn').addEventListener('click', function () {
+        runAction(upsertItem);
+    });
+
+    document.getElementById('deleteItemBtn').addEventListener('click', function () {
+        runAction(deleteItem);
+    });
+
+    initializePage();
 </script>
 </body>
 </html>
