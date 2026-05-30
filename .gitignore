@@ -41,3 +41,6 @@ out/
 .env.*
 /docs
 agent.md
+
+# Local documentation drafts
+docs/
