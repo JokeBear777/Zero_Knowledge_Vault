@@ -5,20 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Vault Setup - Zero Knowledge Vault</title>
     <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/argon2-browser/dist/argon2-bundled.min.js"></script>
 </head>
 <body class="page">
 <main class="page-shell">
     <section class="card">
         <span class="step-badge">Step 4. Vault Setup</span>
         <h1 class="brand">Vault 초기화</h1>
-        <p class="subtitle">이 기기에서 사용할 개인 Vault를 준비합니다. 초기화가 완료되면 비밀 항목을 저장할 수 있습니다.</p>
+        <p class="subtitle">이 기기에서 사용할 개인 Vault를 준비합니다. Master Password는 서버로 전송하지 않습니다.</p>
 
         <div class="message message-warning">
             <strong>보안 안내</strong><br>
-            현재 데모는 Vault 저장 흐름을 보여주기 위한 프로토타입입니다. 운영 수준의 클라이언트 암호화 계층은 별도 보완이 필요합니다.
+            VaultKey는 브라우저에서 생성되고 Master Password 기반 wrapping key로 암호화되어 서버에 저장됩니다.
         </div>
 
-        <div id="statusMessage" class="message">초기화 준비 중입니다.</div>
+        <div class="form-group">
+            <label for="masterPassword">Master Password</label>
+            <input class="input" type="password" id="masterPassword" autocomplete="current-password"
+                   placeholder="Master Password를 입력하세요">
+        </div>
+
+        <div id="statusMessage" class="message">초기화 정보를 준비하는 중입니다.</div>
 
         <div class="button-row">
             <button type="button" id="setupVaultBtn" class="button">Vault 초기화</button>
@@ -29,46 +36,16 @@
 
 <script src="/js/storageCleaner.js"></script>
 <script src="/js/apiClient.js"></script>
+<script src="/js/vaultCrypto.js"></script>
 <script>
     const statusMessage = document.getElementById("statusMessage");
     const setupVaultBtn = document.getElementById("setupVaultBtn");
+    const masterPasswordInput = document.getElementById("masterPassword");
     let setupInit = null;
 
     function setStatus(message, type = "") {
         statusMessage.className = type ? "message message-" + type : "message";
         statusMessage.textContent = message;
-    }
-
-    function utf8ToBytes(str) {
-        return new TextEncoder().encode(str);
-    }
-
-    function bytesToBase64(bytes) {
-        let binary = "";
-        const chunkSize = 0x8000;
-        for (let i = 0; i < bytes.length; i += chunkSize) {
-            const chunk = bytes.subarray(i, i + chunkSize);
-            binary += String.fromCharCode(...chunk);
-        }
-        return btoa(binary);
-    }
-
-    function stringToBase64(str) {
-        return bytesToBase64(utf8ToBytes(str));
-    }
-
-    function base64ToBytes(base64) {
-        const binary = atob(base64);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) {
-            bytes[i] = binary.charCodeAt(i);
-        }
-        return bytes;
-    }
-
-    async function sha256Base64FromBytes(bytes) {
-        const digest = await crypto.subtle.digest("SHA-256", bytes);
-        return bytesToBase64(new Uint8Array(digest));
     }
 
     async function loadSetupInit() {
@@ -85,42 +62,64 @@
     }
 
     async function setupVault() {
+        const masterPassword = masterPasswordInput.value;
+
         if (!setupInit) {
             setStatus("초기화 정보를 아직 불러오지 못했습니다. 잠시 후 다시 시도해주세요.", "error");
             return;
         }
 
+        if (!masterPassword || masterPassword.length < 8) {
+            setStatus("Master Password를 8자 이상 입력해주세요.", "error");
+            return;
+        }
+
         setupVaultBtn.disabled = true;
-        setStatus("Vault를 초기화하고 있습니다.");
+        setStatus("VaultKey를 생성하고 암호화하는 중입니다.");
 
         try {
-            const initialIndex = JSON.stringify({
-                items: [],
-                version: 1
+            const wrappingKey = await VaultCrypto.deriveWrappingKey(
+                masterPassword,
+                setupInit.wrapSalt,
+                setupInit.wrapKdfParams || {},
+                setupInit.wrapKdfAlgorithm
+            );
+            const vaultKey = await VaultCrypto.generateAesKey();
+            const wrappedVaultKeyBase64 = await VaultCrypto.wrapVaultKey(vaultKey, wrappingKey);
+            const indexCipherBase64 = await VaultCrypto.encryptJson(vaultKey, {
+                schemaVersion: 1,
+                items: []
             });
-            const indexCipherBase64 = stringToBase64(initialIndex);
-            const commitHashBase64 = await sha256Base64FromBytes(base64ToBytes(indexCipherBase64));
+            const commitHashBase64 = await VaultCrypto.generateCommitHash(indexCipherBase64);
 
             await APIClient.post("/api/vault/setup", {
                 saltWrapBase64: setupInit.wrapSalt,
-                wrappedVaultKeyBase64: stringToBase64("prototype-vault-key-material"),
+                wrappedVaultKeyBase64,
                 wrapKdfAlgorithm: setupInit.wrapKdfAlgorithm,
                 wrapKdfParams: setupInit.wrapKdfParams || {},
                 indexCipherBase64,
                 commitHashBase64
             });
 
+            masterPasswordInput.value = "";
             setStatus("Vault 초기화가 완료되었습니다. Vault로 이동합니다.", "success");
             setTimeout(function () {
                 window.location.href = "/vault.html";
             }, 600);
         } catch (error) {
-            setStatus(error.userMessage || "Vault 초기화에 실패했습니다.", error.isConflict ? "warning" : "error");
+            masterPasswordInput.value = "";
+            const fallback = "Vault 초기화에 실패했습니다. Master Password와 브라우저 암호화 지원 상태를 확인해주세요.";
+            setStatus(error.userMessage || fallback, error.isConflict ? "warning" : "error");
             setupVaultBtn.disabled = false;
         }
     }
 
     setupVaultBtn.addEventListener("click", setupVault);
+    masterPasswordInput.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+            setupVault();
+        }
+    });
     loadSetupInit();
 </script>
 </body>

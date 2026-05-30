@@ -7,6 +7,7 @@ public enum VaultErrorCode {
     INDEX_VERSION_CONFLICT("Vault index version conflict"),
     VAULT_ALREADY_INITIALIZED("vault already initialized"),
     VAULT_SETUP_ALREADY_COMPLETED("vault setup already completed"),
+    VAULT_KEY_MATERIAL_NOT_FOUND("Vault key material not found"),
     MEMBER_NOT_FOUND("Member not found"),
     ;
 

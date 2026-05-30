@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Vault - Zero Knowledge Vault</title>
     <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/argon2-browser/dist/argon2-bundled.min.js"></script>
 </head>
 <body class="page">
 <main class="page-shell-wide">
@@ -12,48 +13,65 @@
         <div class="toolbar">
             <div>
                 <span class="step-badge">Step 5. Vault</span>
-                <h1 class="brand">내 Vault</h1>
-                <p class="subtitle">비밀 항목을 만들고, 열람하고, 수정하고, 삭제합니다.</p>
+                <h1 class="brand">Vault</h1>
+                <p class="subtitle">암호화된 비밀 항목을 만들고, 열고, 수정하고, 삭제합니다.</p>
             </div>
             <button type="button" class="button button-danger" onclick="logout()">Logout</button>
         </div>
 
         <div class="message message-warning security-note">
-            현재 데모는 Vault 저장 흐름을 보여주기 위한 프로토타입입니다. 운영 수준의 클라이언트 암호화 계층은 별도 보완이 필요합니다.
+            Vault 데이터는 브라우저에서 암호화된 뒤 서버에 저장됩니다. Master Password와 Vault 평문은 서버로 전송하지 않습니다.
         </div>
 
-        <div id="message" class="message">Vault를 불러오는 중입니다.</div>
+        <div id="message" class="message">Vault 상태를 확인하는 중입니다.</div>
 
-        <section class="section">
-            <div class="toolbar">
-                <h2 class="section-title">새 항목 추가</h2>
-                <button type="button" class="button button-secondary" id="refreshBtn">새로고침</button>
+        <section id="openVaultSection" class="section hidden">
+            <h2 class="section-title">Vault 열기</h2>
+            <p class="muted">VaultKey는 이 페이지 메모리에서만 복원됩니다. 새로고침하면 다시 Master Password를 입력해야 합니다.</p>
+
+            <div class="form-group">
+                <label for="openMasterPassword">Master Password</label>
+                <input class="input" type="password" id="openMasterPassword" autocomplete="current-password"
+                       placeholder="Master Password를 입력하세요">
             </div>
 
-            <form id="itemForm">
-                <div class="form-group">
-                    <label for="itemTitle">제목</label>
-                    <input class="input" type="text" id="itemTitle" placeholder="예: 은행 메모" autocomplete="off">
-                </div>
-
-                <div class="form-group">
-                    <label for="itemContent">내용</label>
-                    <textarea id="itemContent" placeholder="저장할 내용을 입력하세요."></textarea>
-                </div>
-
-                <div class="button-row">
-                    <button type="submit" class="button" id="saveBtn">저장</button>
-                    <button type="button" class="button button-ghost" id="cancelEditBtn">취소</button>
-                </div>
-            </form>
+            <div class="button-row">
+                <button type="button" class="button" id="openVaultBtn">Vault 열기</button>
+            </div>
         </section>
 
-        <section class="section">
-            <h2 class="section-title">저장된 항목</h2>
-            <div id="emptyState" class="empty-state hidden">
-                아직 저장된 항목이 없습니다. 첫 번째 항목을 추가해보세요.
-            </div>
-            <div id="itemList" class="item-list"></div>
+        <section id="vaultContentSection" class="hidden">
+            <section class="section">
+                <div class="toolbar">
+                    <h2 class="section-title">새 항목 추가</h2>
+                    <button type="button" class="button button-secondary" id="refreshBtn">새로고침</button>
+                </div>
+
+                <form id="itemForm">
+                    <div class="form-group">
+                        <label for="itemTitle">제목</label>
+                        <input class="input" type="text" id="itemTitle" placeholder="예: 은행 메모" autocomplete="off">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="itemContent">내용</label>
+                        <textarea id="itemContent" placeholder="저장할 비밀 내용을 입력하세요"></textarea>
+                    </div>
+
+                    <div class="button-row">
+                        <button type="submit" class="button" id="saveBtn">저장</button>
+                        <button type="button" class="button button-ghost hidden" id="cancelEditBtn">취소</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">저장된 항목</h2>
+                <div id="emptyState" class="empty-state hidden">
+                    아직 저장된 항목이 없습니다. 첫 번째 항목을 추가해보세요.
+                </div>
+                <div id="itemList" class="item-list"></div>
+            </section>
         </section>
     </section>
 </main>
@@ -62,8 +80,13 @@
 <script src="/js/apiClient.js"></script>
 <script src="/js/authGuard.js"></script>
 <script src="/js/auth.js"></script>
+<script src="/js/vaultCrypto.js"></script>
 <script>
     const message = document.getElementById("message");
+    const openVaultSection = document.getElementById("openVaultSection");
+    const vaultContentSection = document.getElementById("vaultContentSection");
+    const openMasterPasswordInput = document.getElementById("openMasterPassword");
+    const openVaultBtn = document.getElementById("openVaultBtn");
     const itemList = document.getElementById("itemList");
     const emptyState = document.getElementById("emptyState");
     const itemForm = document.getElementById("itemForm");
@@ -74,6 +97,7 @@
     const contentInput = document.getElementById("itemContent");
 
     const state = {
+        vaultKey: null,
         indexVersion: null,
         items: [],
         editingItemId: null,
@@ -85,79 +109,32 @@
         message.textContent = text;
     }
 
-    function utf8ToBytes(str) {
-        return new TextEncoder().encode(str);
+    function setVaultOpened(opened) {
+        openVaultSection.classList.toggle("hidden", opened);
+        vaultContentSection.classList.toggle("hidden", !opened);
     }
 
-    function bytesToBase64(bytes) {
-        let binary = "";
-        const chunkSize = 0x8000;
-        for (let i = 0; i < bytes.length; i += chunkSize) {
-            const chunk = bytes.subarray(i, i + chunkSize);
-            binary += String.fromCharCode(...chunk);
-        }
-        return btoa(binary);
-    }
-
-    function stringToBase64(str) {
-        return bytesToBase64(utf8ToBytes(str));
-    }
-
-    function base64ToBytes(base64) {
-        const binary = atob(base64);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) {
-            bytes[i] = binary.charCodeAt(i);
-        }
-        return bytes;
-    }
-
-    function tryDecodeUtf8FromBase64(base64) {
-        if (!base64) return null;
-
-        try {
-            const bytes = base64ToBytes(base64);
-            return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
-        } catch (error) {
-            return null;
-        }
-    }
-
-    async function sha256Base64FromBytes(bytes) {
-        const digest = await crypto.subtle.digest("SHA-256", bytes);
-        return bytesToBase64(new Uint8Array(digest));
-    }
-
-    function normalizeIndex(decodedText) {
-        if (!decodedText) {
+    function normalizeIndex(indexDocument) {
+        if (!indexDocument || !Array.isArray(indexDocument.items)) {
             return [];
         }
 
-        try {
-            const parsed = JSON.parse(decodedText);
-            if (Array.isArray(parsed.items)) {
-                return parsed.items
-                    .filter(item => item && item.id && item.title)
-                    .map(item => ({
-                        id: String(item.id),
-                        title: String(item.title),
-                        updatedAt: item.updatedAt || ""
-                    }));
-            }
-        } catch (error) {
-            return [];
-        }
-
-        return [];
+        return indexDocument.items
+            .filter(item => item && (item.itemId || item.id) && item.title)
+            .map(item => ({
+                itemId: String(item.itemId || item.id),
+                title: String(item.title),
+                createdAt: item.createdAt || "",
+                updatedAt: item.updatedAt || ""
+            }));
     }
 
     async function buildIndexPayload(items) {
-        const indexText = JSON.stringify({
-            items,
-            version: 1
+        const indexCipherBase64 = await VaultCrypto.encryptJson(state.vaultKey, {
+            schemaVersion: 1,
+            items
         });
-        const indexCipherBase64 = stringToBase64(indexText);
-        const commitHashBase64 = await sha256Base64FromBytes(utf8ToBytes(indexText));
+        const commitHashBase64 = await VaultCrypto.generateCommitHash(indexCipherBase64);
 
         return {
             newIndexCipherBase64: indexCipherBase64,
@@ -166,8 +143,32 @@
     }
 
     function createItemId() {
-        const random = crypto.getRandomValues(new Uint32Array(1))[0].toString(16);
-        return "item-" + Date.now().toString(36) + "-" + random;
+        if (crypto.randomUUID) {
+            return crypto.randomUUID();
+        }
+
+        const bytes = crypto.getRandomValues(new Uint8Array(16));
+        bytes[6] = (bytes[6] & 0x0f) | 0x40;
+        bytes[8] = (bytes[8] & 0x3f) | 0x80;
+        const hex = Array.from(bytes).map(byte => byte.toString(16).padStart(2, "0")).join("");
+        return [
+            hex.slice(0, 8),
+            hex.slice(8, 12),
+            hex.slice(12, 16),
+            hex.slice(16, 20),
+            hex.slice(20)
+        ].join("-");
+    }
+
+    function formatDate(value) {
+        if (!value) return "저장된 항목";
+
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+            return value;
+        }
+
+        return date.toLocaleString();
     }
 
     function resetForm() {
@@ -192,7 +193,7 @@
 
             const meta = document.createElement("p");
             meta.className = "muted";
-            meta.textContent = item.updatedAt ? "수정됨: " + item.updatedAt : "저장된 항목";
+            meta.textContent = item.updatedAt ? "수정: " + formatDate(item.updatedAt) : "저장된 항목";
 
             const actions = document.createElement("div");
             actions.className = "button-row";
@@ -202,7 +203,7 @@
             openBtn.className = "button button-secondary";
             openBtn.textContent = "열기";
             openBtn.addEventListener("click", function () {
-                openItem(item.id);
+                openItem(item.itemId);
             });
 
             const deleteBtn = document.createElement("button");
@@ -210,7 +211,7 @@
             deleteBtn.className = "button button-danger";
             deleteBtn.textContent = "삭제";
             deleteBtn.addEventListener("click", function () {
-                deleteItem(item.id);
+                deleteItem(item.itemId);
             });
 
             actions.append(openBtn, deleteBtn);
@@ -219,37 +220,96 @@
         }
     }
 
-    async function loadIndex() {
-        setMessage("Vault 항목을 불러오는 중입니다.");
+    async function openVault() {
+        const masterPassword = openMasterPasswordInput.value;
 
-        const data = await APIClient.get("/api/vault/index");
-        state.indexVersion = data.version;
-        state.items = normalizeIndex(tryDecodeUtf8FromBase64(data.indexCipherBase64 || ""));
-        renderItems();
-        setMessage("Vault를 불러왔습니다.", "success");
+        if (!masterPassword) {
+            setMessage("Master Password를 입력해주세요.", "error");
+            return;
+        }
+
+        openVaultBtn.disabled = true;
+        setMessage("VaultKey를 복원하고 있습니다.");
+
+        try {
+            const keyMaterial = await APIClient.get("/api/vault/key-material");
+            const wrappingKey = await VaultCrypto.deriveWrappingKey(
+                masterPassword,
+                keyMaterial.saltWrapBase64,
+                keyMaterial.wrapKdfParams || {},
+                keyMaterial.wrapKdfAlgorithm
+            );
+
+            state.vaultKey = await VaultCrypto.unwrapVaultKey(
+                keyMaterial.wrappedVaultKeyBase64,
+                wrappingKey
+            );
+            openMasterPasswordInput.value = "";
+            setVaultOpened(true);
+            await loadIndex();
+        } catch (error) {
+            state.vaultKey = null;
+            openMasterPasswordInput.value = "";
+            const fallback = "Master Password가 올바르지 않거나 Vault 데이터가 손상되었습니다.";
+            setMessage(error.userMessage || fallback, error.isConflict ? "warning" : "error");
+        } finally {
+            openVaultBtn.disabled = false;
+        }
+    }
+
+    async function loadIndex() {
+        if (!state.vaultKey) {
+            setMessage("Vault를 먼저 열어주세요.", "warning");
+            return;
+        }
+
+        setMessage("Vault 항목을 복호화하는 중입니다.");
+
+        try {
+            const data = await APIClient.get("/api/vault/index");
+            const indexDocument = await VaultCrypto.decryptJson(state.vaultKey, data.indexCipherBase64);
+            state.indexVersion = data.version;
+            state.items = normalizeIndex(indexDocument);
+            renderItems();
+            setMessage("Vault를 열었습니다.", "success");
+        } catch (error) {
+            const fallback = "Master Password가 올바르지 않거나 Vault 데이터가 손상되었습니다.";
+            setMessage(error.userMessage || fallback, error.isConflict ? "warning" : "error");
+        }
     }
 
     async function openItem(itemId) {
+        if (!state.vaultKey) {
+            setMessage("Vault를 먼저 열어주세요.", "warning");
+            return;
+        }
+
         try {
-            setMessage("항목을 여는 중입니다.");
+            setMessage("항목을 복호화하는 중입니다.");
             const data = await APIClient.get("/api/vault/item/" + encodeURIComponent(itemId));
-            const decoded = tryDecodeUtf8FromBase64(data.itemCipherBase64 || "");
-            const parsed = decoded ? JSON.parse(decoded) : {};
+            const itemKey = await VaultCrypto.unwrapVaultKey(data.itemKeyCipherBase64, state.vaultKey);
+            const itemDocument = await VaultCrypto.decryptJson(itemKey, data.itemCipherBase64);
 
             state.editingItemId = data.itemId;
             state.editingItemVersion = data.version;
-            titleInput.value = parsed.title || "";
-            contentInput.value = parsed.content || "";
+            titleInput.value = itemDocument.title || "";
+            contentInput.value = itemDocument.content || "";
             saveBtn.textContent = "수정 저장";
             cancelEditBtn.classList.remove("hidden");
             setMessage("항목을 열었습니다.", "success");
         } catch (error) {
-            setMessage(error.userMessage || "항목을 열 수 없습니다.", error.isConflict ? "warning" : "error");
+            const fallback = "항목을 열 수 없습니다. Master Password 또는 Vault 데이터 상태를 확인해주세요.";
+            setMessage(error.userMessage || fallback, error.isConflict ? "warning" : "error");
         }
     }
 
     async function saveItem(event) {
         event.preventDefault();
+
+        if (!state.vaultKey) {
+            setMessage("Vault를 먼저 열어주세요.", "warning");
+            return;
+        }
 
         const title = titleInput.value.trim();
         const content = contentInput.value.trim();
@@ -262,34 +322,39 @@
         saveBtn.disabled = true;
 
         try {
-            const now = new Date().toLocaleString();
+            const now = new Date().toISOString();
             const itemId = state.editingItemId || createItemId();
-            const nextItems = state.items.filter(item => item.id !== itemId);
+            const existingMeta = state.items.find(item => item.itemId === itemId);
+            const createdAt = existingMeta?.createdAt || now;
+            const nextItems = state.items.filter(item => item.itemId !== itemId);
             nextItems.unshift({
-                id: itemId,
+                itemId,
                 title,
+                createdAt,
                 updatedAt: now
             });
 
-            const indexPayload = await buildIndexPayload(nextItems);
-            const itemText = JSON.stringify({
+            const itemKey = await VaultCrypto.generateAesKey();
+            const itemCipherBase64 = await VaultCrypto.encryptJson(itemKey, {
+                schemaVersion: 1,
                 title,
                 content,
+                createdAt,
                 updatedAt: now
             });
+            const itemKeyCipherBase64 = await VaultCrypto.wrapVaultKey(itemKey, state.vaultKey);
+            const indexPayload = await buildIndexPayload(nextItems);
 
             await APIClient.post("/api/vault/item", {
                 itemId,
                 expectedItemVersion: state.editingItemVersion,
                 expectedIndexVersion: state.indexVersion,
-                itemKeyCipherBase64: stringToBase64("prototype-item-key"),
-                itemCipherBase64: stringToBase64(itemText),
+                itemKeyCipherBase64,
+                itemCipherBase64,
                 newIndexCipherBase64: indexPayload.newIndexCipherBase64,
                 newCommitHashBase64: indexPayload.newCommitHashBase64
             });
 
-            state.items = nextItems;
-            renderItems();
             resetForm();
             await loadIndex();
             setMessage("저장되었습니다.", "success");
@@ -301,6 +366,11 @@
     }
 
     async function deleteItem(itemId) {
+        if (!state.vaultKey) {
+            setMessage("Vault를 먼저 열어주세요.", "warning");
+            return;
+        }
+
         if (!confirm("이 항목을 삭제할까요?")) {
             return;
         }
@@ -308,7 +378,7 @@
         try {
             setMessage("항목을 삭제하는 중입니다.");
             const currentItem = await APIClient.get("/api/vault/item/" + encodeURIComponent(itemId));
-            const nextItems = state.items.filter(item => item.id !== itemId);
+            const nextItems = state.items.filter(item => item.itemId !== itemId);
             const indexPayload = await buildIndexPayload(nextItems);
 
             await APIClient.del("/api/vault/item", {
@@ -323,8 +393,6 @@
                 resetForm();
             }
 
-            state.items = nextItems;
-            renderItems();
             await loadIndex();
             setMessage("삭제되었습니다.", "success");
         } catch (error) {
@@ -363,7 +431,8 @@
                 return;
             }
 
-            await loadIndex();
+            setVaultOpened(false);
+            setMessage("Vault를 열려면 Master Password를 입력해주세요.");
         } catch (error) {
             setMessage(error.userMessage || "Vault를 불러오지 못했습니다.", error.isConflict ? "warning" : "error");
         }
@@ -372,6 +441,12 @@
     itemForm.addEventListener("submit", saveItem);
     cancelEditBtn.addEventListener("click", resetForm);
     refreshBtn.addEventListener("click", loadIndex);
+    openVaultBtn.addEventListener("click", openVault);
+    openMasterPasswordInput.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+            openVault();
+        }
+    });
 
     initializePage();
 </script>

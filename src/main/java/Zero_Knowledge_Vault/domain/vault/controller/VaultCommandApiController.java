@@ -66,6 +66,15 @@ public class VaultCommandApiController {
         return ResponseEntity.ok(res);
     }
 
+    @GetMapping("/key-material")
+    public ResponseEntity<GetVaultKeyMaterialResponse> getKeyMaterial(
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        GetVaultKeyMaterialResponse res = vaultCommandService.getVaultKeyMaterialResponse(principal.getUserId());
+
+        return ResponseEntity.ok(res);
+    }
+
     @GetMapping("/item/{itemId}")
     public ResponseEntity<GetVaultItemResponse> getVaultItem(
             @PathVariable("itemId") String itemId,
