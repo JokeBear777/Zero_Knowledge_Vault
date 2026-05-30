@@ -49,13 +49,6 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
             GeneratedToken accessToken = authTokenService.issuePreAuth(member);
 
-            /*
-            String redirectUrl = UriComponentsBuilder
-                    .fromUriString("/?token=" + token.getAccessToken())
-                    .build().toUriString();
-
-            getRedirectStrategy().sendRedirect(request, response, redirectUrl);
-            */
             CookieUtil.setAccessToken(response, accessToken.getAccessToken(), 60 * 10);
 
             response.sendRedirect("/dashboard.html");

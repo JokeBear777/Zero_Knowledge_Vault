@@ -49,12 +49,10 @@ public class JwtUtil {
     }
 
     public boolean verifyToken(String token) {
-        log.info("String token = {}", token);
         try{
             Jws<Claims> claims = Jwts.parserBuilder()
                     .setSigningKey(secretKey)
                     .build().parseClaimsJws(token);
-            log.info(claims.getBody().toString());
             return claims.getBody()
                     .getExpiration()
                     .after(new Date());

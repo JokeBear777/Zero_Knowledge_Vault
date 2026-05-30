@@ -1,37 +1,45 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Dynamic Password - Main</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Zero Knowledge Vault - Home</title>
+    <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
+<body class="page">
+<main class="page-shell">
+    <section class="card">
+        <span class="step-badge">Account</span>
+        <h1 class="brand">Zero Knowledge Vault</h1>
+        <p class="subtitle">현재 계정 상태를 확인하고 다음 단계로 이동합니다.</p>
 
-<h1>Dynamic Password HOME</h1>
-<div id="user-info"></div>
-<button onclick="logout()">로그아웃</button>
+        <div id="user-info" class="message">사용자 정보를 불러오는 중입니다.</div>
 
+        <div class="button-row">
+            <a class="button button-secondary" href="/setup-mp.html">Master Password 등록</a>
+            <a class="button button-secondary" href="/unlock.html">Unlock</a>
+            <a class="button" href="/vault.html">Vault 이동</a>
+            <button type="button" class="button-danger" onclick="logout()">Logout</button>
+        </div>
+    </section>
+</main>
+
+<script src="/js/storageCleaner.js"></script>
+<script src="/js/apiClient.js"></script>
+<script src="/js/authGuard.js"></script>
 <script src="/js/auth.js"></script>
-
 <script>
-    window.onload = function () {
-        loadUserInfo();
-    };
+    window.onload = loadUserInfo;
 
     async function loadUserInfo() {
-
-        const res = await fetch("/api/member/me", {
-            credentials: "include"
-        });
-
-        if (res.ok) {
-            const data = await res.json();
-            document.getElementById("user-info").innerText =
-                "환영합니다: " + data.email;
-        } else {
+        try {
+            const data = await AuthGuard.requireLogin();
+            if (!data) return;
+            document.getElementById("user-info").textContent = "환영합니다: " + data.email;
+        } catch (error) {
             window.location.href = "/login.html";
         }
     }
 </script>
-
 </body>
 </html>

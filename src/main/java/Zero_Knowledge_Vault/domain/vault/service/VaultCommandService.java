@@ -59,6 +59,13 @@ public class VaultCommandService {
         return GetVaultIndexResponse.from(vaultIndex);
     }
 
+    public GetVaultKeyMaterialResponse getVaultKeyMaterialResponse(Long memberId) {
+        MemberVaultKeyMaterial material = memberVaultKeyMaterialRepository.findById(memberId)
+                .orElseThrow(() -> new VaultException(VaultErrorCode.VAULT_KEY_MATERIAL_NOT_FOUND));
+
+        return GetVaultKeyMaterialResponse.from(material);
+    }
+
     public SetupInitResponse getSetupInitResponse(Long memberId) {
         Optional<MemberVaultKeyMaterial> vaultKeyMaterial =
                 memberVaultKeyMaterialRepository.findById(memberId);

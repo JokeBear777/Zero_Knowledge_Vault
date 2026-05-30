@@ -1,6 +1,5 @@
 package Zero_Knowledge_Vault.infra.security.config;
 
-import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -13,11 +12,6 @@ import java.util.Base64;
 @Getter
 @Setter
 public class JwtProperties {
-
-    @PostConstruct
-    public void check() {
-        System.out.println("secretKey = " + secretKey);
-    }
 
     private String issuer;
     private String secretKey;

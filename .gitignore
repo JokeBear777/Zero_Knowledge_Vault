@@ -39,3 +39,8 @@ out/
 # env files
 .env
 .env.*
+/docs
+agent.md
+
+# Local documentation drafts
+docs/

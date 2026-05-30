@@ -94,11 +94,6 @@ public class SrpService {
 
         String expectedM1Hex = computeM1Hex(A, B, K);
 
-        log.info("Server S: {}", S.toString(16));
-        log.info("Server K: {}", bytesToHex(K));
-        log.info("Server M1: {}", expectedM1Hex);
-        log.info("Client M1: {}", clientM1Hex);
-
         if (!constantTimeEqualsHex(expectedM1Hex, clientM1Hex)) {
             srpSessionStore.delete(session.id());
             throw new SecurityException("Invalid SRP proof (M1)");

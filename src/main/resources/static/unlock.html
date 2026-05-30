@@ -3,10 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <title>Vault Unlock</title> <!-- kdfAlgorithm=ARGON2ID 일 때 필요 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/argon2-browser/dist/argon2-bundled.min.js"></script>
+    <script src="/js/apiClient.js"></script>
 </head>
-<body><h2>Vault Unlock</h2> <input type="password" id="mp" placeholder="Master Password">
-<button onclick="unlock()">Unlock</button>
+<body class="page">
+<main class="page-shell">
+<section class="card">
+    <span class="step-badge">Step 3. Unlock</span>
+    <h1 class="brand">Vault Unlock</h1>
+    <p class="subtitle">Master Password로 SRP proof를 계산해 VAULT_AUTH 권한을 얻습니다.</p>
+
+    <div id="unlock-message" class="message"></div>
+
+    <div class="form-group">
+        <label for="mp">Master Password</label>
+        <input class="input" type="password" id="mp" placeholder="Master Password" autocomplete="current-password">
+    </div>
+
+    <div class="button-row">
+        <button type="button" class="button" id="unlockBtn" onclick="unlock()">Unlock</button>
+        <a class="button button-secondary" href="/login.html">로그인으로 돌아가기</a>
+    </div>
+</section>
+</main>
 
 <script>
     /* =========================
@@ -243,28 +264,28 @@
        Unlock SRP
        ========================= */
     async function unlock() {
+        const message = document.getElementById("unlock-message");
+        const button = document.getElementById("unlockBtn");
         try {
             const mp = document.getElementById("mp").value;
-            if (!mp) return alert("MP 입력해");
+            if (!mp) {
+                message.className = "message message-error";
+                message.textContent = "Master Password를 입력해주세요.";
+                return;
+            }
+
+            button.disabled = true;
+            message.className = "message";
+            message.textContent = "Unlock을 진행하고 있습니다.";
 
             // 1) a, A
             const a = randomBigInt(32);
             const A = modPow(g, a, N);
 
             // 2) init
-            const initRes = await fetch("/api/pake/auth/init", {
-                method: "POST",
-                credentials: "include",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({A: toFullHex(A)})
+            const initData = await APIClient.post("/api/pake/auth/init", {
+                A: toFullHex(A)
             });
-
-            if (!initRes.ok) {
-                const t = await initRes.text().catch(() => "");
-                throw new Error("init 실패: " + initRes.status + "\n" + t);
-            }
-
-            const initData = await initRes.json();
 
             const B = BigInt("0x" + initData.B);
             const saltAuth = initData.saltAuth;
@@ -310,44 +331,23 @@
             ));
             const M1Hex = bytesToHex(M1Bytes);
 
-            // 비교용 로그 (서버와 비교 가능)
-            /*
-            const gx_check = modPow(g, x, N);
-            console.log("gx_check:", toFullHex(gx_check))
-            console.log("origin:", location.origin);
-            console.log("deviceSecret exists:", !!localStorage.getItem("zkv_device_secret_v1"));
-            console.log("deviceSecret:", localStorage.getItem("zkv_device_secret_v1"));
-            console.log("Client A:", toFullHex(A));
-            console.log("Client B:", toFullHex(B));
-            console.log("Client u:", u.toString(16));
-            console.log("Client k:", k.toString(16));
-            console.log("Client S:", toFullHex(S));      // 절대 음수 나오면 안 됨
-            console.log("Client K:", KHex);              // 64 hex chars
-            console.log("Client M1:", M1Hex);
-            console.log("init kdfAlgorithm:", initData.kdfAlgorithm);
-            console.log("init kdfParams:", initData.kdfParams);
-            */
-
             // 10) prove
-            const proveRes = await fetch("/api/pake/auth/prove", {
-                method: "POST",
-                credentials: "include",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({
-                    authSessionId: initData.authSessionId,
-                    M1: M1Hex
-                })
+            await APIClient.post("/api/pake/auth/prove", {
+                authSessionId: initData.authSessionId,
+                M1: M1Hex
             });
 
-            if (!proveRes.ok) {
-                const t = await proveRes.text().catch(() => "");
-                throw new Error("prove 실패: " + proveRes.status + "\n" + t);
-            }
-
+            message.className = "message message-success";
+            message.textContent = "Unlock이 완료되었습니다. Vault로 이동합니다.";
             window.location.href = "/vault.html";
         } catch (e) {
             console.error(e);
-            alert(String(e?.message ?? e));
+            message.className = "message message-error";
+            message.textContent = String(e?.userMessage ?? e?.message ?? e);
+        } finally {
+            button.disabled = false;
         }
     }
 </script>
+</body>
+</html>
