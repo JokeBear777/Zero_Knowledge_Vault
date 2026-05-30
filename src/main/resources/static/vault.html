@@ -1,194 +1,88 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Vault</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Vault - Zero Knowledge Vault</title>
+    <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
-<h1>Vault Main</h1>
-<div id="user-info"></div>
+<body class="page">
+<main class="page-shell-wide">
+    <section class="card-wide">
+        <div class="toolbar">
+            <div>
+                <span class="step-badge">Step 5. Vault</span>
+                <h1 class="brand">내 Vault</h1>
+                <p class="subtitle">비밀 항목을 만들고, 열람하고, 수정하고, 삭제합니다.</p>
+            </div>
+            <button type="button" class="button button-danger" onclick="logout()">Logout</button>
+        </div>
 
-<div>
-    <h2>Index</h2>
-    <button type="button" id="loadIndexBtn">Load Index</button>
+        <div class="message message-warning security-note">
+            현재 데모는 Vault 저장 흐름을 보여주기 위한 프로토타입입니다. 운영 수준의 클라이언트 암호화 계층은 별도 보완이 필요합니다.
+        </div>
 
-    <div>
-        <label for="indexPlainText">indexPlainText</label><br>
-        <textarea id="indexPlainText" rows="6" cols="120" readonly></textarea>
-    </div>
+        <div id="message" class="message">Vault를 불러오는 중입니다.</div>
 
-    <div>
-        <label for="indexCipherBase64">indexCipherBase64</label><br>
-        <textarea id="indexCipherBase64" rows="6" cols="120" readonly></textarea>
-    </div>
+        <section class="section">
+            <div class="toolbar">
+                <h2 class="section-title">새 항목 추가</h2>
+                <button type="button" class="button button-secondary" id="refreshBtn">새로고침</button>
+            </div>
 
-    <div>
-        <label for="commitHashBase64">commitHashBase64</label><br>
-        <textarea id="commitHashBase64" rows="4" cols="120" readonly></textarea>
-    </div>
+            <form id="itemForm">
+                <div class="form-group">
+                    <label for="itemTitle">제목</label>
+                    <input class="input" type="text" id="itemTitle" placeholder="예: 은행 메모" autocomplete="off">
+                </div>
 
-    <div>
-        <label for="indexVersion">version</label><br>
-        <input type="text" id="indexVersion" readonly>
-    </div>
-</div>
+                <div class="form-group">
+                    <label for="itemContent">내용</label>
+                    <textarea id="itemContent" placeholder="저장할 내용을 입력하세요."></textarea>
+                </div>
 
-<div>
-    <h2>Get Item</h2>
-    <div>
-        <label for="loadItemId">itemId</label><br>
-        <input type="text" id="loadItemId">
-        <button type="button" id="loadItemBtn">Load Item</button>
-    </div>
+                <div class="button-row">
+                    <button type="submit" class="button" id="saveBtn">저장</button>
+                    <button type="button" class="button button-ghost" id="cancelEditBtn">취소</button>
+                </div>
+            </form>
+        </section>
 
-    <div>
-        <label for="loadedItemId">loaded itemId</label><br>
-        <input type="text" id="loadedItemId" readonly>
-    </div>
-
-    <div>
-        <label for="loadedItemKeyPlainText">itemKeyPlainText</label><br>
-        <textarea id="loadedItemKeyPlainText" rows="4" cols="120" readonly></textarea>
-    </div>
-
-    <div id="loadedItemKeyPlainTextHint"></div>
-
-    <div>
-        <label for="loadedItemKeyCipherBase64">itemKeyCipherBase64</label><br>
-        <textarea id="loadedItemKeyCipherBase64" rows="4" cols="120" readonly></textarea>
-    </div>
-
-    <div>
-        <label for="loadedItemPlainText">itemPlainText</label><br>
-        <textarea id="loadedItemPlainText" rows="6" cols="120" readonly></textarea>
-    </div>
-
-    <div id="loadedItemPlainTextHint"></div>
-
-    <div>
-        <label for="loadedItemCipherBase64">itemCipherBase64</label><br>
-        <textarea id="loadedItemCipherBase64" rows="6" cols="120" readonly></textarea>
-    </div>
-
-    <div>
-        <label for="loadedItemVersion">version</label><br>
-        <input type="text" id="loadedItemVersion" readonly>
-    </div>
-</div>
-
-<div>
-    <h2>Upsert Item</h2>
-    <div>
-        <label for="upsertItemId">itemId</label><br>
-        <input type="text" id="upsertItemId">
-    </div>
-
-    <div>
-        <label for="upsertExpectedItemVersion">expectedItemVersion (leave empty for new item)</label><br>
-        <input type="number" id="upsertExpectedItemVersion">
-    </div>
-
-    <div>
-        <label for="upsertExpectedIndexVersion">expectedIndexVersion</label><br>
-        <input type="number" id="upsertExpectedIndexVersion">
-    </div>
-
-    <div>
-        <label for="upsertItemKeyPlainText">itemKeyPlainText</label><br>
-        <textarea id="upsertItemKeyPlainText" rows="4" cols="120"></textarea>
-    </div>
-
-    <div>
-        <label for="upsertItemPlainText">itemPlainText</label><br>
-        <textarea id="upsertItemPlainText" rows="6" cols="120"></textarea>
-    </div>
-
-    <div>
-        <label for="upsertNewIndexPlainText">newIndexPlainText</label><br>
-        <textarea id="upsertNewIndexPlainText" rows="6" cols="120"></textarea>
-    </div>
-
-    <div>
-        <label for="upsertNewIndexCipherBase64Preview">newIndexCipherBase64 (auto)</label><br>
-        <textarea id="upsertNewIndexCipherBase64Preview" rows="6" cols="120" readonly></textarea>
-    </div>
-
-    <div>
-        <label for="upsertNewCommitHashBase64Preview">newCommitHashBase64 (auto)</label><br>
-        <textarea id="upsertNewCommitHashBase64Preview" rows="4" cols="120" readonly></textarea>
-    </div>
-
-    <button type="button" id="upsertItemBtn">Upsert Item</button>
-</div>
-
-<div>
-    <h2>Delete Item</h2>
-    <div>
-        <label for="deleteItemId">itemId</label><br>
-        <input type="text" id="deleteItemId">
-    </div>
-
-    <div>
-        <label for="deleteExpectedItemVersion">expectedItemVersion</label><br>
-        <input type="number" id="deleteExpectedItemVersion">
-    </div>
-
-    <div>
-        <label for="deleteExpectedIndexVersion">expectedIndexVersion</label><br>
-        <input type="number" id="deleteExpectedIndexVersion">
-    </div>
-
-    <div>
-        <label for="deleteNewIndexPlainText">newIndexPlainText</label><br>
-        <textarea id="deleteNewIndexPlainText" rows="6" cols="120"></textarea>
-    </div>
-
-    <div>
-        <label for="deleteNewIndexCipherBase64Preview">newIndexCipherBase64 (auto)</label><br>
-        <textarea id="deleteNewIndexCipherBase64Preview" rows="6" cols="120" readonly></textarea>
-    </div>
-
-    <div>
-        <label for="deleteNewCommitHashBase64Preview">newCommitHashBase64 (auto)</label><br>
-        <textarea id="deleteNewCommitHashBase64Preview" rows="4" cols="120" readonly></textarea>
-    </div>
-
-    <button type="button" id="deleteItemBtn">Delete Item</button>
-</div>
-
-<div>
-    <h2>Status</h2>
-    <div id="statusMessage">Idle</div>
-</div>
-
-<div>
-    <h2>Response</h2>
-    <pre id="responseOutput"></pre>
-</div>
+        <section class="section">
+            <h2 class="section-title">저장된 항목</h2>
+            <div id="emptyState" class="empty-state hidden">
+                아직 저장된 항목이 없습니다. 첫 번째 항목을 추가해보세요.
+            </div>
+            <div id="itemList" class="item-list"></div>
+        </section>
+    </section>
+</main>
 
 <script src="/js/storageCleaner.js"></script>
 <script src="/js/apiClient.js"></script>
 <script src="/js/authGuard.js"></script>
 <script src="/js/auth.js"></script>
-<script src="/js/state.js"></script>
 <script>
-    const statusMessage = document.getElementById('statusMessage');
-    const responseOutput = document.getElementById('responseOutput');
+    const message = document.getElementById("message");
+    const itemList = document.getElementById("itemList");
+    const emptyState = document.getElementById("emptyState");
+    const itemForm = document.getElementById("itemForm");
+    const saveBtn = document.getElementById("saveBtn");
+    const cancelEditBtn = document.getElementById("cancelEditBtn");
+    const refreshBtn = document.getElementById("refreshBtn");
+    const titleInput = document.getElementById("itemTitle");
+    const contentInput = document.getElementById("itemContent");
 
-    function setStatus(message) {
-        statusMessage.textContent = message;
-    }
+    const state = {
+        indexVersion: null,
+        items: [],
+        editingItemId: null,
+        editingItemVersion: null
+    };
 
-    function setResponse(data) {
-        if (data == null) {
-            responseOutput.textContent = '';
-            return;
-        }
-        responseOutput.textContent = JSON.stringify(data, null, 2);
-    }
-
-    function getTrimmedValue(id) {
-        return document.getElementById(id).value.trim();
+    function setMessage(text, type = "") {
+        message.className = type ? "message message-" + type : "message";
+        message.textContent = text;
     }
 
     function utf8ToBytes(str) {
@@ -196,7 +90,7 @@
     }
 
     function bytesToBase64(bytes) {
-        let binary = '';
+        let binary = "";
         const chunkSize = 0x8000;
         for (let i = 0; i < bytes.length; i += chunkSize) {
             const chunk = bytes.subarray(i, i + chunkSize);
@@ -219,297 +113,265 @@
     }
 
     function tryDecodeUtf8FromBase64(base64) {
-        if (!base64) {
-            return null;
-        }
+        if (!base64) return null;
 
         try {
             const bytes = base64ToBytes(base64);
-            return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+            return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
         } catch (error) {
             return null;
         }
     }
 
-    function isProbablyPrintableText(text) {
-        if (text == null || text.length === 0) {
-            return true;
-        }
-
-        for (let i = 0; i < text.length; i++) {
-            const code = text.charCodeAt(i);
-
-            const isAllowedControl =
-                code === 9 || code === 10 || code === 13;
-
-            const isPrintable =
-                code >= 32 && code !== 127;
-
-            if (!isAllowedControl && !isPrintable) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    function decodeForDisplay(base64, fieldName) {
-        if (!base64) {
-            return {
-                text: '',
-                hint: fieldName + ': empty'
-            };
-        }
-
-        const decoded = tryDecodeUtf8FromBase64(base64);
-
-        if (decoded !== null && isProbablyPrintableText(decoded)) {
-            return {
-                text: decoded,
-                hint: fieldName + ': Base64 -> UTF-8 decoded successfully'
-            };
-        }
-
-        return {
-            text: '[encrypted or binary data]',
-            hint: fieldName + ': server returned Base64 bytes, but this page has no decrypt logic'
-        };
-    }
-
     async function sha256Base64FromBytes(bytes) {
-        const digest = await crypto.subtle.digest('SHA-256', bytes);
+        const digest = await crypto.subtle.digest("SHA-256", bytes);
         return bytesToBase64(new Uint8Array(digest));
     }
 
-    async function buildIndexPayloadFromPlainText(plainText, cipherPreviewId, hashPreviewId) {
-        const indexBytes = utf8ToBytes(plainText);
-        const indexCipherBase64 = bytesToBase64(indexBytes);
-        const commitHashBase64 = await sha256Base64FromBytes(indexBytes);
+    function normalizeIndex(decodedText) {
+        if (!decodedText) {
+            return [];
+        }
 
-        document.getElementById(cipherPreviewId).value = indexCipherBase64;
-        document.getElementById(hashPreviewId).value = commitHashBase64;
+        try {
+            const parsed = JSON.parse(decodedText);
+            if (Array.isArray(parsed.items)) {
+                return parsed.items
+                    .filter(item => item && item.id && item.title)
+                    .map(item => ({
+                        id: String(item.id),
+                        title: String(item.title),
+                        updatedAt: item.updatedAt || ""
+                    }));
+            }
+        } catch (error) {
+            return [];
+        }
+
+        return [];
+    }
+
+    async function buildIndexPayload(items) {
+        const indexText = JSON.stringify({
+            items,
+            version: 1
+        });
+        const indexCipherBase64 = stringToBase64(indexText);
+        const commitHashBase64 = await sha256Base64FromBytes(utf8ToBytes(indexText));
 
         return {
-            indexCipherBase64,
-            commitHashBase64
+            newIndexCipherBase64: indexCipherBase64,
+            newCommitHashBase64: commitHashBase64
         };
     }
 
-    function parseOptionalNumber(id) {
-        const value = getTrimmedValue(id);
-        if (value === '') {
-            return null;
-        }
-
-        const parsed = Number(value);
-        if (!Number.isInteger(parsed)) {
-            throw new Error(id + ' must be an integer.');
-        }
-
-        return parsed;
+    function createItemId() {
+        const random = crypto.getRandomValues(new Uint32Array(1))[0].toString(16);
+        return "item-" + Date.now().toString(36) + "-" + random;
     }
 
-    function parseRequiredNumber(id) {
-        const parsed = parseOptionalNumber(id);
-        if (parsed === null) {
-            throw new Error(id + ' is required.');
-        }
-        return parsed;
+    function resetForm() {
+        state.editingItemId = null;
+        state.editingItemVersion = null;
+        titleInput.value = "";
+        contentInput.value = "";
+        saveBtn.textContent = "저장";
+        cancelEditBtn.classList.add("hidden");
     }
 
-    async function fetchJson(url, options = {}) {
-        return await APIClient.request(url, options);
-    }
+    function renderItems() {
+        itemList.textContent = "";
+        emptyState.classList.toggle("hidden", state.items.length > 0);
 
-    async function ensureVaultReady() {
-        const response = await fetchJson('/api/vault/state', {
-            method: 'GET'
-        });
+        for (const item of state.items) {
+            const card = document.createElement("article");
+            card.className = "item-card";
 
-        if (!response.vaultKeyMaterialExists || !response.vaultIndexExists) {
-            window.location.href = '/vault-setup.html';
-            return false;
-        }
+            const title = document.createElement("h3");
+            title.textContent = item.title;
 
-        return true;
-    }
+            const meta = document.createElement("p");
+            meta.className = "muted";
+            meta.textContent = item.updatedAt ? "수정됨: " + item.updatedAt : "저장된 항목";
 
-    function fillIndex(data) {
-        const decodedIndex = tryDecodeUtf8FromBase64(data.indexCipherBase64 || '');
+            const actions = document.createElement("div");
+            actions.className = "button-row";
 
-        document.getElementById('indexPlainText').value = decodedIndex ?? '[encrypted or binary data]';
-        document.getElementById('indexCipherBase64').value = data.indexCipherBase64 || '';
-        document.getElementById('commitHashBase64').value = data.commitHashBase64 || '';
-        document.getElementById('indexVersion').value = data.version ?? '';
+            const openBtn = document.createElement("button");
+            openBtn.type = "button";
+            openBtn.className = "button button-secondary";
+            openBtn.textContent = "열기";
+            openBtn.addEventListener("click", function () {
+                openItem(item.id);
+            });
 
-        document.getElementById('upsertExpectedIndexVersion').value = data.version ?? '';
-        document.getElementById('deleteExpectedIndexVersion').value = data.version ?? '';
-    }
+            const deleteBtn = document.createElement("button");
+            deleteBtn.type = "button";
+            deleteBtn.className = "button button-danger";
+            deleteBtn.textContent = "삭제";
+            deleteBtn.addEventListener("click", function () {
+                deleteItem(item.id);
+            });
 
-    function fillItem(data) {
-        const itemKeyDisplay = decodeForDisplay(data.itemKeyCipherBase64 || '', 'itemKeyCipherBase64');
-        const itemDisplay = decodeForDisplay(data.itemCipherBase64 || '', 'itemCipherBase64');
-
-        document.getElementById('loadedItemId').value = data.itemId || '';
-        document.getElementById('loadedItemKeyPlainText').value = itemKeyDisplay.text;
-        document.getElementById('loadedItemKeyPlainTextHint').textContent = itemKeyDisplay.hint;
-        document.getElementById('loadedItemKeyCipherBase64').value = data.itemKeyCipherBase64 || '';
-
-        document.getElementById('loadedItemPlainText').value = itemDisplay.text;
-        document.getElementById('loadedItemPlainTextHint').textContent = itemDisplay.hint;
-        document.getElementById('loadedItemCipherBase64').value = data.itemCipherBase64 || '';
-
-        document.getElementById('loadedItemVersion').value = data.version ?? '';
-
-        document.getElementById('upsertItemId').value = data.itemId || '';
-        document.getElementById('upsertExpectedItemVersion').value = data.version ?? '';
-        document.getElementById('deleteItemId').value = data.itemId || '';
-        document.getElementById('deleteExpectedItemVersion').value = data.version ?? '';
-
-        if (itemKeyDisplay.text !== '[encrypted or binary data]') {
-            document.getElementById('upsertItemKeyPlainText').value = itemKeyDisplay.text;
-        } else {
-            document.getElementById('upsertItemKeyPlainText').value = '';
-        }
-
-        if (itemDisplay.text !== '[encrypted or binary data]') {
-            document.getElementById('upsertItemPlainText').value = itemDisplay.text;
-        } else {
-            document.getElementById('upsertItemPlainText').value = '';
+            actions.append(openBtn, deleteBtn);
+            card.append(title, meta, actions);
+            itemList.appendChild(card);
         }
     }
 
     async function loadIndex() {
-        setStatus('Loading index...');
-        const data = await fetchJson('/api/vault/index', { method: 'GET' });
-        fillIndex(data);
-        setResponse(data);
-        setStatus('Index loaded');
+        setMessage("Vault 항목을 불러오는 중입니다.");
+
+        const data = await APIClient.get("/api/vault/index");
+        state.indexVersion = data.version;
+        state.items = normalizeIndex(tryDecodeUtf8FromBase64(data.indexCipherBase64 || ""));
+        renderItems();
+        setMessage("Vault를 불러왔습니다.", "success");
     }
 
-    async function loadItem() {
-        const rawItemId = getTrimmedValue('loadItemId');
+    async function openItem(itemId) {
+        try {
+            setMessage("항목을 여는 중입니다.");
+            const data = await APIClient.get("/api/vault/item/" + encodeURIComponent(itemId));
+            const decoded = tryDecodeUtf8FromBase64(data.itemCipherBase64 || "");
+            const parsed = decoded ? JSON.parse(decoded) : {};
 
-        if (!rawItemId) {
-            throw new Error('itemId is required.');
+            state.editingItemId = data.itemId;
+            state.editingItemVersion = data.version;
+            titleInput.value = parsed.title || "";
+            contentInput.value = parsed.content || "";
+            saveBtn.textContent = "수정 저장";
+            cancelEditBtn.classList.remove("hidden");
+            setMessage("항목을 열었습니다.", "success");
+        } catch (error) {
+            setMessage(error.userMessage || "항목을 열 수 없습니다.", error.isConflict ? "warning" : "error");
         }
-
-        const encodedItemId = encodeURIComponent(rawItemId);
-
-        setStatus('Loading item...');
-        const data = await fetchJson('/api/vault/item/' + encodedItemId, { method: 'GET' });
-
-        if (!data || typeof data !== 'object') {
-            throw new Error('Invalid item response.');
-        }
-
-        fillItem(data);
-        setResponse(data);
-        setStatus('Item loaded');
     }
 
-    async function upsertItem() {
-        const indexPayload = await buildIndexPayloadFromPlainText(
-            getTrimmedValue('upsertNewIndexPlainText'),
-            'upsertNewIndexCipherBase64Preview',
-            'upsertNewCommitHashBase64Preview'
-        );
+    async function saveItem(event) {
+        event.preventDefault();
 
-        const payload = {
-            itemId: getTrimmedValue('upsertItemId'),
-            expectedItemVersion: parseOptionalNumber('upsertExpectedItemVersion'),
-            expectedIndexVersion: parseRequiredNumber('upsertExpectedIndexVersion'),
-            itemKeyCipherBase64: stringToBase64(getTrimmedValue('upsertItemKeyPlainText')),
-            itemCipherBase64: stringToBase64(getTrimmedValue('upsertItemPlainText')),
-            newIndexCipherBase64: indexPayload.indexCipherBase64,
-            newCommitHashBase64: indexPayload.commitHashBase64
-        };
+        const title = titleInput.value.trim();
+        const content = contentInput.value.trim();
 
-        if (!payload.itemId) {
-            throw new Error('itemId is required.');
+        if (!title || !content) {
+            setMessage("제목과 내용을 입력해주세요.", "error");
+            return;
         }
 
-        setStatus('Saving item...');
-        await fetchJson('/api/vault/item', {
-            method: 'POST',
-            body: JSON.stringify(payload)
-        });
+        saveBtn.disabled = true;
 
-        setResponse(payload);
-        setStatus('Item saved');
-        await loadIndex();
+        try {
+            const now = new Date().toLocaleString();
+            const itemId = state.editingItemId || createItemId();
+            const nextItems = state.items.filter(item => item.id !== itemId);
+            nextItems.unshift({
+                id: itemId,
+                title,
+                updatedAt: now
+            });
+
+            const indexPayload = await buildIndexPayload(nextItems);
+            const itemText = JSON.stringify({
+                title,
+                content,
+                updatedAt: now
+            });
+
+            await APIClient.post("/api/vault/item", {
+                itemId,
+                expectedItemVersion: state.editingItemVersion,
+                expectedIndexVersion: state.indexVersion,
+                itemKeyCipherBase64: stringToBase64("prototype-item-key"),
+                itemCipherBase64: stringToBase64(itemText),
+                newIndexCipherBase64: indexPayload.newIndexCipherBase64,
+                newCommitHashBase64: indexPayload.newCommitHashBase64
+            });
+
+            state.items = nextItems;
+            renderItems();
+            resetForm();
+            await loadIndex();
+            setMessage("저장되었습니다.", "success");
+        } catch (error) {
+            setMessage(error.userMessage || "저장에 실패했습니다.", error.isConflict ? "warning" : "error");
+        } finally {
+            saveBtn.disabled = false;
+        }
     }
 
-    async function deleteItem() {
-        const indexPayload = await buildIndexPayloadFromPlainText(
-            getTrimmedValue('deleteNewIndexPlainText'),
-            'deleteNewIndexCipherBase64Preview',
-            'deleteNewCommitHashBase64Preview'
-        );
-
-        const payload = {
-            itemId: getTrimmedValue('deleteItemId'),
-            expectedItemVersion: parseRequiredNumber('deleteExpectedItemVersion'),
-            expectedIndexVersion: parseRequiredNumber('deleteExpectedIndexVersion'),
-            newIndexCipherBase64: indexPayload.indexCipherBase64,
-            newCommitHashBase64: indexPayload.commitHashBase64
-        };
-
-        if (!payload.itemId) {
-            throw new Error('itemId is required.');
+    async function deleteItem(itemId) {
+        if (!confirm("이 항목을 삭제할까요?")) {
+            return;
         }
 
-        setStatus('Deleting item...');
-        await fetchJson('/api/vault/item', {
-            method: 'DELETE',
-            body: JSON.stringify(payload)
-        });
+        try {
+            setMessage("항목을 삭제하는 중입니다.");
+            const currentItem = await APIClient.get("/api/vault/item/" + encodeURIComponent(itemId));
+            const nextItems = state.items.filter(item => item.id !== itemId);
+            const indexPayload = await buildIndexPayload(nextItems);
 
-        setResponse(payload);
-        setStatus('Item deleted');
-        await loadIndex();
+            await APIClient.del("/api/vault/item", {
+                itemId,
+                expectedItemVersion: currentItem.version,
+                expectedIndexVersion: state.indexVersion,
+                newIndexCipherBase64: indexPayload.newIndexCipherBase64,
+                newCommitHashBase64: indexPayload.newCommitHashBase64
+            });
+
+            if (state.editingItemId === itemId) {
+                resetForm();
+            }
+
+            state.items = nextItems;
+            renderItems();
+            await loadIndex();
+            setMessage("삭제되었습니다.", "success");
+        } catch (error) {
+            setMessage(error.userMessage || "삭제에 실패했습니다.", error.isConflict ? "warning" : "error");
+        }
     }
 
     async function initializePage() {
         try {
-            await checkMemberState();
+            const member = await AuthGuard.requireLogin();
+            if (!member) return;
 
-            const ready = await ensureVaultReady();
-            if (!ready) {
+            if (member.pakeAuthStatus === "NOT_REGISTERED") {
+                window.location.href = "/setup-mp.html";
+                return;
+            }
+
+            if (member.pakeAuthStatus === "DISABLED") {
+                window.location.href = "/account-disabled.html";
+                return;
+            }
+
+            if (member.pakeAuthStatus === "ROTATING") {
+                window.location.href = "/rotate-mp.html";
+                return;
+            }
+
+            if (member.authLevel === "PRE_AUTH") {
+                window.location.href = "/unlock.html";
+                return;
+            }
+
+            const ready = await APIClient.get("/api/vault/state");
+            if (!ready.vaultKeyMaterialExists || !ready.vaultIndexExists) {
+                window.location.href = "/vault-setup.html";
                 return;
             }
 
             await loadIndex();
         } catch (error) {
-            console.error(error);
-            setStatus('Initialization failed: ' + error.message);
+            setMessage(error.userMessage || "Vault를 불러오지 못했습니다.", error.isConflict ? "warning" : "error");
         }
     }
 
-    async function runAction(action) {
-        try {
-            await action();
-        } catch (error) {
-            console.error(error);
-            setStatus('Failed: ' + (error.userMessage || error.message));
-        }
-    }
-
-    document.getElementById('loadIndexBtn').addEventListener('click', function () {
-        runAction(loadIndex);
-    });
-
-    document.getElementById('loadItemBtn').addEventListener('click', function () {
-        runAction(loadItem);
-    });
-
-    document.getElementById('upsertItemBtn').addEventListener('click', function () {
-        runAction(upsertItem);
-    });
-
-    document.getElementById('deleteItemBtn').addEventListener('click', function () {
-        runAction(deleteItem);
-    });
+    itemForm.addEventListener("submit", saveItem);
+    cancelEditBtn.addEventListener("click", resetForm);
+    refreshBtn.addEventListener("click", loadIndex);
 
     initializePage();
 </script>

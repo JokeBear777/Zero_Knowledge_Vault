@@ -1,15 +1,29 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Login - Zero Knowledge Vault</title>
+    <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
-<h2>OAuth2 로그인</h2>
+<body class="page">
+<main class="page-shell">
+    <section class="card">
+        <span class="step-badge">Step 1. Login</span>
+        <h1 class="brand">Zero Knowledge Vault</h1>
+        <p class="subtitle">OAuth 로그인 후 PRE_AUTH 상태로 진입하고, Master Password unlock 후 Vault에 접근합니다.</p>
 
-<a href="/oauth2/authorization/naver">
-    네이버 로그인
-</a>
+        <a class="button" href="/oauth2/authorization/naver">Naver로 로그인</a>
 
+        <div class="divider"></div>
+        <ol class="flow-list">
+            <li>OAuth2 Login</li>
+            <li>PRE_AUTH JWT</li>
+            <li>Master Password 기반 SRP 검증</li>
+            <li>VAULT_AUTH JWT</li>
+            <li>Vault API 접근</li>
+        </ol>
+    </section>
+</main>
 </body>
 </html>

@@ -1,18 +1,26 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Dynamic Password</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Zero Knowledge Vault</title>
+    <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
+<body class="page">
+<main class="page-shell">
+    <section class="card">
+        <span class="step-badge">Step 1. Login</span>
+        <h1 class="brand">Zero Knowledge Vault</h1>
+        <p class="subtitle">서버가 비밀번호와 Vault 평문을 알지 못하도록 설계한 보안 저장소입니다.</p>
 
-<h1>Dynamic Password</h1>
+        <div id="content" class="message">로그인 상태를 확인하고 있습니다.</div>
 
-<p>안전한 원격 데이터 저장소 서비스 입니다.</p>
-
-<div id="content">
-    <p>상태 확인 중...</p>
-</div>
+        <div id="login-panel" class="hidden">
+            <p class="muted">OAuth 로그인 후 Master Password 기반 unlock을 거쳐 Vault에 접근합니다.</p>
+            <button type="button" class="button" id="login-btn">Naver 로그인</button>
+        </div>
+    </section>
+</main>
 
 <script src="/js/apiClient.js"></script>
 <script src="/js/authGuard.js"></script>
@@ -20,7 +28,6 @@
     window.onload = init;
 
     async function init() {
-
         const content = document.getElementById("content");
 
         try {
@@ -34,23 +41,20 @@
             }
 
             AuthGuard.redirectByMemberState(data);
-
         } catch (e) {
             showLogin(content);
         }
     }
 
     function showLogin(content) {
-        content.innerHTML = `
-        <p>로그인이 필요합니다.</p>
-        <button onclick="goLogin()">네이버 로그인</button>
-    `;
+        content.className = "message message-warning";
+        content.textContent = "로그인이 필요합니다.";
+        document.getElementById("login-panel").classList.remove("hidden");
     }
 
-    function goLogin() {
+    document.getElementById("login-btn").addEventListener("click", function () {
         window.location.href = "/oauth2/authorization/naver";
-    }
+    });
 </script>
-
 </body>
 </html>

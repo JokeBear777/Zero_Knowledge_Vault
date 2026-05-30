@@ -2,148 +2,40 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Vault Setup</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 900px;
-            margin: 40px auto;
-            line-height: 1.5;
-        }
-
-        .section {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 24px;
-        }
-
-        .row {
-            margin-bottom: 14px;
-        }
-
-        label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 6px;
-        }
-
-        input[type="text"], textarea {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 10px;
-        }
-
-        textarea {
-            min-height: 90px;
-            resize: vertical;
-        }
-
-        button {
-            padding: 10px 16px;
-            cursor: pointer;
-            margin-right: 8px;
-        }
-
-        .success { color: green; font-weight: bold; }
-        .error { color: red; font-weight: bold; }
-        .muted { color: #666; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Vault Setup - Zero Knowledge Vault</title>
+    <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
-<h1>Vault Setup</h1>
+<body class="page">
+<main class="page-shell">
+    <section class="card">
+        <span class="step-badge">Step 4. Vault Setup</span>
+        <h1 class="brand">Vault 초기화</h1>
+        <p class="subtitle">이 기기에서 사용할 개인 Vault를 준비합니다. 초기화가 완료되면 비밀 항목을 저장할 수 있습니다.</p>
 
-<div class="section">
-    <h2>1. Setup Init</h2>
+        <div class="message message-warning">
+            <strong>보안 안내</strong><br>
+            현재 데모는 Vault 저장 흐름을 보여주기 위한 프로토타입입니다. 운영 수준의 클라이언트 암호화 계층은 별도 보완이 필요합니다.
+        </div>
 
-    <div class="row">
-        <button type="button" id="loadInitBtn">Setup Init 불러오기</button>
-    </div>
+        <div id="statusMessage" class="message">초기화 준비 중입니다.</div>
 
-    <div class="row">
-        <label for="wrapKdfAlgorithm">wrapKdfAlgorithm</label>
-        <input type="text" id="wrapKdfAlgorithm" readonly>
-    </div>
-
-    <div class="row">
-        <label for="wrapSalt">wrapSalt</label>
-        <textarea id="wrapSalt" readonly></textarea>
-    </div>
-
-    <div class="row">
-        <label for="wrapKdfParams">wrapKdfParams (JSON)</label>
-        <textarea id="wrapKdfParams" readonly></textarea>
-    </div>
-</div>
-
-<div class="section">
-    <h2>2. 평문 입력</h2>
-
-    <div class="row">
-        <label for="wrappedVaultKeyPlain">wrappedVaultKey 평문(테스트용)</label>
-        <textarea id="wrappedVaultKeyPlain" placeholder="테스트용 평문 입력"></textarea>
-    </div>
-
-    <div class="row">
-        <label for="indexPlain">index 평문(JSON 추천)</label>
-        <textarea id="indexPlain" placeholder='예: {"items":[],"version":1}'></textarea>
-    </div>
-
-    <div class="row">
-        <button type="button" id="generateBtn">Base64 / CommitHash 생성</button>
-    </div>
-</div>
-
-<div class="section">
-    <h2>3. 서버 전송 Payload</h2>
-
-    <div class="row">
-        <label for="saltWrapBase64">saltWrapBase64</label>
-        <textarea id="saltWrapBase64"></textarea>
-    </div>
-
-    <div class="row">
-        <label for="wrappedVaultKeyBase64">wrappedVaultKeyBase64</label>
-        <textarea id="wrappedVaultKeyBase64"></textarea>
-    </div>
-
-    <div class="row">
-        <label for="wrapKdfAlgorithmInput">wrapKdfAlgorithm</label>
-        <input type="text" id="wrapKdfAlgorithmInput">
-    </div>
-
-    <div class="row">
-        <label for="wrapKdfParamsInput">wrapKdfParams (JSON)</label>
-        <textarea id="wrapKdfParamsInput"></textarea>
-    </div>
-
-    <div class="row">
-        <label for="indexCipherBase64">indexCipherBase64</label>
-        <textarea id="indexCipherBase64"></textarea>
-    </div>
-
-    <div class="row">
-        <label for="commitHashBase64">commitHashBase64</label>
-        <textarea id="commitHashBase64"></textarea>
-    </div>
-
-    <div class="row">
-        <button type="button" id="setupVaultBtn">Vault Setup 완료</button>
-    </div>
-</div>
-
-<div class="section">
-    <h2>4. 상태</h2>
-    <div id="statusMessage" class="muted">아직 작업 없음</div>
-</div>
+        <div class="button-row">
+            <button type="button" id="setupVaultBtn" class="button">Vault 초기화</button>
+            <a class="button button-secondary" href="/unlock.html">Unlock으로 돌아가기</a>
+        </div>
+    </section>
+</main>
 
 <script src="/js/storageCleaner.js"></script>
 <script src="/js/apiClient.js"></script>
 <script>
-    const statusMessage = document.getElementById('statusMessage');
+    const statusMessage = document.getElementById("statusMessage");
+    const setupVaultBtn = document.getElementById("setupVaultBtn");
+    let setupInit = null;
 
-    function setStatus(message, type = 'muted') {
-        statusMessage.className = type;
+    function setStatus(message, type = "") {
+        statusMessage.className = type ? "message message-" + type : "message";
         statusMessage.textContent = message;
     }
 
@@ -152,7 +44,7 @@
     }
 
     function bytesToBase64(bytes) {
-        let binary = '';
+        let binary = "";
         const chunkSize = 0x8000;
         for (let i = 0; i < bytes.length; i += chunkSize) {
             const chunk = bytes.subarray(i, i + chunkSize);
@@ -175,98 +67,60 @@
     }
 
     async function sha256Base64FromBytes(bytes) {
-        const digest = await crypto.subtle.digest('SHA-256', bytes);
+        const digest = await crypto.subtle.digest("SHA-256", bytes);
         return bytesToBase64(new Uint8Array(digest));
-    }
-
-    async function fetchJson(url, options = {}) {
-        return await APIClient.request(url, options);
     }
 
     async function loadSetupInit() {
         try {
-            setStatus('Setup init 불러오는 중...');
-
-            const data = await fetchJson('/api/vault/setup/init', { method: 'GET' });
-
-            document.getElementById('wrapKdfAlgorithm').value = data.wrapKdfAlgorithm ?? '';
-            document.getElementById('wrapSalt').value = data.wrapSalt ?? '';
-            document.getElementById('wrapKdfParams').value = JSON.stringify(data.wrapKdfParams ?? {}, null, 2);
-
-            document.getElementById('saltWrapBase64').value = data.wrapSalt ?? '';
-            document.getElementById('wrapKdfAlgorithmInput').value = data.wrapKdfAlgorithm ?? '';
-            document.getElementById('wrapKdfParamsInput').value = JSON.stringify(data.wrapKdfParams ?? {}, null, 2);
-
-            setStatus('Setup init 로드 완료', 'success');
+            setupVaultBtn.disabled = true;
+            setStatus("Vault 초기화 정보를 준비하고 있습니다.");
+            setupInit = await APIClient.get("/api/vault/setup/init");
+            setStatus("초기화를 시작할 수 있습니다.", "success");
         } catch (error) {
-            console.error(error);
-            setStatus(`Setup init 실패: ${error.userMessage || error.message}`, 'error');
-        }
-    }
-
-    async function generateDerivedFields() {
-        try {
-            const wrappedVaultKeyPlain = document.getElementById('wrappedVaultKeyPlain').value;
-            const indexPlain = document.getElementById('indexPlain').value;
-
-            const wrappedVaultKeyBase64 = stringToBase64(wrappedVaultKeyPlain);
-            const indexCipherBase64 = stringToBase64(indexPlain);
-
-            document.getElementById('wrappedVaultKeyBase64').value = wrappedVaultKeyBase64;
-            document.getElementById('indexCipherBase64').value = indexCipherBase64;
-
-            // 규칙: commitHash = Base64(SHA-256(decoded(indexCipherBase64)))
-            const indexCipherBytes = base64ToBytes(indexCipherBase64);
-            const commitHashBase64 = await sha256Base64FromBytes(indexCipherBytes);
-
-            document.getElementById('commitHashBase64').value = commitHashBase64;
-
-            setStatus('Base64 및 commit hash 생성 완료', 'success');
-        } catch (error) {
-            console.error(error);
-            setStatus(`생성 실패: ${error.message}`, 'error');
+            setStatus(error.userMessage || "초기화 정보를 불러오지 못했습니다.", "error");
+        } finally {
+            setupVaultBtn.disabled = false;
         }
     }
 
     async function setupVault() {
+        if (!setupInit) {
+            setStatus("초기화 정보를 아직 불러오지 못했습니다. 잠시 후 다시 시도해주세요.", "error");
+            return;
+        }
+
+        setupVaultBtn.disabled = true;
+        setStatus("Vault를 초기화하고 있습니다.");
+
         try {
-            setStatus('Vault setup 요청 중...');
+            const initialIndex = JSON.stringify({
+                items: [],
+                version: 1
+            });
+            const indexCipherBase64 = stringToBase64(initialIndex);
+            const commitHashBase64 = await sha256Base64FromBytes(base64ToBytes(indexCipherBase64));
 
-            let wrapKdfParams;
-            try {
-                wrapKdfParams = JSON.parse(document.getElementById('wrapKdfParamsInput').value || '{}');
-            } catch (e) {
-                throw new Error('wrapKdfParams JSON 형식이 올바르지 않습니다.');
-            }
-
-            const payload = {
-                saltWrapBase64: document.getElementById('saltWrapBase64').value.trim(),
-                wrappedVaultKeyBase64: document.getElementById('wrappedVaultKeyBase64').value.trim(),
-                wrapKdfAlgorithm: document.getElementById('wrapKdfAlgorithmInput').value.trim(),
-                wrapKdfParams: wrapKdfParams,
-                indexCipherBase64: document.getElementById('indexCipherBase64').value.trim(),
-                commitHashBase64: document.getElementById('commitHashBase64').value.trim()
-            };
-
-            await fetchJson('/api/vault/setup', {
-                method: 'POST',
-                body: JSON.stringify(payload)
+            await APIClient.post("/api/vault/setup", {
+                saltWrapBase64: setupInit.wrapSalt,
+                wrappedVaultKeyBase64: stringToBase64("prototype-vault-key-material"),
+                wrapKdfAlgorithm: setupInit.wrapKdfAlgorithm,
+                wrapKdfParams: setupInit.wrapKdfParams || {},
+                indexCipherBase64,
+                commitHashBase64
             });
 
-            setStatus('Vault setup 성공', 'success');
-            setTimeout(() => {
-                window.location.href = '/vault.html';
-            }, 500);
+            setStatus("Vault 초기화가 완료되었습니다. Vault로 이동합니다.", "success");
+            setTimeout(function () {
+                window.location.href = "/vault.html";
+            }, 600);
         } catch (error) {
-            console.error(error);
-            setStatus(`Vault setup 실패: ${error.userMessage || error.message}`, 'error');
+            setStatus(error.userMessage || "Vault 초기화에 실패했습니다.", error.isConflict ? "warning" : "error");
+            setupVaultBtn.disabled = false;
         }
     }
 
-    document.getElementById('loadInitBtn').addEventListener('click', loadSetupInit);
-    document.getElementById('generateBtn').addEventListener('click', generateDerivedFields);
-    document.getElementById('setupVaultBtn').addEventListener('click', setupVault);
-
+    setupVaultBtn.addEventListener("click", setupVault);
     loadSetupInit();
 </script>
 </body>

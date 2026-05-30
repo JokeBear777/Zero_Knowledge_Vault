@@ -14,6 +14,7 @@
         .ok  { color: #0b7a0b; white-space: pre-wrap; }
         code { background: #f6f6f6; padding: 2px 6px; border-radius: 6px; }
     </style>
+    <link rel="stylesheet" href="/css/style.css">
 
     <!--
       Argon2id (WASM) 필요하면 아래 CDN 하나만 추가하면 됨.
@@ -27,18 +28,28 @@
     <script src="/js/apiClient.js"></script>
 </head>
 
-<body>
-<h2>Master Password 설정</h2>
+<body class="page">
+<main class="page-shell">
+<section class="card">
+<span class="step-badge">Step 2. Master Password Setup</span>
+<h1 class="brand">Master Password 설정</h1>
+<p class="subtitle">Master Password는 서버로 전송하지 않고, 브라우저에서 SRP 등록값을 계산합니다.</p>
 
-<div class="row">
-    <input type="password" id="newMp" placeholder="새 Master Password" autocomplete="new-password" />
+<div class="form-group">
+    <label for="newMp">Master Password</label>
+    <input class="input" type="password" id="newMp" placeholder="새 Master Password" autocomplete="new-password" />
 </div>
 
-<div class="row">
-    <button id="btn" type="button">등록</button>
+<div class="form-group">
+    <label for="confirmMp">Master Password 확인</label>
+    <input class="input" type="password" id="confirmMp" placeholder="Master Password 다시 입력" autocomplete="new-password" />
 </div>
 
-<p class="hint">
+<div class="button-row">
+    <button id="btn" class="button" type="button">등록</button>
+</div>
+
+<p class="hint hidden">
     서버로 <b>MP를 보내지 않습니다</b>. 브라우저에서 <code>verifier</code>를 계산해 전송합니다.<br/>
     DeviceSecret은 브라우저 로컬에 저장됩니다(데모로 <code>localStorage</code> 사용).<br/><br/>
 
@@ -54,7 +65,9 @@
         }</code>
 </p>
 
-<div id="status" class="row"></div>
+<div id="status" class="message"></div>
+</section>
+</main>
 
 <script>
     // =========================================================
@@ -233,7 +246,9 @@
 
         try {
             const mp = document.getElementById("newMp").value;
-            if (!mp || mp.length < 8) throw new Error("MP는 최소 8자 이상으로 설정해줘.");
+            const confirmMp = document.getElementById("confirmMp").value;
+            if (!mp || mp.length < 8) throw new Error("Master Password는 최소 8자 이상이어야 합니다.");
+            if (mp !== confirmMp) throw new Error("Master Password 확인 값이 일치하지 않습니다.");
 
             setStatus("1) init (salt/group/kdf 정책) 요청 중...");
             const init = await initPake();
