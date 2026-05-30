@@ -166,6 +166,9 @@
     <pre id="responseOutput"></pre>
 </div>
 
+<script src="/js/storageCleaner.js"></script>
+<script src="/js/apiClient.js"></script>
+<script src="/js/authGuard.js"></script>
 <script src="/js/auth.js"></script>
 <script src="/js/state.js"></script>
 <script>
@@ -315,26 +318,7 @@
     }
 
     async function fetchJson(url, options = {}) {
-        const response = await fetch(url, {
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            ...options
-        });
-
-        const contentType = response.headers.get('content-type') || '';
-        const isJson = contentType.includes('application/json');
-        const body = isJson ? await response.json() : await response.text();
-
-        if (!response.ok) {
-            const message = isJson
-                ? (body.message || JSON.stringify(body))
-                : body;
-            throw new Error(message || ('HTTP ' + response.status));
-        }
-
-        return body;
+        return await APIClient.request(url, options);
     }
 
     async function ensureVaultReady() {
@@ -507,7 +491,7 @@
             await action();
         } catch (error) {
             console.error(error);
-            setStatus('Failed: ' + error.message);
+            setStatus('Failed: ' + (error.userMessage || error.message));
         }
     }
 

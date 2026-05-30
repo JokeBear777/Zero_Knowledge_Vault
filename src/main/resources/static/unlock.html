@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Vault Unlock</title> <!-- kdfAlgorithm=ARGON2ID 일 때 필요 -->
     <script src="https://cdn.jsdelivr.net/npm/argon2-browser/dist/argon2-bundled.min.js"></script>
+    <script src="/js/apiClient.js"></script>
 </head>
 <body><h2>Vault Unlock</h2> <input type="password" id="mp" placeholder="Master Password">
 <button onclick="unlock()">Unlock</button>
@@ -252,19 +253,9 @@
             const A = modPow(g, a, N);
 
             // 2) init
-            const initRes = await fetch("/api/pake/auth/init", {
-                method: "POST",
-                credentials: "include",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({A: toFullHex(A)})
+            const initData = await APIClient.post("/api/pake/auth/init", {
+                A: toFullHex(A)
             });
-
-            if (!initRes.ok) {
-                const t = await initRes.text().catch(() => "");
-                throw new Error("init 실패: " + initRes.status + "\n" + t);
-            }
-
-            const initData = await initRes.json();
 
             const B = BigInt("0x" + initData.B);
             const saltAuth = initData.saltAuth;
@@ -311,25 +302,15 @@
             const M1Hex = bytesToHex(M1Bytes);
 
             // 10) prove
-            const proveRes = await fetch("/api/pake/auth/prove", {
-                method: "POST",
-                credentials: "include",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({
-                    authSessionId: initData.authSessionId,
-                    M1: M1Hex
-                })
+            await APIClient.post("/api/pake/auth/prove", {
+                authSessionId: initData.authSessionId,
+                M1: M1Hex
             });
-
-            if (!proveRes.ok) {
-                const t = await proveRes.text().catch(() => "");
-                throw new Error("prove 실패: " + proveRes.status + "\n" + t);
-            }
 
             window.location.href = "/vault.html";
         } catch (e) {
             console.error(e);
-            alert(String(e?.message ?? e));
+            alert(String(e?.userMessage ?? e?.message ?? e));
         }
     }
 </script>

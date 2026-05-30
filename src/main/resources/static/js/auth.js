@@ -1,4 +1,8 @@
 async function checkLogin() {
+    if (window.AuthGuard) {
+        return await window.AuthGuard.requireLogin();
+    }
+
     const res = await fetch("/api/member/me", {
         credentials: "include"
     });
@@ -12,6 +16,11 @@ async function checkLogin() {
 }
 
 function clearSensitiveBrowserState() {
+    if (window.StorageCleaner) {
+        window.StorageCleaner.clearSensitiveStorage();
+        return;
+    }
+
     const sensitiveKeys = [
         "zkv_device_secret_v1",
         "zkv_vault_key",
@@ -29,10 +38,16 @@ function clearSensitiveBrowserState() {
 
 async function logout() {
     try {
-        await fetch("/api/logout", {
-            method: "POST",
-            credentials: "include"
-        });
+        if (window.APIClient) {
+            await window.APIClient.post("/api/logout", undefined, {
+                redirectOnAuthError: false
+            });
+        } else {
+            await fetch("/api/logout", {
+                method: "POST",
+                credentials: "include"
+            });
+        }
     } finally {
         clearSensitiveBrowserState();
     }

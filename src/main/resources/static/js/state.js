@@ -1,6 +1,8 @@
 async function checkMemberState() {
 
-    const data = await checkLogin();
+    const data = window.AuthGuard
+        ? await window.AuthGuard.requireLogin()
+        : await checkLogin();
     if (!data) return;
 
     if (data.pakeAuthStatus === "NOT_REGISTERED") {

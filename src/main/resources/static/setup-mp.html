@@ -24,6 +24,7 @@
             아래 스크립트는 없어도 동작함.
     -->
     <script src="https://cdn.jsdelivr.net/npm/argon2-browser/dist/argon2-bundled.min.js"></script>
+    <script src="/js/apiClient.js"></script>
 </head>
 
 <body>
@@ -202,36 +203,16 @@
     // =========================================================
     async function initPake() {
         // 네 백엔드가 GET /api/pake/register 로 init 응답을 주는 구조
-        const res = await fetch("/api/pake/register", {
-            method: "GET",
-            credentials: "include"
-        });
-
-        if (!res.ok) {
-            const text = await res.text().catch(() => "");
-            throw new Error(`initPake failed: ${res.status} ${res.statusText}\n${text}`);
-        }
-        return await res.json();
+        return await APIClient.get("/api/pake/register");
     }
 
     async function registerVerifier({ verifierHex, saltAuth }) {
         // POST는 verifier + saltAuth만 보냄 (MP 절대 전송 X)
 
-        const res = await fetch("/api/pake/register", {
-
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                verifier: verifierHex, // hex string
-                saltAuth               // base64
-            })
+        await APIClient.post("/api/pake/register", {
+            verifier: verifierHex, // hex string
+            saltAuth               // base64
         });
-
-        if (!res.ok) {
-            const text = await res.text().catch(() => "");
-            throw new Error(`register failed: ${res.status} ${res.statusText}\n${text}`);
-        }
     }
 
     // =========================================================
@@ -308,7 +289,7 @@
             setStatus("완료! 대시보드로 이동합니다.");
             window.location.href = "/dashboard.html";
         } catch (e) {
-            setStatus(String(e?.message ?? e), false);
+            setStatus(String(e?.userMessage ?? e?.message ?? e), false);
         } finally {
             btn.disabled = false;
         }
