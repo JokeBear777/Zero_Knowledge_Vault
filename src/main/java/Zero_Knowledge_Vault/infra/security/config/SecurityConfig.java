@@ -121,13 +121,10 @@ public class SecurityConfig {
                 new OAuth2AccessTokenResponseHttpMessageConverter();
 
         tokenConverter.setAccessTokenResponseConverter(params -> {
-
-            System.out.println("NAVER TOKEN RESPONSE = " + params);
-
             String accessToken = (String) params.get("access_token");
 
             if (accessToken == null) {
-                throw new IllegalArgumentException("access_token missing: " + params);
+                throw new IllegalArgumentException("access_token missing");
             }
 
             return OAuth2AccessTokenResponse.withToken(accessToken)

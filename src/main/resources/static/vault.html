@@ -363,13 +363,8 @@
     }
 
     function fillItem(data) {
-        console.log('load item response = ', data);
-
         const itemKeyDisplay = decodeForDisplay(data.itemKeyCipherBase64 || '', 'itemKeyCipherBase64');
         const itemDisplay = decodeForDisplay(data.itemCipherBase64 || '', 'itemCipherBase64');
-
-        console.log('decoded itemKeyDisplay = ', itemKeyDisplay);
-        console.log('decoded itemDisplay = ', itemDisplay);
 
         document.getElementById('loadedItemId').value = data.itemId || '';
         document.getElementById('loadedItemKeyPlainText').value = itemKeyDisplay.text;

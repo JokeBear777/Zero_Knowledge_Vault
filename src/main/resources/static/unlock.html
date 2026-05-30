@@ -310,24 +310,6 @@
             ));
             const M1Hex = bytesToHex(M1Bytes);
 
-            // 비교용 로그 (서버와 비교 가능)
-            /*
-            const gx_check = modPow(g, x, N);
-            console.log("gx_check:", toFullHex(gx_check))
-            console.log("origin:", location.origin);
-            console.log("deviceSecret exists:", !!localStorage.getItem("zkv_device_secret_v1"));
-            console.log("deviceSecret:", localStorage.getItem("zkv_device_secret_v1"));
-            console.log("Client A:", toFullHex(A));
-            console.log("Client B:", toFullHex(B));
-            console.log("Client u:", u.toString(16));
-            console.log("Client k:", k.toString(16));
-            console.log("Client S:", toFullHex(S));      // 절대 음수 나오면 안 됨
-            console.log("Client K:", KHex);              // 64 hex chars
-            console.log("Client M1:", M1Hex);
-            console.log("init kdfAlgorithm:", initData.kdfAlgorithm);
-            console.log("init kdfParams:", initData.kdfParams);
-            */
-
             // 10) prove
             const proveRes = await fetch("/api/pake/auth/prove", {
                 method: "POST",
