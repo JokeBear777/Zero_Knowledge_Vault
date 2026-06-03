@@ -11,12 +11,12 @@
 <body class="page">
 <main class="page-shell">
     <section class="card">
-        <span class="step-badge">Step 2. Master Password</span>
+        <span class="step-badge">Security Setup</span>
         <h1 class="brand">Master Password 설정</h1>
-        <p class="subtitle">Master Password는 서버로 전송하지 않고, 브라우저에서 SRP 등록값을 계산합니다.</p>
+        <p class="subtitle">서버에는 Master Password 평문이 전송되지 않습니다.</p>
 
         <div class="message message-warning security-note">
-            Device Secret은 현재 브라우저에 저장됩니다. 다른 기기에서는 다시 설정 또는 복구 절차가 필요할 수 있습니다.
+            이 비밀번호는 Vault 접근에 사용됩니다. 분실하지 않도록 안전하게 보관하세요.
         </div>
 
         <div class="form-group">
@@ -30,11 +30,11 @@
         </div>
 
         <div class="button-row">
-            <button id="btn" class="button" type="button">등록</button>
+            <button id="btn" class="button button-primary" type="button">등록</button>
             <a class="button button-secondary" href="/home.html">Home</a>
         </div>
 
-        <div id="status" class="message"></div>
+        <div id="status" class="message message-info"></div>
     </section>
 </main>
 
@@ -85,7 +85,7 @@
 
     function parseNToBigInt(Nstr) {
         const s = String(Nstr).trim();
-        if (!s) throw new Error("SRP 그룹 파라미터가 비어 있습니다.");
+        if (!s) throw new Error("보안 설정 정보를 확인할 수 없습니다.");
         if (s.startsWith("0x") || /^[0-9a-fA-F]+$/.test(s)) {
             return BigInt(s.startsWith("0x") ? s : "0x" + s);
         }
@@ -175,20 +175,20 @@
             if (!mp || mp.length < 8) throw new Error("Master Password는 최소 8자 이상이어야 합니다.");
             if (mp !== confirmMp) throw new Error("Master Password 확인 값이 일치하지 않습니다.");
 
-            setStatus("등록 파라미터를 요청하고 있습니다.");
+            setStatus("보안 설정 정보를 요청하고 있습니다.");
             const init = await initPake();
 
             const saltAuth = init.saltAuth;
-            if (!saltAuth) throw new Error("서버 응답에 saltAuth가 없습니다.");
+            if (!saltAuth) throw new Error("보안 설정 정보를 확인할 수 없습니다.");
 
             const kdfAlgorithm = init.kdfAlgorithm;
             const kdfParams = init.kdfParams ?? {};
-            if (!kdfAlgorithm) throw new Error("서버 응답에 kdfAlgorithm이 없습니다.");
+            if (!kdfAlgorithm) throw new Error("보안 설정 정보를 확인할 수 없습니다.");
 
             const NStr = init.N;
             const gStr = init.g;
             if (!NStr || !gStr) {
-                throw new Error("서버 응답에 SRP 그룹 파라미터가 없습니다.");
+                throw new Error("보안 설정 정보를 확인할 수 없습니다.");
             }
 
             const N = parseNToBigInt(NStr);
@@ -196,14 +196,14 @@
             const deviceSecretB64 = getOrCreateDeviceSecretBase64();
             const P = `${mp}||${deviceSecretB64}`;
 
-            setStatus("KDF를 수행하고 있습니다. (" + kdfAlgorithm + ")");
+            setStatus("보안 등록값을 계산하고 있습니다.");
             const xBytes = await deriveX({ P, saltAuthB64: saltAuth, kdfAlgorithm, kdfParams });
             const x = BigInt("0x" + bytesToHex(xBytes));
 
-            setStatus("SRP verifier를 계산하고 있습니다.");
+            setStatus("보안 등록값을 준비하고 있습니다.");
             const v = modPow(g, x, N);
 
-            setStatus("verifier를 등록하고 있습니다.");
+            setStatus("등록 정보를 전송하고 있습니다.");
             await registerVerifier({
                 verifierHex: v.toString(16),
                 saltAuth

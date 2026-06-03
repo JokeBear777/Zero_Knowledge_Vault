@@ -21,12 +21,15 @@
     --success-bg: #ecfdf3;
     --warning: #946200;
     --warning-bg: #fffaeb;
-    --shadow: 0 18px 50px rgba(15, 23, 42, 0.12);
+    --shadow: 0 12px 34px rgba(15, 23, 42, 0.08);
+    --frame-shadow: 0 24px 70px rgba(15, 23, 42, 0.16);
 }
 
 body {
     margin: 0;
-    background: var(--bg);
+    background:
+        radial-gradient(circle at top, rgba(15, 118, 110, 0.12), transparent 32%),
+        #e8eef5;
     color: var(--text);
     font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     line-height: 1.5;
@@ -41,14 +44,18 @@ body {
 
 .page-shell,
 .page-shell-wide {
-    width: min(100%, 520px);
-    min-height: 100vh;
+    width: min(100%, 430px);
+    min-height: calc(100vh - 28px);
     background: var(--app-bg);
-    padding: 18px 14px 28px;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    border-radius: 26px;
+    box-shadow: var(--frame-shadow);
+    padding: 18px;
+    margin: 14px;
 }
 
 .page-shell-wide {
-    width: min(100%, 980px);
+    width: min(100%, 430px);
 }
 
 .app-topbar,
@@ -62,8 +69,9 @@ body {
 
 .app-title {
     margin: 0;
-    font-size: 22px;
+    font-size: 25px;
     line-height: 1.2;
+    letter-spacing: 0;
 }
 
 .app-subtitle,
@@ -76,10 +84,13 @@ body {
 .card,
 .card-wide,
 .section,
-.panel {
+.panel,
+.screen-card,
+.primary-card,
+.tool-card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: 18px;
     box-shadow: var(--shadow);
     padding: 18px;
     margin-bottom: 14px;
@@ -91,7 +102,7 @@ body {
 
 .brand {
     margin: 0 0 8px;
-    font-size: 28px;
+    font-size: 25px;
     line-height: 1.15;
     letter-spacing: 0;
 }
@@ -172,7 +183,7 @@ a.button {
     justify-content: center;
     min-height: 46px;
     border: 1px solid transparent;
-    border-radius: 8px;
+    border-radius: 12px;
     padding: 11px 16px;
     background: var(--primary);
     color: #ffffff;
@@ -203,6 +214,16 @@ button:disabled {
     border-color: #99f6e4;
 }
 
+.button-primary {
+    background: var(--primary);
+    color: #ffffff;
+    border-color: var(--primary);
+}
+
+.button-primary:hover {
+    background: var(--primary-dark);
+}
+
 .button-secondary:hover {
     background: #f0fdfa;
 }
@@ -222,7 +243,9 @@ button:disabled {
 }
 
 .button-row,
-.quick-actions {
+.quick-actions,
+.bottom-actions,
+.tool-grid {
     display: grid;
     grid-template-columns: 1fr;
     gap: 10px;
@@ -232,7 +255,7 @@ button:disabled {
 .message {
     margin: 14px 0;
     padding: 12px 14px;
-    border-radius: 8px;
+    border-radius: 14px;
     border: 1px solid var(--border);
     background: var(--surface-soft);
     color: var(--text);
@@ -255,7 +278,7 @@ button:disabled {
     background: var(--danger-bg);
     color: var(--danger);
     padding: 12px 14px;
-    border-radius: 8px;
+    border-radius: 14px;
     white-space: pre-wrap;
 }
 
@@ -266,7 +289,7 @@ button:disabled {
     background: var(--success-bg);
     color: var(--success);
     padding: 12px 14px;
-    border-radius: 8px;
+    border-radius: 14px;
     white-space: pre-wrap;
 }
 
@@ -280,6 +303,65 @@ button:disabled {
 .section-title {
     margin: 0 0 10px;
     font-size: 18px;
+}
+
+.screen,
+.app-shell {
+    width: 100%;
+}
+
+.screen-header {
+    margin-bottom: 14px;
+}
+
+.status-card {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    padding: 14px;
+}
+
+.status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.status-label {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.status-value {
+    color: var(--text);
+    font-weight: 900;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 26px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.status-success {
+    background: var(--success-bg);
+    color: var(--success);
+}
+
+.status-warning {
+    background: var(--warning-bg);
+    color: var(--warning);
+}
+
+.status-danger {
+    background: var(--danger-bg);
+    color: var(--danger);
 }
 
 .muted,
@@ -317,7 +399,7 @@ button:disabled {
 .action-tile {
     border: 1px solid var(--border);
     background: var(--surface);
-    border-radius: 8px;
+    border-radius: 14px;
     padding: 14px;
 }
 
@@ -357,7 +439,7 @@ button:disabled {
 
 .item-card {
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: 16px;
     background: #ffffff;
     padding: 16px;
 }
@@ -371,7 +453,7 @@ button:disabled {
 
 .empty-state {
     border: 1px dashed #94a3b8;
-    border-radius: 8px;
+    border-radius: 16px;
     background: #f8fafc;
     color: var(--muted);
     padding: 24px;
@@ -409,7 +491,7 @@ button:disabled {
     border: 1px solid rgba(148, 163, 184, 0.28);
     border-radius: 26px;
     background: #f8fafc;
-    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.16);
+    box-shadow: var(--frame-shadow);
     padding: 18px;
 }
 
@@ -513,16 +595,6 @@ button:disabled {
     gap: 10px;
 }
 
-.button-primary {
-    background: var(--primary);
-    color: #ffffff;
-    border-color: var(--primary);
-}
-
-.button-primary:hover {
-    background: var(--primary-dark);
-}
-
 .storage-button {
     min-height: 64px;
     font-size: 15px;
@@ -566,31 +638,32 @@ code {
 @media (min-width: 720px) {
     .page {
         padding: 28px;
+        align-items: center;
     }
 
     .page-shell,
     .page-shell-wide {
-        min-height: auto;
-        border-radius: 24px;
-        padding: 22px;
-        box-shadow: 0 22px 70px rgba(15, 23, 42, 0.14);
+        min-height: 720px;
+        margin: 0;
     }
 
     .page-shell-wide {
-        width: min(100%, 1100px);
+        width: min(100%, 430px);
     }
 
     .status-grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: 1fr;
     }
 
     .quick-actions,
-    .button-row {
-        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    .button-row,
+    .bottom-actions,
+    .tool-grid {
+        grid-template-columns: 1fr;
     }
 
     .item-list {
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        grid-template-columns: 1fr;
     }
 
     .app-layout {
@@ -619,6 +692,16 @@ code {
 
     .mobile-shell {
         padding: 0;
+    }
+
+    .page-shell,
+    .page-shell-wide {
+        min-height: 100vh;
+        border-radius: 0;
+        border-left: 0;
+        border-right: 0;
+        margin: 0;
+        padding: 16px 14px 22px;
     }
 
     .mobile-frame {

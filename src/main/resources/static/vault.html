@@ -12,22 +12,22 @@
     <section class="card-wide">
         <div class="toolbar">
             <div>
-                <span class="step-badge">Step 5. Vault</span>
+                <span class="step-badge">Vault</span>
                 <h1 class="brand">Vault</h1>
-                <p class="subtitle">브라우저에서 복호화된 항목만 열고, 수정하고, 삭제합니다.</p>
+                <p class="subtitle">민감정보 영역은 별도 잠금 해제가 필요합니다.</p>
             </div>
-            <button type="button" class="button button-danger" onclick="logout()">Logout</button>
+            <span id="vault-status" class="status-badge status-warning">상태 확인 중</span>
         </div>
 
         <div class="message message-warning security-note">
-            Vault 데이터는 브라우저에서 암호화된 뒤 서버에 저장됩니다. Master Password와 Vault 평문은 서버로 전송하지 않습니다.
+            이 페이지를 벗어나거나 일정 시간이 지나면 다시 잠금 해제가 필요할 수 있습니다.
         </div>
 
         <div id="message" class="message">Vault 상태를 확인하고 있습니다.</div>
 
         <section id="openVaultSection" class="section hidden">
             <h2 class="section-title">Vault 열기</h2>
-            <p class="muted">VaultKey는 이 페이지 메모리에서만 복원됩니다. 새로고침하면 다시 Master Password를 입력해야 합니다.</p>
+            <p class="muted">Master Password를 입력해 개인 Vault 접근을 확인합니다.</p>
 
             <div class="form-group">
                 <label for="openMasterPassword">Master Password</label>
@@ -36,7 +36,7 @@
             </div>
 
             <div class="button-row">
-                <button type="button" class="button" id="openVaultBtn">Vault 열기</button>
+                <button type="button" class="button button-primary" id="openVaultBtn">Vault 열기</button>
                 <a class="button button-secondary" href="/home.html">Home</a>
             </div>
         </section>
@@ -45,8 +45,8 @@
             <section class="section">
                 <div class="toolbar">
                     <div>
-                        <h2 class="section-title">비밀 항목</h2>
-                        <p class="muted">제목과 내용을 입력해 새 항목을 저장하거나, 기존 항목을 열어 수정합니다.</p>
+                        <h2 class="section-title">새 항목 추가</h2>
+                        <p class="muted">제목과 내용을 입력해 새 비밀 항목을 저장합니다.</p>
                     </div>
                     <button type="button" class="button button-secondary" id="refreshBtn">새로고침</button>
                 </div>
@@ -63,7 +63,7 @@
                     </div>
 
                     <div class="button-row">
-                        <button type="submit" class="button" id="saveBtn">저장</button>
+                        <button type="submit" class="button button-primary" id="saveBtn">저장</button>
                         <button type="button" class="button button-ghost hidden" id="cancelEditBtn">취소</button>
                     </div>
                 </form>
@@ -77,6 +77,11 @@
                 <div id="itemList" class="item-list"></div>
             </section>
         </section>
+
+        <div class="bottom-actions">
+            <a class="button button-secondary" href="/home.html">Home</a>
+            <button type="button" class="button button-danger" onclick="logout()">로그아웃</button>
+        </div>
     </section>
 </main>
 
@@ -116,6 +121,11 @@
     function setVaultOpened(opened) {
         openVaultSection.classList.toggle("hidden", opened);
         vaultContentSection.classList.toggle("hidden", !opened);
+        const status = document.getElementById("vault-status");
+        if (status) {
+            status.className = opened ? "status-badge status-success" : "status-badge status-warning";
+            status.textContent = opened ? "상태: 열림" : "상태: 잠김";
+        }
     }
 
     function normalizeIndex(indexDocument) {
@@ -233,7 +243,7 @@
         }
 
         openVaultBtn.disabled = true;
-        setMessage("VaultKey를 복원하고 있습니다.");
+        setMessage("개인 Vault를 여는 중입니다.");
 
         try {
             const keyMaterial = await APIClient.get("/api/vault/key-material");
