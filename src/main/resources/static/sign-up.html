@@ -53,7 +53,7 @@
             const data = await APIClient.get("/api/oauth-info", {
                 redirectOnAuthError: false
             });
-            document.getElementById("email-display").textContent = data.email;
+            document.getElementById("email-display").textContent = data.email || "-";
             document.getElementById("name").value = data.name || "";
             document.getElementById("mobile").value = data.mobile || "";
             showMessage("success", "가입 정보를 확인했습니다.");
