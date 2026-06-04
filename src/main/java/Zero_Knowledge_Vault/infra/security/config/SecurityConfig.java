@@ -56,6 +56,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/sign-up", "/api/oauth-info").permitAll()
                         .requestMatchers("/api/vault/unlock/**").hasAuthority("PRE_AUTH")
+                        .requestMatchers("/api/share/keys/**").hasAuthority("VAULT_AUTH")
                         .requestMatchers("/api/vault/**").hasAuthority("VAULT_AUTH")
                         .anyRequest().authenticated()
                 )
