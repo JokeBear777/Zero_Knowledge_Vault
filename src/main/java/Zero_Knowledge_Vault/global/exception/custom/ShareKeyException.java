@@ -1,4 +1,4 @@
-package Zero_Knowledge_Vault.domain.vault.share.exception;
+package Zero_Knowledge_Vault.global.exception.custom;
 
 import org.springframework.http.HttpStatus;
 

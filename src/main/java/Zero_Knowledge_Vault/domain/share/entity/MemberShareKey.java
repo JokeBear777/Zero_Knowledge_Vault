@@ -1,7 +1,7 @@
-package Zero_Knowledge_Vault.domain.vault.share.entity;
+package Zero_Knowledge_Vault.domain.share.entity;
 
 import Zero_Knowledge_Vault.domain.member.entity.Member;
-import Zero_Knowledge_Vault.domain.vault.share.type.ShareKeyStatus;
+import Zero_Knowledge_Vault.domain.share.type.ShareKeyStatus;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;

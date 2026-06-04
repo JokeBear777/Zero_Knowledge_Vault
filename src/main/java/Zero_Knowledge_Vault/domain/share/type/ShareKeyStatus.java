@@ -1,4 +1,4 @@
-package Zero_Knowledge_Vault.domain.vault.share.type;
+package Zero_Knowledge_Vault.domain.share.type;
 
 public enum ShareKeyStatus {
     ACTIVE,

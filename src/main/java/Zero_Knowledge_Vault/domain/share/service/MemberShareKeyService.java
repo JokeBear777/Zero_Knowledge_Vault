@@ -1,16 +1,17 @@
-package Zero_Knowledge_Vault.domain.vault.share.service;
+package Zero_Knowledge_Vault.domain.share.service;
 
 import Zero_Knowledge_Vault.domain.member.entity.Member;
 import Zero_Knowledge_Vault.domain.member.repository.MemberRepository;
-import Zero_Knowledge_Vault.domain.vault.share.dto.request.CreateShareKeyRequest;
-import Zero_Knowledge_Vault.domain.vault.share.dto.request.RegenerateShareKeyRequest;
-import Zero_Knowledge_Vault.domain.vault.share.dto.response.DeleteShareKeyResponse;
-import Zero_Knowledge_Vault.domain.vault.share.dto.response.MyShareKeyResponse;
-import Zero_Knowledge_Vault.domain.vault.share.dto.response.PublicShareKeyResponse;
-import Zero_Knowledge_Vault.domain.vault.share.entity.MemberShareKey;
-import Zero_Knowledge_Vault.domain.vault.share.exception.ShareKeyException;
-import Zero_Knowledge_Vault.domain.vault.share.repository.MemberShareKeyRepository;
-import Zero_Knowledge_Vault.domain.vault.share.type.ShareKeyStatus;
+import Zero_Knowledge_Vault.domain.share.dto.request.CreateShareKeyRequest;
+import Zero_Knowledge_Vault.domain.share.dto.request.RegenerateShareKeyRequest;
+import Zero_Knowledge_Vault.domain.share.dto.response.DeleteShareKeyResponse;
+import Zero_Knowledge_Vault.domain.share.dto.response.MyShareKeyResponse;
+import Zero_Knowledge_Vault.domain.share.dto.response.PublicShareKeyResponse;
+import Zero_Knowledge_Vault.domain.share.entity.MemberShareKey;
+import Zero_Knowledge_Vault.domain.share.policy.ShareKeyPolicy;
+import Zero_Knowledge_Vault.global.exception.custom.ShareKeyException;
+import Zero_Knowledge_Vault.domain.share.repository.MemberShareKeyRepository;
+import Zero_Knowledge_Vault.domain.share.type.ShareKeyStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -25,11 +26,9 @@ import java.util.Base64;
 @Transactional(readOnly = true)
 public class MemberShareKeyService {
 
-    private static final String SUPPORTED_ALGORITHM = "RSA-OAEP-256";
-    private static final int MAX_KEY_TEXT_LENGTH = 65535;
-
     private final MemberRepository memberRepository;
     private final MemberShareKeyRepository memberShareKeyRepository;
+    private final ShareKeyPolicy shareKeyPolicy;
 
     public MyShareKeyResponse getMyShareKey(Long memberId) {
         return memberShareKeyRepository
@@ -140,7 +139,7 @@ public class MemberShareKeyService {
     }
 
     private void validateAlgorithm(String algorithm) {
-        if (!SUPPORTED_ALGORITHM.equals(algorithm)) {
+        if (!shareKeyPolicy.supportedAlgorithm().equals(algorithm)) {
             throw new ShareKeyException(
                     HttpStatus.BAD_REQUEST,
                     "UNSUPPORTED_SHARE_KEY_ALGORITHM",
@@ -158,7 +157,7 @@ public class MemberShareKeyService {
             );
         }
 
-        if (value.length() > MAX_KEY_TEXT_LENGTH) {
+        if (value.length() > shareKeyPolicy.maxKeyTextLength()) {
             throw new ShareKeyException(
                     HttpStatus.BAD_REQUEST,
                     "SHARE_KEY_FIELD_TOO_LONG",

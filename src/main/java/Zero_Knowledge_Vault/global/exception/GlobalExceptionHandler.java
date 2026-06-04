@@ -2,7 +2,7 @@ package Zero_Knowledge_Vault.global.exception;
 
 import Zero_Knowledge_Vault.global.exception.custom.OAuthSignupSessionNotFoundException;
 import Zero_Knowledge_Vault.global.exception.custom.VaultException;
-import Zero_Knowledge_Vault.domain.vault.share.exception.ShareKeyException;
+import Zero_Knowledge_Vault.global.exception.custom.ShareKeyException;
 import Zero_Knowledge_Vault.global.util.dto.MessageStatusResponseDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

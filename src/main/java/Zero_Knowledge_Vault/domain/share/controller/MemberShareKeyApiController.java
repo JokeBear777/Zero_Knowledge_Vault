@@ -1,11 +1,11 @@
-package Zero_Knowledge_Vault.domain.vault.share.controller;
+package Zero_Knowledge_Vault.domain.share.controller;
 
-import Zero_Knowledge_Vault.domain.vault.share.dto.request.CreateShareKeyRequest;
-import Zero_Knowledge_Vault.domain.vault.share.dto.request.RegenerateShareKeyRequest;
-import Zero_Knowledge_Vault.domain.vault.share.dto.response.DeleteShareKeyResponse;
-import Zero_Knowledge_Vault.domain.vault.share.dto.response.MyShareKeyResponse;
-import Zero_Knowledge_Vault.domain.vault.share.dto.response.PublicShareKeyResponse;
-import Zero_Knowledge_Vault.domain.vault.share.service.MemberShareKeyService;
+import Zero_Knowledge_Vault.domain.share.dto.request.CreateShareKeyRequest;
+import Zero_Knowledge_Vault.domain.share.dto.request.RegenerateShareKeyRequest;
+import Zero_Knowledge_Vault.domain.share.dto.response.DeleteShareKeyResponse;
+import Zero_Knowledge_Vault.domain.share.dto.response.MyShareKeyResponse;
+import Zero_Knowledge_Vault.domain.share.dto.response.PublicShareKeyResponse;
+import Zero_Knowledge_Vault.domain.share.service.MemberShareKeyService;
 import Zero_Knowledge_Vault.infra.security.jwt.CustomUserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

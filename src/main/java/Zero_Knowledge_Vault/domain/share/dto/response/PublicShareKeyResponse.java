@@ -1,7 +1,7 @@
-package Zero_Knowledge_Vault.domain.vault.share.dto.response;
+package Zero_Knowledge_Vault.domain.share.dto.response;
 
-import Zero_Knowledge_Vault.domain.vault.share.entity.MemberShareKey;
-import Zero_Knowledge_Vault.domain.vault.share.type.ShareKeyStatus;
+import Zero_Knowledge_Vault.domain.share.entity.MemberShareKey;
+import Zero_Knowledge_Vault.domain.share.type.ShareKeyStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 public record PublicShareKeyResponse(

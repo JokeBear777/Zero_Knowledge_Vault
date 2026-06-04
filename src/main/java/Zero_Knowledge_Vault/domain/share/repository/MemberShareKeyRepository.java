@@ -1,7 +1,7 @@
-package Zero_Knowledge_Vault.domain.vault.share.repository;
+package Zero_Knowledge_Vault.domain.share.repository;
 
-import Zero_Knowledge_Vault.domain.vault.share.entity.MemberShareKey;
-import Zero_Knowledge_Vault.domain.vault.share.type.ShareKeyStatus;
+import Zero_Knowledge_Vault.domain.share.entity.MemberShareKey;
+import Zero_Knowledge_Vault.domain.share.type.ShareKeyStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
