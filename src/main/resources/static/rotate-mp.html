@@ -1,12 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Rotate Master Password - Zero Knowledge Vault</title>
+    <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
-<h2>Master Password 교체</h2>
-<input type="password" id="newMp">
-<button onclick="rotateMp()">변경</button>
+<body class="page">
+<main class="page-shell">
+    <section class="card">
+        <span class="step-badge">Security</span>
+        <h1 class="brand">Master Password 교체</h1>
+        <p class="subtitle">현재 계정은 Master Password 교체 절차가 필요한 상태입니다.</p>
+        <div class="message message-warning">교체 API가 준비된 뒤 이 화면에서 새 Master Password를 등록할 수 있습니다.</div>
+        <div class="button-row">
+            <a class="button button-secondary" href="/home.html">Home으로 돌아가기</a>
+            <button type="button" class="button-danger" onclick="logout()">Logout</button>
+        </div>
+    </section>
+</main>
+
+<script src="/js/storageCleaner.js"></script>
+<script src="/js/apiClient.js"></script>
+<script src="/js/auth.js"></script>
 </body>
 </html>

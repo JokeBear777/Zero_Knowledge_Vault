@@ -9,19 +9,19 @@
 <body class="page">
 <main class="page-shell">
     <section class="card">
-        <span class="step-badge">Step 1. Login</span>
-        <h1 class="brand">Zero Knowledge Vault</h1>
-        <p class="subtitle">OAuth 로그인 후 PRE_AUTH 상태로 진입하고, Master Password unlock 후 Vault에 접근합니다.</p>
+        <span class="step-badge">Account</span>
+        <h1 class="brand">계정 로그인</h1>
+        <p class="subtitle">로그인 후 Vault 접근을 위해 Master Password 확인이 필요합니다.</p>
 
-        <a class="button" href="/oauth2/authorization/naver">Naver로 로그인</a>
+        <a class="button button-primary" href="/oauth2/authorization/naver">네이버로 로그인</a>
 
         <div class="divider"></div>
         <ol class="flow-list">
             <li>OAuth2 Login</li>
             <li>PRE_AUTH JWT</li>
-            <li>Master Password 기반 SRP 검증</li>
-            <li>VAULT_AUTH JWT</li>
-            <li>Vault API 접근</li>
+            <li>Master Password 기반 보안 확인</li>
+            <li>민감정보 영역 잠금 해제</li>
+            <li>Vault 접근</li>
         </ol>
     </section>
 </main>

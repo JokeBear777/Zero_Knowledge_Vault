@@ -1,38 +1,35 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Vault Unlock</title> <!-- kdfAlgorithm=ARGON2ID 일 때 필요 -->
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Vault Unlock - Zero Knowledge Vault</title>
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/argon2-browser/dist/argon2-bundled.min.js"></script>
     <script src="/js/apiClient.js"></script>
 </head>
 <body class="page">
 <main class="page-shell">
-<section class="card">
-    <span class="step-badge">Step 3. Unlock</span>
-    <h1 class="brand">Vault Unlock</h1>
-    <p class="subtitle">Master Password로 SRP proof를 계산해 VAULT_AUTH 권한을 얻습니다.</p>
+    <section class="card">
+        <span class="step-badge">Vault</span>
+        <h1 class="brand">Vault 열기</h1>
+        <p class="subtitle">Master Password로 민감정보 영역을 잠금 해제합니다.</p>
 
-    <div id="unlock-message" class="message"></div>
+        <div id="unlock-message" class="message message-info"></div>
 
-    <div class="form-group">
-        <label for="mp">Master Password</label>
-        <input class="input" type="password" id="mp" placeholder="Master Password" autocomplete="current-password">
-    </div>
+        <div class="form-group">
+            <label for="mp">Master Password</label>
+            <input class="input" type="password" id="mp" placeholder="Master Password" autocomplete="current-password">
+        </div>
 
-    <div class="button-row">
-        <button type="button" class="button" id="unlockBtn" onclick="unlock()">Unlock</button>
-        <a class="button button-secondary" href="/login.html">로그인으로 돌아가기</a>
-    </div>
-</section>
+        <div class="button-row">
+            <button type="button" class="button button-primary" id="unlockBtn" onclick="unlock()">Vault 열기</button>
+            <a class="button button-secondary" href="/home.html">Home으로 돌아가기</a>
+        </div>
+    </section>
 </main>
 
 <script>
-    /* =========================
-       SRP Group (4096)
-       ========================= */
     const N_HEX =
         "FFFFFFFFFFFFFFFFC90FDAA22168C234" +
         "C4C6628B80DC1CD129024E088A67CC74" +
@@ -69,13 +66,9 @@
 
     const N = BigInt("0x" + N_HEX);
     const g = 2n;
-    const PAD_HEX_LEN = N_HEX.length; // 1024 hex chars (512 bytes)
-
+    const PAD_HEX_LEN = N_HEX.length;
     const enc = new TextEncoder();
 
-    /* =========================
-       Bytes/Hex/Base64 utils
-       ========================= */
     function bytesToHex(bytes) {
         return Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
     }
@@ -109,17 +102,11 @@
         return new Uint8Array(digest);
     }
 
-    /* =========================
-       Math helpers
-       ========================= */
-
-    // 수학적 mod (음수 제거)
     function mod(a, n) {
         const r = a % n;
         return r >= 0n ? r : r + n;
     }
 
-    // modPow (항상 0..N-1)
     function modPow(base, exp, modn) {
         base = mod(base, modn);
         let result = 1n;
@@ -137,18 +124,14 @@
         return BigInt("0x" + bytesToHex(arr));
     }
 
-    // 서버 toPaddedBytes와 동일 목적: N 바이트(512) 길이로 left pad
     function toFullHex(bi) {
-        bi = mod(bi, N); // 혹시라도 음수/범위 밖이면 정규화
+        bi = mod(bi, N);
         let hex = bi.toString(16);
         while (hex.length < PAD_HEX_LEN) hex = "0" + hex;
         if (hex.length > PAD_HEX_LEN) hex = hex.slice(hex.length - PAD_HEX_LEN);
         return hex;
     }
 
-    /* =========================
-       computeK: Java BigInteger.toByteArray() 동일하게
-       ========================= */
     function toJavaBigIntegerByteArrayFromHexUnsigned(magHex) {
         magHex = magHex.replace(/^0+/, "") || "0";
         let mag = hexToBytes(magHex);
@@ -178,15 +161,12 @@
     }
 
     async function computeK_likeServer() {
-        const nBytes = toJavaBigIntegerByteArrayFromHexUnsigned(N_HEX); // N.toByteArray()
-        const gBytes = toJavaBigIntegerByteArraySmall(g);              // g.toByteArray()
+        const nBytes = toJavaBigIntegerByteArrayFromHexUnsigned(N_HEX);
+        const gBytes = toJavaBigIntegerByteArraySmall(g);
         const kBytes = await sha256(concatBytes(nBytes, gBytes));
         return BigInt("0x" + bytesToHex(kBytes));
     }
 
-    /* =========================
-       DeviceSecret (setup과 동일)
-       ========================= */
     const DEVICE_SECRET_KEY = "zkv_device_secret_v1";
 
     function getOrCreateDeviceSecretBase64() {
@@ -203,20 +183,17 @@
         return ds;
     }
 
-    /* =========================
-       KDF (setup과 동일)
-       ========================= */
-    async function kdfPbkdf2Sha256({passwordStr, saltBytes, iterations, outBits = 256}) {
+    async function kdfPbkdf2Sha256({ passwordStr, saltBytes, iterations, outBits = 256 }) {
         const keyMaterial = await crypto.subtle.importKey(
             "raw",
             enc.encode(passwordStr),
-            {name: "PBKDF2"},
+            { name: "PBKDF2" },
             false,
             ["deriveBits"]
         );
 
         const bits = await crypto.subtle.deriveBits(
-            {name: "PBKDF2", hash: "SHA-256", salt: saltBytes, iterations},
+            { name: "PBKDF2", hash: "SHA-256", salt: saltBytes, iterations },
             keyMaterial,
             outBits
         );
@@ -224,45 +201,38 @@
         return new Uint8Array(bits);
     }
 
-    async function kdfArgon2id({passwordStr, saltBytes, params}) {
+    async function kdfArgon2id({ passwordStr, saltBytes, params }) {
         if (typeof argon2 === "undefined") {
-            throw new Error("ARGON2ID인데 argon2-browser가 로드되지 않았어.");
+            throw new Error("Argon2 런타임을 불러오지 못했습니다.");
         }
-        const memKiB = Number(params?.memory ?? 65536);
-        const time = Number(params?.iterations ?? 3);
-        const parallelism = Number(params?.parallelism ?? 1);
-
         const res = await argon2.hash({
             pass: passwordStr,
             salt: saltBytes,
             type: argon2.ArgonType.Argon2id,
-            mem: memKiB,
-            time,
-            parallelism,
+            mem: Number(params?.memory ?? 65536),
+            time: Number(params?.iterations ?? 3),
+            parallelism: Number(params?.parallelism ?? 1),
             hashLen: 32
         });
 
         return new Uint8Array(res.hash);
     }
 
-    async function deriveX({P, saltAuthB64, kdfAlgorithm, kdfParams}) {
+    async function deriveX({ P, saltAuthB64, kdfAlgorithm, kdfParams }) {
         const saltBytes = base64ToBytes(saltAuthB64);
 
         if (kdfAlgorithm === "ARGON2ID") {
-            return await kdfArgon2id({passwordStr: P, saltBytes, params: kdfParams});
+            return await kdfArgon2id({ passwordStr: P, saltBytes, params: kdfParams });
         }
 
         if (kdfAlgorithm === "PBKDF2_SHA256") {
             const iterations = Number(kdfParams?.iterations ?? 200000);
-            return await kdfPbkdf2Sha256({passwordStr: P, saltBytes, iterations, outBits: 256});
+            return await kdfPbkdf2Sha256({ passwordStr: P, saltBytes, iterations, outBits: 256 });
         }
 
-        throw new Error("지원하지 않는 kdfAlgorithm: " + kdfAlgorithm);
+        throw new Error("지원하지 않는 KDF입니다: " + kdfAlgorithm);
     }
 
-    /* =========================
-       Unlock SRP
-       ========================= */
     async function unlock() {
         const message = document.getElementById("unlock-message");
         const button = document.getElementById("unlockBtn");
@@ -276,13 +246,11 @@
 
             button.disabled = true;
             message.className = "message";
-            message.textContent = "Unlock을 진행하고 있습니다.";
+            message.textContent = "Vault 잠금 해제를 진행하고 있습니다.";
 
-            // 1) a, A
             const a = randomBigInt(32);
             const A = modPow(g, a, N);
 
-            // 2) init
             const initData = await APIClient.post("/api/pake/auth/init", {
                 A: toFullHex(A)
             });
@@ -292,38 +260,28 @@
             const kdfAlgorithm = initData.kdfAlgorithm;
             const kdfParams = initData.kdfParams ?? {};
 
-            if (!saltAuth || !kdfAlgorithm) throw new Error("init 응답에 saltAuth/kdfAlgorithm 누락");
+            if (!saltAuth || !kdfAlgorithm) throw new Error("잠금 해제 정보를 확인할 수 없습니다.");
 
-            // 3) P (setup과 동일)
             const deviceSecretB64 = getOrCreateDeviceSecretBase64();
             const P = `${mp}||${deviceSecretB64}`;
 
-            // 4) x = KDF(P, saltAuth)
-            const xBytes = await deriveX({P, saltAuthB64: saltAuth, kdfAlgorithm, kdfParams});
+            const xBytes = await deriveX({ P, saltAuthB64: saltAuth, kdfAlgorithm, kdfParams });
             const x = BigInt("0x" + bytesToHex(xBytes));
 
-            // 5) u = H(pad(A)||pad(B))  (서버 computeU와 동일)
             const uBytes = await sha256(concatBytes(
                 hexToBytes(toFullHex(A)),
                 hexToBytes(toFullHex(B))
             ));
             const u = BigInt("0x" + bytesToHex(uBytes));
 
-            // 6) k = H(N.toByteArray||g.toByteArray)
             const k = await computeK_likeServer();
-
-            // 7) S = (B - k*g^x)^(a + u*x) mod N
             const gx = modPow(g, x, N);
             const kgx = mod(k * gx, N);
             const temp = mod(B - kgx, N);
             const exp = a + (u * x);
             const S = modPow(temp, exp, N);
 
-            // 8) K = H(pad(S))  (서버 hashSessionKey와 동일)
             const KBytes = await sha256(hexToBytes(toFullHex(S)));
-            const KHex = bytesToHex(KBytes);
-
-            // 9) M1 = H(pad(A)||pad(B)||K)
             const M1Bytes = await sha256(concatBytes(
                 hexToBytes(toFullHex(A)),
                 hexToBytes(toFullHex(B)),
@@ -331,17 +289,15 @@
             ));
             const M1Hex = bytesToHex(M1Bytes);
 
-            // 10) prove
             await APIClient.post("/api/pake/auth/prove", {
                 authSessionId: initData.authSessionId,
                 M1: M1Hex
             });
 
             message.className = "message message-success";
-            message.textContent = "Unlock이 완료되었습니다. Vault로 이동합니다.";
+            message.textContent = "Vault가 열렸습니다. 이동합니다.";
             window.location.href = "/vault.html";
         } catch (e) {
-            console.error(e);
             message.className = "message message-error";
             message.textContent = String(e?.userMessage ?? e?.message ?? e);
         } finally {

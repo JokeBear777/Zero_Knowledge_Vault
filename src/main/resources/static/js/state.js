@@ -1,5 +1,4 @@
 async function checkMemberState() {
-
     const data = window.AuthGuard
         ? await window.AuthGuard.requireLogin()
         : await checkLogin();
@@ -25,6 +24,9 @@ async function checkMemberState() {
         return;
     }
 
-    document.getElementById("user-info").innerText =
-        "환영합니다: " + data.email;
+    const userInfo = document.getElementById("user-info");
+    if (userInfo) {
+        userInfo.className = "message message-success";
+        userInfo.textContent = data.email + " 계정으로 로그인되어 있습니다.";
+    }
 }

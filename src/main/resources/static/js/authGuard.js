@@ -97,7 +97,7 @@
             return;
         }
 
-        window.location.href = "/dashboard.html";
+        window.location.href = "/home.html";
     }
 
     window.AuthGuard = {

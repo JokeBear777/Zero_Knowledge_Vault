@@ -3,43 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Zero Knowledge Vault - Home</title>
+    <title>Home - Zero Knowledge Vault</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
-<body class="page">
-<main class="page-shell">
-    <section class="card">
-        <span class="step-badge">Account</span>
-        <h1 class="brand">Zero Knowledge Vault</h1>
-        <p class="subtitle">현재 계정 상태를 확인하고 다음 단계로 이동합니다.</p>
+<body class="page home-screen">
+<div class="app-layout">
+    <main class="mobile-shell">
+        <div class="mobile-frame">
+            <header class="home-topbar">
+                <p class="timer-text">남은 시간 30:00</p>
+            </header>
 
-        <div id="user-info" class="message">사용자 정보를 불러오는 중입니다.</div>
+            <section class="home-card account-card">
+                <h1 class="home-brand">Zero Knowledge Vault</h1>
+                <p id="account-status" class="masked-email">사용자 계정으로 로그인되어 있습니다.</p>
 
-        <div class="button-row">
-            <a class="button button-secondary" href="/setup-mp.html">Master Password 등록</a>
-            <a class="button button-secondary" href="/unlock.html">Unlock</a>
-            <a class="button" href="/vault.html">Vault 이동</a>
-            <button type="button" class="button-danger" onclick="logout()">Logout</button>
+                <div class="home-action-row">
+                    <button type="button" class="home-action-button" data-ready-message="준비 중인 기능입니다.">정보 변경</button>
+                    <button type="button" class="home-action-button" data-ready-message="준비 중인 기능입니다.">접근 기록 확인</button>
+                </div>
+            </section>
+
+            <div id="home-message" class="message message-info hidden"></div>
+
+            <section class="home-card storage-card">
+                <h2 class="home-card-title">저장소</h2>
+                <div class="storage-grid">
+                    <button type="button" class="storage-button button-primary" id="personal-storage-btn">개인 저장소</button>
+                    <button type="button" class="storage-button button-secondary" data-ready-message="공유 저장소는 준비 중인 기능입니다.">공유 저장소</button>
+                </div>
+            </section>
+
+            <section class="home-card tools-card">
+                <h2 class="home-card-title">보안 도구</h2>
+                <ul class="tool-list">
+                    <li>
+                        <button type="button" class="tool-item" data-ready-message="준비 중인 기능입니다.">
+                            안전 비밀번호 생성
+                        </button>
+                    </li>
+                    <li>
+                        <button type="button" class="tool-item" data-ready-message="보안 뉴스는 준비 중인 기능입니다.">
+                            보안 뉴스
+                        </button>
+                    </li>
+                </ul>
+            </section>
+
+            <button type="button" class="button button-danger home-logout-button" onclick="logout()">로그아웃</button>
         </div>
-    </section>
-</main>
+    </main>
+</div>
 
 <script src="/js/storageCleaner.js"></script>
 <script src="/js/apiClient.js"></script>
 <script src="/js/authGuard.js"></script>
 <script src="/js/auth.js"></script>
 <script>
-    window.onload = loadUserInfo;
+    let currentMember = null;
 
-    async function loadUserInfo() {
+    window.onload = initializeHome;
+
+    function maskEmail(email) {
+        if (!email || typeof email !== "string") {
+            return "";
+        }
+
+        const parts = email.split("@");
+        const local = parts[0] || "";
+        const domain = parts[1] ? "@" + parts[1] : "";
+        const visible = local.length <= 3 ? local.slice(0, 2) : local.slice(0, 3);
+
+        return visible + "***" + domain;
+    }
+
+    function showHomeMessage(text, type = "info") {
+        const message = document.getElementById("home-message");
+        message.className = "message message-" + type;
+        message.textContent = text;
+    }
+
+    async function initializeHome() {
         try {
-            const data = await AuthGuard.requireLogin();
-            if (!data) return;
-            document.getElementById("user-info").textContent = "환영합니다: " + data.email;
+            currentMember = await AuthGuard.requireLogin();
+            if (!currentMember) return;
+
+            const masked = maskEmail(currentMember.email);
+            document.getElementById("account-status").textContent = masked
+                ? masked + " 계정으로 로그인되어 있습니다."
+                : "사용자 계정으로 로그인되어 있습니다.";
         } catch (error) {
             window.location.href = "/login.html";
         }
     }
+
+    async function openPersonalStorage() {
+        if (!currentMember) {
+            window.location.href = "/login.html";
+            return;
+        }
+
+        if (currentMember.pakeAuthStatus === "NOT_REGISTERED") {
+            window.location.href = "/setup-mp.html";
+            return;
+        }
+
+        if (currentMember.pakeAuthStatus === "DISABLED") {
+            window.location.href = "/account-disabled.html";
+            return;
+        }
+
+        if (currentMember.pakeAuthStatus === "ROTATING") {
+            window.location.href = "/rotate-mp.html";
+            return;
+        }
+
+        if (currentMember.authLevel !== "VAULT_AUTH") {
+            window.location.href = "/unlock.html";
+            return;
+        }
+
+        try {
+            const ready = await APIClient.get("/api/vault/state");
+            if (!ready.vaultKeyMaterialExists || !ready.vaultIndexExists) {
+                window.location.href = "/vault-setup.html";
+                return;
+            }
+
+            window.location.href = "/vault.html";
+        } catch (error) {
+            window.location.href = "/unlock.html";
+        }
+    }
+
+    document.getElementById("personal-storage-btn").addEventListener("click", openPersonalStorage);
+
+    document.querySelectorAll("[data-ready-message]").forEach(function (button) {
+        button.addEventListener("click", function () {
+            showHomeMessage(button.getAttribute("data-ready-message"));
+        });
+    });
 </script>
 </body>
 </html>
