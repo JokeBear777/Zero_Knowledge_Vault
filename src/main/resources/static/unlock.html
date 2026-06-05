@@ -7,6 +7,9 @@
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/argon2-browser/dist/argon2-bundled.min.js"></script>
     <script src="/js/apiClient.js"></script>
+    <script src="/js/vaultCrypto.js"></script>
+    <script src="/js/shareKeyCrypto.js"></script>
+    <script src="/js/shareKeyIntent.js"></script>
 </head>
 <body class="page">
 <main class="page-shell">
@@ -68,6 +71,45 @@
     const g = 2n;
     const PAD_HEX_LEN = N_HEX.length;
     const enc = new TextEncoder();
+    const ALLOWED_UNLOCK_REDIRECTS = new Set([
+        "/vault.html",
+        "/share.html",
+        "/home.html"
+    ]);
+
+    function getUnlockNavigation() {
+        const params = new URLSearchParams(window.location.search);
+        const requestedNext = params.get("next");
+        const next = ALLOWED_UNLOCK_REDIRECTS.has(requestedNext) ? requestedNext : "/vault.html";
+        const intent = next === "/share.html"
+            ? ShareKeyIntent.normalizeIntent(params.get("intent"))
+            : null;
+
+        return {
+            intent,
+            target: intent ? next + "?intent=" + encodeURIComponent(intent) : next
+        };
+    }
+
+    async function prepareShareKeyPayload(masterPassword, intent) {
+        try {
+            const keyMaterial = await APIClient.get("/api/vault/key-material");
+            const wrappingKey = await VaultCrypto.deriveWrappingKey(
+                masterPassword,
+                keyMaterial.saltWrapBase64,
+                keyMaterial.wrapKdfParams || {},
+                keyMaterial.wrapKdfAlgorithm
+            );
+            window.__zkvVaultKey = await VaultCrypto.unwrapVaultKey(
+                keyMaterial.wrappedVaultKeyBase64,
+                wrappingKey
+            );
+            const payload = await ShareKeyCrypto.createEncryptedShareKeyPayload();
+            ShareKeyIntent.storePendingPayload(intent, payload);
+        } finally {
+            window.__zkvVaultKey = null;
+        }
+    }
 
     function bytesToHex(bytes) {
         return Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
@@ -294,9 +336,14 @@
                 M1: M1Hex
             });
 
+            const navigation = getUnlockNavigation();
+            if (navigation.intent) {
+                await prepareShareKeyPayload(mp, navigation.intent);
+            }
+
             message.className = "message message-success";
             message.textContent = "Vault가 열렸습니다. 이동합니다.";
-            window.location.href = "/vault.html";
+            window.location.href = navigation.target;
         } catch (e) {
             message.className = "message message-error";
             message.textContent = String(e?.userMessage ?? e?.message ?? e);
