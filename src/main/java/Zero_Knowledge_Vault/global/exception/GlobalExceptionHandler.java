@@ -1,6 +1,7 @@
 package Zero_Knowledge_Vault.global.exception;
 
 import Zero_Knowledge_Vault.global.exception.custom.OAuthSignupSessionNotFoundException;
+import Zero_Knowledge_Vault.domain.shareditem.exception.SharedItemException;
 import Zero_Knowledge_Vault.global.exception.custom.VaultException;
 import Zero_Knowledge_Vault.global.exception.custom.ShareKeyException;
 import Zero_Knowledge_Vault.global.util.dto.MessageStatusResponseDto;
@@ -52,6 +53,15 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ShareKeyException.class)
     public ResponseEntity<Map<String, String>> handleShareKeyException(ShareKeyException e) {
+        return ResponseEntity.status(e.getStatus())
+                .body(Map.of(
+                        "code", e.getCode(),
+                        "message", e.getMessage()
+                ));
+    }
+
+    @ExceptionHandler(SharedItemException.class)
+    public ResponseEntity<Map<String, String>> handleSharedItemException(SharedItemException e) {
         return ResponseEntity.status(e.getStatus())
                 .body(Map.of(
                         "code", e.getCode(),
