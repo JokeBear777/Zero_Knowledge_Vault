@@ -328,7 +328,7 @@
     }
 
     function showSharedItemsReady() {
-        showShareMessage("info", "공유 item 기능은 준비 중입니다.");
+        window.location.href = "/shared-items.html";
     }
 
     function bindEvents() {

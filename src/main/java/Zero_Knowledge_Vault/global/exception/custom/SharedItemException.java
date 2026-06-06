@@ -1,4 +1,4 @@
-package Zero_Knowledge_Vault.domain.shareditem.exception;
+package Zero_Knowledge_Vault.global.exception.custom;
 
 import lombok.Getter;
 import org.springframework.http.HttpStatus;

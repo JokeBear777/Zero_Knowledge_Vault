@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Shared Invite - Zero Knowledge Vault</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="page share-screen">
+<div class="app-layout">
+    <main class="mobile-shell">
+        <div class="mobile-frame">
+            <header class="screen-header">
+                <span class="step-badge">Invite</span>
+                <h1 class="app-title">공유 item 초대</h1>
+                <p class="app-subtitle">초대 링크는 참여 요청만 생성합니다. Owner 승인 후 접근할 수 있습니다.</p>
+            </header>
+
+            <div id="shared-invite-message" class="message message-info">초대 링크를 확인하고 있습니다.</div>
+
+            <section class="home-card">
+                <h2 class="home-card-title">참여 요청</h2>
+                <p class="muted">공유키가 없는 계정은 먼저 공유키를 생성해야 승인 후 item 키를 받을 수 있습니다.</p>
+                <button type="button" class="button button-primary storage-button" id="create-join-request-btn">참여 요청 보내기</button>
+                <a class="button button-secondary storage-button hidden" id="unlock-for-invite" href="/unlock.html?next=/shared-items.html">Vault 잠금 해제</a>
+            </section>
+
+            <div class="bottom-actions">
+                <a class="button button-secondary" href="/share.html">공유키 관리</a>
+                <a class="button button-secondary" href="/home.html">Home</a>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="/js/storageCleaner.js"></script>
+<script src="/js/apiClient.js"></script>
+<script src="/js/authGuard.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/vaultCrypto.js"></script>
+<script src="/js/shareKeyCrypto.js"></script>
+<script src="/js/sharedItemCrypto.js"></script>
+<script src="/js/sharedItemClient.js"></script>
+<script>
+    window.onload = SharedItemClient.loadInvitePage;
+</script>
+</body>
+</html>

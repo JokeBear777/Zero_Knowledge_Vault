@@ -14,7 +14,7 @@ import Zero_Knowledge_Vault.domain.shareditem.entity.SharedItem;
 import Zero_Knowledge_Vault.domain.shareditem.entity.SharedItemInviteLink;
 import Zero_Knowledge_Vault.domain.shareditem.entity.SharedItemJoinRequest;
 import Zero_Knowledge_Vault.domain.shareditem.entity.SharedItemMember;
-import Zero_Knowledge_Vault.domain.shareditem.exception.SharedItemException;
+import Zero_Knowledge_Vault.global.exception.custom.SharedItemException;
 import Zero_Knowledge_Vault.domain.shareditem.repository.SharedItemInviteLinkRepository;
 import Zero_Knowledge_Vault.domain.shareditem.repository.SharedItemJoinRequestRepository;
 import Zero_Knowledge_Vault.domain.shareditem.repository.SharedItemMemberRepository;

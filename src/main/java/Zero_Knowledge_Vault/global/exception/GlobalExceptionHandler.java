@@ -1,7 +1,7 @@
 package Zero_Knowledge_Vault.global.exception;
 
 import Zero_Knowledge_Vault.global.exception.custom.OAuthSignupSessionNotFoundException;
-import Zero_Knowledge_Vault.domain.shareditem.exception.SharedItemException;
+import Zero_Knowledge_Vault.global.exception.custom.SharedItemException;
 import Zero_Knowledge_Vault.global.exception.custom.VaultException;
 import Zero_Knowledge_Vault.global.exception.custom.ShareKeyException;
 import Zero_Knowledge_Vault.global.util.dto.MessageStatusResponseDto;
