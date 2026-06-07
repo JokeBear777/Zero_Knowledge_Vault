@@ -27,7 +27,8 @@ function clearSensitiveBrowserState() {
         "zkv_vault_key_v1",
         "zkv_srp_session",
         "zkv_unlock_state",
-        "zkv_temp_vault_key"
+        "zkv_temp_vault_key",
+        "zkv_pending_share_key_payload"
     ];
 
     for (const key of sensitiveKeys) {

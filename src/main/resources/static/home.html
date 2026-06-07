@@ -30,7 +30,7 @@
                 <h2 class="home-card-title">저장소</h2>
                 <div class="storage-grid">
                     <button type="button" class="storage-button button-primary" id="personal-storage-btn">개인 저장소</button>
-                    <button type="button" class="storage-button button-secondary" data-ready-message="공유 저장소는 준비 중인 기능입니다.">공유 저장소</button>
+                    <button type="button" class="storage-button button-secondary" id="shared-storage-btn">공유 저장소</button>
                 </div>
             </section>
 
@@ -137,6 +137,9 @@
     }
 
     document.getElementById("personal-storage-btn").addEventListener("click", openPersonalStorage);
+    document.getElementById("shared-storage-btn").addEventListener("click", function () {
+        window.location.href = "/share.html";
+    });
 
     document.querySelectorAll("[data-ready-message]").forEach(function (button) {
         button.addEventListener("click", function () {

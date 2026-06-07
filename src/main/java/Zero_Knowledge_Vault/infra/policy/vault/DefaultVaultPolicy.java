@@ -1,4 +1,4 @@
-package Zero_Knowledge_Vault.infra.vault.policy;
+package Zero_Knowledge_Vault.infra.policy.vault;
 
 import Zero_Knowledge_Vault.domain.vault.policy.VaultPolicy;
 import Zero_Knowledge_Vault.global.crypto.kdf.KdfAlgorithm;

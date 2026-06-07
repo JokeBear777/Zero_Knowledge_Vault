@@ -673,6 +673,141 @@ button:disabled {
     margin-top: 2px;
 }
 
+.share-screen {
+    background:
+        radial-gradient(circle at top, rgba(15, 118, 110, 0.12), transparent 32%),
+        #e8eef5;
+}
+
+.share-screen .screen-header {
+    margin-bottom: 14px;
+}
+
+.share-key-card {
+    background: linear-gradient(150deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.share-status-card {
+    display: grid;
+    gap: 12px;
+}
+
+.share-status-title {
+    margin: 0;
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 900;
+}
+
+.share-action-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+}
+
+.share-meta-list {
+    display: grid;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: #f8fafc;
+}
+
+.share-meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.share-meta-row strong {
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
+.share-empty-state {
+    display: grid;
+    gap: 8px;
+    padding: 16px;
+    border: 1px dashed #94a3b8;
+    border-radius: 16px;
+    background: #f8fafc;
+}
+
+.share-empty-state p {
+    margin: 0;
+}
+
+.shared-item-list {
+    display: grid;
+    gap: 12px;
+}
+
+.shared-item-card {
+    display: grid;
+    gap: 10px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: #ffffff;
+    padding: 14px;
+}
+
+.shared-item-card h3 {
+    margin: 0;
+    font-size: 17px;
+    overflow-wrap: anywhere;
+}
+
+.shared-item-meta,
+.shared-inline-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+}
+
+.shared-badge {
+    width: max-content;
+    margin: 0;
+}
+
+.shared-item-content {
+    min-height: 120px;
+    margin: 12px 0;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: #f8fafc;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font: inherit;
+}
+
+.shared-management-block {
+    display: grid;
+    gap: 10px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    margin-top: 14px;
+}
+
+.shared-management-block:first-of-type {
+    padding-top: 0;
+    border-top: 0;
+    margin-top: 0;
+}
+
+.shared-management-block h3 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.shared-invite-result {
+    display: grid;
+    gap: 10px;
+    margin-top: 10px;
+}
+
 code {
     background: #e2e8f0;
     border-radius: 6px;
