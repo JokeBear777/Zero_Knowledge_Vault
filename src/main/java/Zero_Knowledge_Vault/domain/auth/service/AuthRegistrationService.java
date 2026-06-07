@@ -20,6 +20,8 @@ import java.util.Base64;
 @RequiredArgsConstructor
 public class AuthRegistrationService {
 
+    //
+
     private final AuthPolicy authPolicy;
     private final MemberAuthPakeRepository memberAuthPakeRepository;
     private final MemberRepository memberRepository;
