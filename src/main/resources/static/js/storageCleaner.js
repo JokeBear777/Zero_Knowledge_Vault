@@ -1,6 +1,5 @@
 (function () {
     const SENSITIVE_KEYS = [
-        "zkv_device_secret_v1",
         "zkv_vault_key",
         "zkv_vault_key_v1",
         "zkv_srp_session",
@@ -39,7 +38,6 @@
 
     function clearSrpStorage() {
         const keys = [
-            "zkv_device_secret_v1",
             "zkv_srp_session",
             "zkv_unlock_state"
         ];
@@ -47,9 +45,17 @@
         removeKeys(window.sessionStorage, keys);
     }
 
+    function clearDeviceSecretForDeviceReset() {
+        // Deleting this value breaks the existing MP verifier binding for this browser.
+        // Recovery requires MP re-registration or development data reset.
+        removeKeys(window.localStorage, ["zkv_device_secret_v1"]);
+        removeKeys(window.sessionStorage, ["zkv_device_secret_v1"]);
+    }
+
     window.StorageCleaner = {
         clearSensitiveStorage,
         clearVaultStorage,
-        clearSrpStorage
+        clearSrpStorage,
+        clearDeviceSecretForDeviceReset
     };
 })();
