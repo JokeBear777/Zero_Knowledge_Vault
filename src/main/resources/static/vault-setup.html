@@ -3,33 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Vault Setup - Zero Knowledge Vault</title>
+    <title>개인 금고 준비 - Zero Knowledge Vault</title>
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/argon2-browser/dist/argon2-bundled.min.js"></script>
 </head>
 <body class="page">
 <main class="page-shell">
-    <section class="card">
-        <span class="step-badge">Vault Setup</span>
-        <h1 class="brand">Vault 초기화</h1>
-        <p class="subtitle">이 기기에서 사용할 개인 Vault를 준비합니다.</p>
+    <section class="app-card hero-card">
+        <span class="step-badge">금고 준비</span>
+        <h1 class="brand">개인 금고 준비</h1>
+        <p class="subtitle">이 기기에서 사용할 개인 금고를 준비해요.</p>
 
         <div class="message message-warning security-note">
             <strong>보안 안내</strong><br>
-            서버는 Vault 평문을 저장하지 않습니다. 초기화 후 비밀 항목을 안전하게 저장할 수 있습니다.
+            서버는 비밀 내용을 그대로 저장하지 않아요. 준비가 끝나면 비밀 항목을 안전하게 저장할 수 있어요.
         </div>
 
         <div class="form-group">
-            <label for="masterPassword">Master Password</label>
+            <label for="masterPassword">마스터 비밀번호</label>
             <input class="input" type="password" id="masterPassword" autocomplete="current-password"
-                   placeholder="Master Password를 입력하세요">
+                   placeholder="마스터 비밀번호를 입력하세요">
         </div>
 
         <div id="statusMessage" class="message message-info">초기화 정보를 준비하고 있습니다.</div>
 
         <div class="button-row">
-            <button type="button" id="setupVaultBtn" class="button button-primary">Vault 초기화</button>
-            <a class="button button-secondary" href="/unlock.html">Unlock으로 돌아가기</a>
+            <button type="button" id="setupVaultBtn" class="button button-primary">개인 금고 준비</button>
+            <a class="button button-secondary" href="/unlock.html">금고 열기로 돌아가기</a>
         </div>
     </section>
 </main>
@@ -51,7 +51,7 @@
     async function loadSetupInit() {
         try {
             setupVaultBtn.disabled = true;
-            setStatus("Vault 초기화 정보를 준비하고 있습니다.");
+            setStatus("개인 금고 준비 정보를 확인하고 있어요.");
             setupInit = await APIClient.get("/api/vault/setup/init");
             setStatus("초기화를 시작할 수 있습니다.", "success");
         } catch (error) {
@@ -70,12 +70,12 @@
         }
 
         if (!masterPassword || masterPassword.length < 8) {
-            setStatus("Master Password를 8자 이상 입력해주세요.", "error");
+            setStatus("마스터 비밀번호를 8자 이상 입력해주세요.", "error");
             return;
         }
 
         setupVaultBtn.disabled = true;
-        setStatus("개인 Vault를 안전하게 준비하는 중입니다.");
+        setStatus("개인 금고를 안전하게 준비하고 있어요.");
 
         try {
             const wrappingKey = await VaultCrypto.deriveWrappingKey(
@@ -102,13 +102,13 @@
             });
 
             masterPasswordInput.value = "";
-            setStatus("Vault 초기화가 완료되었습니다. Vault로 이동합니다.", "success");
+            setStatus("개인 금고 준비가 완료됐어요. 금고로 이동할게요.", "success");
             setTimeout(function () {
                 window.location.href = "/vault.html";
             }, 600);
         } catch (error) {
             masterPasswordInput.value = "";
-            const fallback = "Vault 초기화에 실패했습니다. Master Password와 브라우저 암호화 지원 상태를 확인해주세요.";
+            const fallback = "개인 금고를 준비하지 못했어요. 마스터 비밀번호와 브라우저 보안 지원 상태를 확인해주세요.";
             setStatus(error.userMessage || fallback, error.isConflict ? "warning" : "error");
             setupVaultBtn.disabled = false;
         }

@@ -1,7 +1,7 @@
 (function () {
     const DEVICE_SECRET_KEY = "zkv_device_secret_v1";
-    const DEVICE_SECRET_MISSING_MESSAGE = "이 브라우저의 디바이스 키가 없어 복원이 불가능합니다. 개발 환경에서는 MP/Vault 데이터를 초기화하고 다시 등록해야 합니다.";
-    const RESTORE_FAILURE_MESSAGE = "Master Password가 틀렸거나 이 브라우저의 deviceSecret이 등록 당시 값과 달라 VaultKey를 복원할 수 없습니다.";
+    const DEVICE_SECRET_MISSING_MESSAGE = "이 브라우저에 필요한 기기 정보가 없어 금고를 열 수 없어요. 이 기기에서 다시 설정해주세요.";
+    const RESTORE_FAILURE_MESSAGE = "마스터 비밀번호가 올바르지 않거나 이 브라우저에서 금고 열쇠를 복원할 수 없어요.";
     const CONFLICT_MESSAGE = "다른 사용자 또는 기기에서 먼저 수정했습니다. 최신 내용을 다시 불러온 뒤 수정해주세요.";
     const state = {
         detailItem: null,
@@ -44,7 +44,12 @@
     }
 
     function createBadge(text) {
-        return createText("span", "status-pill shared-badge", text || "-");
+        const value = text || "-";
+        let badgeClass = "status-pill shared-badge";
+        if (value === "OWNER") badgeClass += " badge-owner";
+        if (value === "READ_WRITE") badgeClass += " badge-write";
+        if (value === "READ_ONLY") badgeClass += " badge-read";
+        return createText("span", badgeClass, value);
     }
 
     function isOwner(item) {
@@ -71,6 +76,7 @@
         setElementVisible("shared-create-section", visible);
         setElementVisible("shared-owner-list-section", visible);
         setElementVisible("shared-participant-list-section", visible);
+        setElementVisible("shared-invite-list-section", visible);
         setElementVisible("shared-detail-section", visible);
 
         if (!visible) {
@@ -110,7 +116,7 @@
         if (!member) return false;
         if (member.authLevel !== "VAULT_AUTH") {
             setSharedContentVisible(false);
-            showSharedItemMessage("warning", "Vault 잠금 해제가 필요합니다.");
+            showSharedItemMessage("warning", "금고 열기가 필요해요.");
             window.setTimeout(function () {
                 window.location.href = sharedItemsUnlockUrl();
             }, 700);
@@ -126,13 +132,13 @@
         }
 
         if (SharedItemCrypto.isVaultKeyRequired(error)) {
-            showLockedSection("공유 item 복호화를 위해 VaultKey 복원이 필요합니다.");
+            showLockedSection("공유 비밀을 보려면 금고 열쇠 복원이 필요해요.");
             return;
         }
 
         if (error?.status === 403) {
             setSharedContentVisible(false);
-            showSharedItemMessage("warning", "Vault 잠금 해제가 필요합니다.");
+            showSharedItemMessage("warning", "금고 열기가 필요해요.");
             window.setTimeout(function () {
                 window.location.href = sharedItemsUnlockUrl();
             }, 700);
@@ -140,7 +146,7 @@
         }
 
         if (SharedItemCrypto.isShareKeyRequired(error)) {
-            showSharedItemMessage("warning", "공유키 생성이 필요합니다. 공유키를 먼저 생성한 뒤 다시 시도해주세요.");
+            showSharedItemMessage("warning", "공유키가 필요해요. 공유키를 먼저 만든 뒤 다시 시도해주세요.");
             return;
         }
 
@@ -153,7 +159,7 @@
         const masterPassword = input?.value || "";
 
         if (!masterPassword) {
-            showSharedItemMessage("warning", "Master Password를 입력해주세요.");
+            showSharedItemMessage("warning", "마스터 비밀번호를 입력해주세요.");
             return;
         }
 
@@ -166,7 +172,7 @@
 
         setBusy(button, true);
         try {
-            showSharedItemMessage("info", "VaultKey와 공유 private key를 복원하고 있습니다.");
+            showSharedItemMessage("info", "금고 열쇠를 복원하고 있어요.");
             const keyMaterial = await APIClient.get("/api/vault/key-material", {
                 redirectOnAuthError: false
             });
@@ -183,7 +189,7 @@
             await SharedItemCrypto.loadMySharePrivateKey();
             input.value = "";
             showSharedContent();
-            showSharedItemMessage("success", "VaultKey와 공유 private key를 복원했습니다.");
+            showSharedItemMessage("success", "금고 열쇠를 복원했어요.");
 
             const detailId = new URLSearchParams(window.location.search).get("id");
             if (window.location.pathname === "/shared-item-detail.html" && detailId) {
@@ -198,7 +204,7 @@
             showVaultRestoreSection();
 
             if (SharedItemCrypto.isShareKeyRequired(error)) {
-                showSharedItemMessage("warning", "공유 private key가 없어 공유 item 복호화를 진행할 수 없습니다. 공유 키를 먼저 생성해주세요.");
+                showSharedItemMessage("warning", "공유키가 없어 공유 비밀을 열 수 없어요. 공유키를 먼저 만들어주세요.");
                 return;
             }
 
@@ -217,25 +223,24 @@
         const card = document.createElement("article");
         card.className = "shared-item-card";
 
-        const heading = createText("h3", null, title || "복호화할 수 없는 항목");
+        const heading = createText("h3", null, title || "열 수 없는 비밀");
         const meta = document.createElement("div");
         meta.className = "shared-item-meta";
         meta.append(
             createBadge(item.role),
             createBadge(item.permission),
-            createBadge(item.status),
-            createText("span", "muted", "수정: " + formatDate(item.updatedAt || item.createdAt))
+            createText("span", "muted", item.ownerEmailMasked || item.emailMasked || "공유 멤버"),
+            createText("span", "muted", "수정 " + formatDate(item.updatedAt || item.createdAt))
         );
 
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "button button-secondary";
-        button.textContent = "상세 보기";
-        button.addEventListener("click", function () {
+        const arrow = createText("span", "shared-item-arrow", "›");
+
+        card.classList.add("is-link");
+        card.addEventListener("click", function () {
             window.location.href = "/shared-item-detail.html?id=" + encodeURIComponent(item.sharedItemId);
         });
 
-        card.append(heading, meta, button);
+        card.append(heading, meta, arrow);
         container.appendChild(card);
     }
 
@@ -257,7 +262,7 @@
             try {
                 title = (await SharedItemCrypto.decryptSharedItem(item)).title;
             } catch (error) {
-                title = "복호화할 수 없는 항목";
+                title = "열 수 없는 비밀";
             }
 
             if (isOwner(item)) {
@@ -269,25 +274,25 @@
             }
         }
 
-        if (ownerCount === 0) renderEmpty(ownerList, "내가 만든 공유 item이 없습니다.");
-        if (participantCount === 0) renderEmpty(participantList, "참여 중인 공유 item이 없습니다.");
+        if (ownerCount === 0) renderEmpty(ownerList, "내가 만든 공유 비밀이 없어요.");
+        if (participantCount === 0) renderEmpty(participantList, "참여 중인 공유 비밀이 없어요.");
     }
 
     async function loadSharedItems() {
         try {
             if (!await requireVaultAuthOrRedirect()) return;
             if (!isSharedCryptoReady()) {
-                showLockedSection("공유 item을 보려면 VaultKey와 공유 private key 복원이 필요합니다.");
+                showLockedSection("공유 비밀을 보려면 금고 열쇠 복원이 필요해요.");
                 return;
             }
 
             showSharedContent();
-            showSharedItemMessage("info", "공유 저장소 목록을 불러오고 있습니다.");
+            showSharedItemMessage("info", "공유 금고 목록을 불러오고 있어요.");
             const items = await APIClient.get("/api/shared-items");
             await renderSharedItemList(items);
-            showSharedItemMessage("success", "공유 저장소 목록을 불러왔습니다.");
+            showSharedItemMessage("success", "공유 금고 목록을 불러왔어요.");
         } catch (error) {
-            handleError(error, "공유 item을 불러오지 못했습니다.");
+            handleError(error, "공유 비밀을 불러오지 못했어요.");
         }
     }
 
@@ -307,17 +312,17 @@
         try {
             if (!await requireVaultAuthOrRedirect()) return;
             if (!isSharedCryptoReady()) {
-                showLockedSection("공유 item을 만들려면 VaultKey와 공유 private key 복원이 필요합니다.");
+                showLockedSection("공유 비밀을 만들려면 금고 열쇠 복원이 필요해요.");
                 return;
             }
 
-            showSharedItemMessage("info", "공유 item을 암호화해 생성하고 있습니다.");
+            showSharedItemMessage("info", "공유 비밀을 암호화해 만들고 있어요.");
             const payload = await SharedItemCrypto.createOwnerSharedItemPayload(title, content);
             const response = await APIClient.post("/api/shared-items", payload);
-            showSharedItemMessage("success", "공유 item이 생성되었습니다.");
+            showSharedItemMessage("success", "공유 비밀을 만들었어요.");
             window.location.href = "/shared-item-detail.html?id=" + encodeURIComponent(response.sharedItemId);
         } catch (error) {
-            handleError(error, "공유 item을 생성하지 못했습니다.");
+            handleError(error, "공유 비밀을 만들지 못했어요.");
         } finally {
             state.busy = false;
             setBusy(byId("create-shared-item-btn"), false);
@@ -325,13 +330,11 @@
     }
 
     function renderSharedItemDetail(item) {
-        byId("detail-title").textContent = state.decryptedTitle || "복호화할 수 없는 항목";
+        byId("detail-title").textContent = state.decryptedTitle || "열 수 없는 비밀";
         byId("detail-content").textContent = state.decryptedContent || "";
         byId("detail-meta").textContent = [
             item.role,
             item.permission,
-            item.status,
-            "version " + item.version,
             "수정 " + formatDate(item.updatedAt || item.createdAt)
         ].filter(Boolean).join(" / ");
 
@@ -342,6 +345,8 @@
         } else {
             byId("edit-section")?.classList.add("hidden");
         }
+
+        byId("read-only-note")?.classList.toggle("hidden", canEdit(item));
 
         if (isOwner(item)) {
             byId("owner-management-section")?.classList.remove("hidden");
@@ -358,12 +363,12 @@
         try {
             if (!await requireVaultAuthOrRedirect()) return;
             if (!isSharedCryptoReady()) {
-                showLockedSection("공유 item 상세를 보려면 VaultKey와 공유 private key 복원이 필요합니다.");
+                showLockedSection("공유 비밀 상세를 보려면 금고 열쇠 복원이 필요해요.");
                 return;
             }
 
             showSharedContent();
-            showSharedItemMessage("info", "공유 item 상세를 불러오고 있습니다.");
+            showSharedItemMessage("info", "공유 비밀을 불러오고 있어요.");
             const item = await APIClient.get("/api/shared-items/" + encodeURIComponent(sharedItemId));
             const decrypted = await SharedItemCrypto.decryptSharedItem(item, { includeContent: true });
 
@@ -372,9 +377,9 @@
             state.decryptedContent = decrypted.content;
             state.sharedItemKey = decrypted.sharedItemKey;
             renderSharedItemDetail(item);
-            showSharedItemMessage("success", "공유 item을 복호화했습니다.");
+            showSharedItemMessage("success", "공유 비밀을 열었어요.");
         } catch (error) {
-            handleError(error, "공유 item 상세를 불러오지 못했습니다.");
+            handleError(error, "공유 비밀 상세를 불러오지 못했어요.");
         }
     }
 
@@ -398,10 +403,10 @@
                 titleCipherBase64: encryptedPayload.titleCipherBase64,
                 itemCipherBase64: encryptedPayload.itemCipherBase64
             });
-            showSharedItemMessage("success", "공유 item이 수정되었습니다.");
+            showSharedItemMessage("success", "공유 비밀을 수정했어요.");
             await loadSharedItemDetail(sharedItemId);
         } catch (error) {
-            handleError(error, "공유 item을 수정하지 못했습니다.");
+            handleError(error, "공유 비밀을 수정하지 못했어요.");
         } finally {
             state.busy = false;
             setBusy(byId("update-shared-item-btn"), false);
@@ -410,23 +415,23 @@
 
     async function deleteSharedItem(sharedItemId) {
         if (!state.detailItem || !isOwner(state.detailItem)) {
-            showSharedItemMessage("warning", "삭제 권한이 없습니다.");
+            showSharedItemMessage("warning", "이 작업을 할 수 있는 권한이 없어요.");
             return;
         }
 
-        if (!confirm("정말 이 공유 item을 삭제하시겠습니까?\n참여자도 더 이상 접근할 수 없습니다.")) return;
+        if (!confirm("정말 이 공유 비밀을 삭제할까요?\n참여자도 더 이상 접근할 수 없어요.")) return;
 
         try {
             await APIClient.del("/api/shared-items/" + encodeURIComponent(sharedItemId));
             window.location.href = "/shared-items.html";
         } catch (error) {
-            handleError(error, "공유 item을 삭제하지 못했습니다.");
+            handleError(error, "공유 비밀을 삭제하지 못했어요.");
         }
     }
 
     async function createInviteLink(sharedItemId) {
         if (!state.detailItem || !isOwner(state.detailItem)) {
-            showSharedItemMessage("warning", "초대 링크를 생성할 권한이 없습니다.");
+            showSharedItemMessage("warning", "이 작업을 할 수 있는 권한이 없어요.");
             return;
         }
 
@@ -436,9 +441,9 @@
             byId("invite-link-url").value = response.inviteUrl || "";
             byId("invite-link-expires").textContent = "만료: " + formatDate(response.expiresAt);
             byId("invite-link-result")?.classList.remove("hidden");
-            showSharedItemMessage("success", "초대 링크가 생성되었습니다.");
+            showSharedItemMessage("success", "초대 링크를 만들었어요.");
         } catch (error) {
-            handleError(error, "초대 링크를 생성할 수 없습니다.");
+            handleError(error, "초대 링크를 만들 수 없어요.");
         } finally {
             setBusy(byId("create-invite-btn"), false);
         }
@@ -449,9 +454,9 @@
         if (!input?.value) return;
         try {
             await navigator.clipboard.writeText(input.value);
-            showSharedItemMessage("success", "초대 링크를 복사했습니다.");
+            showSharedItemMessage("success", "초대 링크를 복사했어요.");
         } catch (error) {
-            showSharedItemMessage("warning", "브라우저가 자동 복사를 허용하지 않습니다. 초대 링크를 직접 선택해 복사해주세요.");
+            showSharedItemMessage("warning", "브라우저가 자동 복사를 허용하지 않아요. 초대 링크를 직접 선택해 복사해주세요.");
         }
     }
 
@@ -460,7 +465,7 @@
         clearNode(container);
 
         if (!requests?.length) {
-            renderEmpty(container, "대기 중인 참여 요청이 없습니다.");
+            renderEmpty(container, "대기 중인 참여 요청이 없어요.");
             return;
         }
 
@@ -517,7 +522,7 @@
 
     async function approveJoinRequest(sharedItemId, request, permission) {
         if (!state.sharedItemKey) {
-            showSharedItemMessage("warning", "공유 item 키를 복호화하지 못해 요청을 승인할 수 없습니다.");
+            showSharedItemMessage("warning", "공유 비밀 열쇠를 확인하지 못해 요청을 승인할 수 없어요.");
             return;
         }
 
@@ -534,11 +539,11 @@
                     permission
                 }
             );
-            showSharedItemMessage("success", "참여 요청을 승인했습니다.");
+            showSharedItemMessage("success", "참여 요청을 승인했어요.");
             await loadJoinRequests(sharedItemId);
             await loadSharedItemMembers(sharedItemId);
         } catch (error) {
-            handleError(error, "요청을 승인할 수 없습니다.");
+            handleError(error, "요청을 승인할 수 없어요.");
         }
     }
 
@@ -548,10 +553,10 @@
                 "/api/shared-items/" + encodeURIComponent(sharedItemId) + "/join-requests/" + encodeURIComponent(joinRequestId) + "/reject",
                 {}
             );
-            showSharedItemMessage("success", "참여 요청을 거절했습니다.");
+            showSharedItemMessage("success", "참여 요청을 거절했어요.");
             await loadJoinRequests(sharedItemId);
         } catch (error) {
-            handleError(error, "요청을 거절할 수 없습니다.");
+            handleError(error, "요청을 거절할 수 없어요.");
         }
     }
 
@@ -560,7 +565,7 @@
         clearNode(container);
 
         if (!members?.length) {
-            renderEmpty(container, "멤버 목록이 비어 있습니다.");
+            renderEmpty(container, "멤버 목록이 비어 있어요.");
             return;
         }
 
@@ -615,25 +620,25 @@
                 "/api/shared-items/" + encodeURIComponent(sharedItemId) + "/members/" + encodeURIComponent(memberId) + "/permission",
                 { permission }
             );
-            showSharedItemMessage("success", "멤버 권한을 변경했습니다.");
+            showSharedItemMessage("success", "멤버 권한을 변경했어요.");
             await loadSharedItemMembers(sharedItemId);
         } catch (error) {
-            handleError(error, "멤버 권한을 변경할 수 없습니다.");
+            handleError(error, "멤버 권한을 변경할 수 없어요.");
         }
     }
 
     async function revokeSharedItemMember(sharedItemId, memberId) {
-        if (!confirm("이 멤버의 접근 권한을 취소하시겠습니까?")) return;
+        if (!confirm("이 멤버의 접근 권한을 취소할까요?")) return;
 
         try {
             await APIClient.post(
                 "/api/shared-items/" + encodeURIComponent(sharedItemId) + "/members/" + encodeURIComponent(memberId) + "/revoke",
                 {}
             );
-            showSharedItemMessage("success", "멤버 권한을 취소했습니다.");
+            showSharedItemMessage("success", "멤버 권한을 취소했어요.");
             await loadSharedItemMembers(sharedItemId);
         } catch (error) {
-            handleError(error, "멤버 권한을 취소할 수 없습니다.");
+            handleError(error, "멤버 권한을 취소할 수 없어요.");
         }
     }
 
@@ -641,9 +646,9 @@
         setBusy(byId("create-join-request-btn"), true);
         try {
             await APIClient.post("/api/shared-items/invite-links/" + encodeURIComponent(inviteToken) + "/join-requests", {});
-            showSharedItemMessage("success", "참여 요청을 보냈습니다. owner가 승인하면 공유 item에 접근할 수 있습니다.");
+            showSharedItemMessage("success", "참여 요청을 보냈어요. owner가 승인하면 공유 금고에서 확인할 수 있어요.");
         } catch (error) {
-            handleError(error, "초대 링크가 만료되었거나 이미 처리된 요청입니다.");
+            handleError(error, "초대 링크가 만료되었거나 이미 처리된 요청이에요.");
         } finally {
             setBusy(byId("create-join-request-btn"), false);
         }
@@ -652,7 +657,7 @@
     async function loadInvitePage() {
         const token = new URLSearchParams(window.location.search).get("token");
         if (!token) {
-            showSharedItemMessage("error", "초대 링크 토큰이 없습니다.");
+            showSharedItemMessage("error", "초대 링크를 확인할 수 없어요.");
             return;
         }
 
@@ -660,21 +665,36 @@
             const member = await AuthGuard.requireLogin();
             if (!member) return;
             if (member.authLevel !== "VAULT_AUTH") {
-                showSharedItemMessage("warning", "참여 요청을 보내려면 Vault 잠금 해제가 필요합니다. 잠금 해제 후 초대 링크를 다시 열어주세요.");
+                showSharedItemMessage("warning", "참여 요청을 보내려면 금고 열기가 필요해요. 금고를 연 뒤 초대 링크를 다시 열어주세요.");
                 byId("unlock-for-invite")?.classList.remove("hidden");
             } else {
-                showSharedItemMessage("info", "초대 링크를 확인했습니다. 참여 요청을 보낼 수 있습니다.");
+                showSharedItemMessage("info", "초대 링크를 확인했어요. 참여 요청을 보낼 수 있어요.");
             }
             byId("create-join-request-btn")?.addEventListener("click", function () {
                 createJoinRequest(token);
             });
         } catch (error) {
-            handleError(error, "초대 링크를 처리할 수 없습니다.");
+            handleError(error, "초대 링크를 처리할 수 없어요.");
+        }
+    }
+
+    async function copyDetailContent() {
+        const content = byId("detail-content")?.textContent || "";
+        if (!content) {
+            showSharedItemMessage("warning", "복사할 내용이 없어요.");
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(content);
+            showSharedItemMessage("success", "내용을 복사했어요.");
+        } catch (error) {
+            showSharedItemMessage("warning", "브라우저가 자동 복사를 허용하지 않아요. 내용을 직접 선택해 복사해주세요.");
         }
     }
 
     function bindListPage() {
-        showLockedSection("공유 item을 보려면 VaultKey와 공유 private key 복원이 필요합니다.");
+        showLockedSection("공유 비밀을 보려면 금고 열쇠 복원이 필요해요.");
         byId("show-shared-vault-restore-btn")?.addEventListener("click", showVaultRestoreSection);
         byId("restore-shared-vault-key-btn")?.addEventListener("click", restoreVaultKeyFromPassword);
         byId("create-shared-item-btn")?.addEventListener("click", createSharedItem);
@@ -684,11 +704,11 @@
     function bindDetailPage() {
         const sharedItemId = new URLSearchParams(window.location.search).get("id");
         if (!sharedItemId) {
-            showSharedItemMessage("error", "공유 item ID가 없습니다.");
+            showSharedItemMessage("error", "공유 비밀을 확인할 수 없어요.");
             return;
         }
 
-        showLockedSection("공유 item 상세를 보려면 VaultKey와 공유 private key 복원이 필요합니다.");
+        showLockedSection("공유 비밀 상세를 보려면 금고 열쇠 복원이 필요해요.");
         byId("show-shared-vault-restore-btn")?.addEventListener("click", showVaultRestoreSection);
         byId("restore-shared-vault-key-btn")?.addEventListener("click", restoreVaultKeyFromPassword);
         byId("update-shared-item-btn")?.addEventListener("click", function () {
@@ -701,6 +721,7 @@
             createInviteLink(sharedItemId);
         });
         byId("copy-invite-btn")?.addEventListener("click", copyInviteLink);
+        byId("copy-detail-content-btn")?.addEventListener("click", copyDetailContent);
         loadSharedItemDetail(sharedItemId);
     }
 

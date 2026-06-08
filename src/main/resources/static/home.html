@@ -9,49 +9,87 @@
 <body class="page home-screen">
 <div class="app-layout">
     <main class="mobile-shell">
-        <div class="mobile-frame">
-            <header class="home-topbar">
-                <p class="timer-text">남은 시간 30:00</p>
+        <div class="mobile-frame app-content">
+            <header class="app-header">
+                <div class="app-header-main">
+                    <div class="app-logo-row">
+                        <span class="brand-dot">Z</span>
+                        <div class="app-logo-text">
+                            <strong>Zero Vault</strong>
+                            <span>나만의 보안 금고</span>
+                        </div>
+                    </div>
+                    <h1 class="app-title" id="home-greeting">안녕하세요, 민우님</h1>
+                    <p class="app-subtitle">오늘도 안전하게 관리해볼까요?</p>
+                </div>
+                <button type="button" class="icon-button" data-ready-message="알림 기능은 준비 중이에요.">알림</button>
             </header>
 
-            <section class="home-card account-card">
-                <h1 class="home-brand">Zero Knowledge Vault</h1>
-                <p id="account-status" class="masked-email">사용자 계정으로 로그인되어 있습니다.</p>
-
-                <div class="home-action-row">
-                    <button type="button" class="home-action-button" data-ready-message="준비 중인 기능입니다.">정보 변경</button>
-                    <button type="button" class="home-action-button" data-ready-message="준비 중인 기능입니다.">접근 기록 확인</button>
+            <section class="app-card hero-card">
+                <div class="card-header-row">
+                    <div>
+                        <p class="card-kicker">계정</p>
+                        <p id="account-status" class="masked-email">로그인 상태를 확인하고 있어요.</p>
+                    </div>
+                    <span class="pill-badge">보호 중</span>
                 </div>
             </section>
 
             <div id="home-message" class="message message-info hidden"></div>
 
-            <section class="home-card storage-card">
-                <h2 class="home-card-title">저장소</h2>
-                <div class="storage-grid">
-                    <button type="button" class="storage-button button-primary" id="personal-storage-btn">개인 저장소</button>
-                    <button type="button" class="storage-button button-secondary" id="shared-storage-btn">공유 저장소</button>
+            <section class="status-card">
+                <div class="status-row">
+                    <div>
+                        <p class="status-label">금고 상태</p>
+                        <p class="status-value">잠겨 있어요</p>
+                    </div>
+                    <span class="hero-emoji">잠금</span>
+                </div>
+                <div class="button-row">
+                    <button type="button" class="button button-primary" id="personal-storage-btn">금고 열기</button>
                 </div>
             </section>
 
-            <section class="home-card tools-card">
-                <h2 class="home-card-title">보안 도구</h2>
-                <ul class="tool-list">
-                    <li>
-                        <button type="button" class="tool-item" data-ready-message="준비 중인 기능입니다.">
-                            안전 비밀번호 생성
-                        </button>
-                    </li>
-                    <li>
-                        <button type="button" class="tool-item" data-ready-message="보안 뉴스는 준비 중인 기능입니다.">
-                            보안 뉴스
-                        </button>
-                    </li>
-                </ul>
+            <section class="app-card">
+                <h2 class="home-card-title">빠른 시작</h2>
+                <div class="action-grid">
+                    <button type="button" class="action-card" id="quick-personal-storage-btn">
+                        <span class="action-icon">개</span>
+                        <strong>개인 금고</strong>
+                        <span>나만 보는 비밀</span>
+                    </button>
+                    <button type="button" class="action-card" id="shared-storage-btn">
+                        <span class="action-icon">공</span>
+                        <strong>공유 금고</strong>
+                        <span>함께 여는 비밀</span>
+                    </button>
+                    <button type="button" class="action-card" data-ready-message="안전한 비밀번호 생성기는 준비 중이에요.">
+                        <span class="action-icon">키</span>
+                        <strong>비밀번호 생성기</strong>
+                        <span>강한 비밀번호 만들기</span>
+                    </button>
+                    <button type="button" class="action-card" data-ready-message="보안 도구는 곧 사용할 수 있어요.">
+                        <span class="action-icon">보</span>
+                        <strong>보안 도구</strong>
+                        <span>계정 안전 점검</span>
+                    </button>
+                </div>
+            </section>
+
+            <section class="app-card warning-card">
+                <h2 class="home-card-title">오늘의 보안 팁</h2>
+                <p class="muted">주기적으로 비밀번호를 변경하고 이중 인증을 사용하면 더 안전해요.</p>
             </section>
 
             <button type="button" class="button button-danger home-logout-button" onclick="logout()">로그아웃</button>
+
         </div>
+        <nav class="bottom-nav" aria-label="주요 메뉴">
+            <a class="active" href="/home.html"><span class="nav-icon">홈</span><span class="nav-label">홈</span></a>
+            <a href="/vault.html"><span class="nav-icon">개</span><span class="nav-label">개인 금고</span></a>
+            <a href="/share.html"><span class="nav-icon">공</span><span class="nav-label">공유 금고</span></a>
+            <button type="button" data-ready-message="설정 화면은 준비 중이에요."><span class="nav-icon">설</span><span class="nav-label">설정</span></button>
+        </nav>
     </main>
 </div>
 
@@ -90,8 +128,8 @@
 
             const masked = maskEmail(currentMember.email);
             document.getElementById("account-status").textContent = masked
-                ? masked + " 계정으로 로그인되어 있습니다."
-                : "사용자 계정으로 로그인되어 있습니다.";
+                ? masked + " 계정으로 로그인되어 있어요."
+                : "사용자 계정으로 로그인되어 있어요.";
         } catch (error) {
             window.location.href = "/login.html";
         }
@@ -137,6 +175,7 @@
     }
 
     document.getElementById("personal-storage-btn").addEventListener("click", openPersonalStorage);
+    document.getElementById("quick-personal-storage-btn").addEventListener("click", openPersonalStorage);
     document.getElementById("shared-storage-btn").addEventListener("click", function () {
         window.location.href = "/share.html";
     });

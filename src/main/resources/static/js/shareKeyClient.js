@@ -104,18 +104,16 @@
         if (currentState.exists) {
             const heading = document.createElement("p");
             heading.className = "share-status-title";
-            heading.textContent = "공유 저장소 준비 완료";
+            heading.textContent = "공유 금고가 준비됐어요.";
 
             const metaList = document.createElement("div");
             metaList.className = "share-meta-list";
-            addMetaRow(metaList, "버전", currentState.keyVersion ? "v" + currentState.keyVersion : "-");
-            addMetaRow(metaList, "상태", currentState.status || "-");
-            addMetaRow(metaList, "알고리즘", currentState.algorithm || "-");
-            addMetaRow(metaList, "생성일", formatDate(currentState.createdAt));
+            addMetaRow(metaList, "상태", currentState.status === "ACTIVE" ? "사용 가능" : "확인 필요");
+            addMetaRow(metaList, "준비한 날", formatDate(currentState.createdAt));
 
             const note = document.createElement("p");
             note.className = "muted";
-            note.textContent = "공유 item 목록 기능은 준비 중입니다.";
+            note.textContent = "이제 공유 금고에서 새 공유 비밀을 만들고 초대할 수 있어요.";
 
             statusCard.append(heading, metaList, note);
             createButton?.classList.add("hidden");
@@ -129,15 +127,15 @@
 
         const title = document.createElement("p");
         title.className = "share-status-title";
-        title.textContent = "공유키가 없습니다.";
+        title.textContent = "공유 금고 열쇠가 아직 없어요.";
 
         const description = document.createElement("p");
         description.className = "muted";
-        description.textContent = "공유 기능을 사용하려면 이 기기에서 공유키를 먼저 생성해야 합니다.";
+        description.textContent = "공유 비밀을 사용하려면 이 기기에서 공유키를 먼저 만들어야 해요.";
 
         const securityNote = document.createElement("p");
         securityNote.className = "muted";
-        securityNote.textContent = "공개키만 서버에 저장되고, 개인키는 클라이언트에서 암호화된 값으로만 전송됩니다.";
+        securityNote.textContent = "개인키는 브라우저에서 암호화된 값으로만 다뤄져요.";
 
         empty.append(title, description, securityNote);
         statusCard.appendChild(empty);
@@ -155,10 +153,10 @@
 
     function handleVaultKeyRequired(intent) {
         const message = intent === "regenerate-share-key"
-            ? "공유키 재생성을 위해 Vault 잠금 해제가 필요합니다."
+            ? "공유키를 다시 만들려면 먼저 금고를 열어야 해요."
             : intent === "create-share-key"
-                ? "공유키 생성을 위해 Vault 잠금 해제가 필요합니다."
-                : "Vault 잠금 해제가 필요합니다.";
+                ? "공유키를 만들려면 먼저 금고를 열어야 해요."
+                : "금고 열기가 필요해요.";
 
         showShareMessage("warning", message);
         redirectToUnlockSoon(intent);
@@ -195,7 +193,7 @@
             const allowed = await requireVaultAuthOrRedirect(intent);
             if (!allowed) return;
 
-            showShareMessage("info", "공유키 상태를 확인하고 있습니다.");
+            showShareMessage("info", "공유키 상태를 확인하고 있어요.");
             const response = await APIClient.get("/api/share/keys/me");
             const state = sanitizeShareKeyState(response);
             renderShareKeyState(state);
@@ -205,17 +203,17 @@
                 return;
             }
 
-            showShareMessage("success", state.exists ? "공유 저장소가 준비되어 있습니다." : "공유키가 아직 없습니다.");
+            showShareMessage("success", state.exists ? "공유 금고가 준비되어 있어요." : "공유키가 아직 없어요.");
         } catch (error) {
             renderShareKeyState({ exists: false });
-            handleError(error, "공유키 상태를 확인하지 못했습니다.");
+            handleError(error, "공유키 상태를 확인하지 못했어요.");
         }
     }
 
     async function continueShareIntent(intent, state) {
         if (intent === "create-share-key" && state.exists) {
             ShareKeyIntent.clearPendingPayload();
-            showShareMessage("success", "공유키가 이미 존재합니다.");
+            showShareMessage("success", "공유키가 이미 준비되어 있어요.");
             return;
         }
 
@@ -223,8 +221,8 @@
         showShareMessage(
             "info",
             intent === "regenerate-share-key"
-                ? "Vault 잠금 해제가 완료되었습니다. 공유키 재생성을 계속합니다."
-                : "Vault 잠금 해제가 완료되었습니다. 공유키 생성을 계속합니다."
+                ? "금고가 열렸어요. 공유키를 다시 만들게요."
+                : "금고가 열렸어요. 공유키를 만들게요."
         );
 
         if (intent === "regenerate-share-key" && state.exists) {
@@ -240,24 +238,24 @@
 
         if (currentState?.exists) {
             ShareKeyIntent.clearPendingPayload();
-            showShareMessage("success", "공유키가 이미 존재합니다.");
+            showShareMessage("success", "공유키가 이미 준비되어 있어요.");
             return;
         }
 
         actionInProgress = true;
         try {
             setActionButtonsBusy(true);
-            showShareMessage("info", "공유키를 생성하고 있습니다.");
+            showShareMessage("info", "공유키를 만들고 있어요.");
             const payload = options.payload || await ShareKeyCrypto.createEncryptedShareKeyPayload();
             const response = await APIClient.post("/api/share/keys", payload);
             renderShareKeyState(response);
-            showShareMessage("success", "공유키가 생성되었습니다.");
+            showShareMessage("success", "공유키를 만들었어요.");
         } catch (error) {
             handleError(
                 error,
                 options.automatic
-                    ? "공유키 생성 정보를 확인할 수 없습니다. 공유키 생성 버튼으로 다시 시도해주세요."
-                    : "공유키 생성에 실패했습니다.",
+                    ? "공유키 만들기 정보를 확인할 수 없어요. 버튼으로 다시 시도해주세요."
+                    : "공유키를 만들지 못했어요.",
                 {
                     intent: "create-share-key",
                     redirectOnVaultRequired: !options.automatic
@@ -280,17 +278,17 @@
         actionInProgress = true;
         try {
             setActionButtonsBusy(true);
-            showShareMessage("info", "공유키를 재생성하고 있습니다.");
+            showShareMessage("info", "공유키를 다시 만들고 있어요.");
             const payload = options.payload || await ShareKeyCrypto.createEncryptedShareKeyPayload();
             const response = await APIClient.post("/api/share/keys/regenerate", payload);
             renderShareKeyState(response);
-            showShareMessage("success", "공유키가 재생성되었습니다.");
+            showShareMessage("success", "공유키를 다시 만들었어요.");
         } catch (error) {
             handleError(
                 error,
                 options.automatic
-                    ? "공유키 재생성 정보를 확인할 수 없습니다. 공유키 재생성 버튼으로 다시 시도해주세요."
-                    : "공유키 재생성에 실패했습니다.",
+                    ? "공유키 다시 만들기 정보를 확인할 수 없어요. 버튼으로 다시 시도해주세요."
+                    : "공유키를 다시 만들지 못했어요.",
                 {
                     intent: "regenerate-share-key",
                     redirectOnVaultRequired: !options.automatic
@@ -304,7 +302,7 @@
 
     async function deleteShareKey() {
         if (!currentState?.exists) {
-            showShareMessage("warning", "삭제할 공유키가 없습니다.");
+            showShareMessage("warning", "삭제할 공유키가 없어요.");
             return;
         }
 
@@ -316,12 +314,12 @@
 
         try {
             setButtonBusy(button, true);
-            showShareMessage("info", "공유키를 삭제하고 있습니다.");
+            showShareMessage("info", "공유키를 삭제하고 있어요.");
             await APIClient.del("/api/share/keys/me");
             renderShareKeyState({ exists: false });
-            showShareMessage("success", "공유키가 삭제되었습니다.");
+            showShareMessage("success", "공유키를 삭제했어요.");
         } catch (error) {
-            handleError(error, "공유키 삭제에 실패했습니다.");
+            handleError(error, "공유키를 삭제하지 못했어요.");
         } finally {
             setButtonBusy(button, false);
         }
