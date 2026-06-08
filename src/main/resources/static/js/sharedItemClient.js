@@ -1,4 +1,7 @@
 (function () {
+    const DEVICE_SECRET_KEY = "zkv_device_secret_v1";
+    const DEVICE_SECRET_MISSING_MESSAGE = "이 브라우저의 디바이스 키가 없어 복원이 불가능합니다. 개발 환경에서는 MP/Vault 데이터를 초기화하고 다시 등록해야 합니다.";
+    const RESTORE_FAILURE_MESSAGE = "Master Password가 틀렸거나 이 브라우저의 deviceSecret이 등록 당시 값과 달라 VaultKey를 복원할 수 없습니다.";
     const CONFLICT_MESSAGE = "다른 사용자 또는 기기에서 먼저 수정했습니다. 최신 내용을 다시 불러온 뒤 수정해주세요.";
     const state = {
         detailItem: null,
@@ -56,14 +59,57 @@
         return "/unlock.html?next=/shared-items.html";
     }
 
+    function hasDeviceSecret() {
+        return Boolean(localStorage.getItem(DEVICE_SECRET_KEY));
+    }
+
+    function setElementVisible(id, visible) {
+        byId(id)?.classList.toggle("hidden", !visible);
+    }
+
+    function setSharedContentVisible(visible) {
+        setElementVisible("shared-create-section", visible);
+        setElementVisible("shared-owner-list-section", visible);
+        setElementVisible("shared-participant-list-section", visible);
+        setElementVisible("shared-detail-section", visible);
+
+        if (!visible) {
+            setElementVisible("edit-section", false);
+            setElementVisible("owner-management-section", false);
+            setElementVisible("delete-shared-item-btn", false);
+        }
+    }
+
+    function isSharedCryptoReady() {
+        return Boolean(window.__zkvVaultKey && window.__zkvSharePrivateKey);
+    }
+
+    function showLockedSection(message) {
+        setElementVisible("shared-vault-locked-section", true);
+        setElementVisible("shared-vault-open-section", false);
+        setSharedContentVisible(false);
+        if (message) {
+            showSharedItemMessage("warning", message);
+        }
+    }
+
     function showVaultRestoreSection() {
-        byId("shared-vault-open-section")?.classList.remove("hidden");
+        setElementVisible("shared-vault-locked-section", false);
+        setElementVisible("shared-vault-open-section", true);
+        setSharedContentVisible(false);
+    }
+
+    function showSharedContent() {
+        setElementVisible("shared-vault-locked-section", false);
+        setElementVisible("shared-vault-open-section", false);
+        setSharedContentVisible(true);
     }
 
     async function requireVaultAuthOrRedirect() {
         const member = await AuthGuard.requireLogin();
         if (!member) return false;
         if (member.authLevel !== "VAULT_AUTH") {
+            setSharedContentVisible(false);
             showSharedItemMessage("warning", "Vault 잠금 해제가 필요합니다.");
             window.setTimeout(function () {
                 window.location.href = sharedItemsUnlockUrl();
@@ -80,12 +126,12 @@
         }
 
         if (SharedItemCrypto.isVaultKeyRequired(error)) {
-            showVaultRestoreSection();
-            showSharedItemMessage("warning", "공유 item 복호화를 위해 VaultKey 복원이 필요합니다. Master Password를 입력해 복원해주세요.");
+            showLockedSection("공유 item 복호화를 위해 VaultKey 복원이 필요합니다.");
             return;
         }
 
         if (error?.status === 403) {
+            setSharedContentVisible(false);
             showSharedItemMessage("warning", "Vault 잠금 해제가 필요합니다.");
             window.setTimeout(function () {
                 window.location.href = sharedItemsUnlockUrl();
@@ -111,10 +157,19 @@
             return;
         }
 
+        if (!hasDeviceSecret()) {
+            if (input) input.value = "";
+            showVaultRestoreSection();
+            showSharedItemMessage("error", DEVICE_SECRET_MISSING_MESSAGE);
+            return;
+        }
+
         setBusy(button, true);
         try {
-            showSharedItemMessage("info", "VaultKey를 복원하고 있습니다.");
-            const keyMaterial = await APIClient.get("/api/vault/key-material");
+            showSharedItemMessage("info", "VaultKey와 공유 private key를 복원하고 있습니다.");
+            const keyMaterial = await APIClient.get("/api/vault/key-material", {
+                redirectOnAuthError: false
+            });
             const wrappingKey = await VaultCrypto.deriveWrappingKey(
                 masterPassword,
                 keyMaterial.saltWrapBase64,
@@ -125,9 +180,10 @@
                 keyMaterial.wrappedVaultKeyBase64,
                 wrappingKey
             );
+            await SharedItemCrypto.loadMySharePrivateKey();
             input.value = "";
-            byId("shared-vault-open-section")?.classList.add("hidden");
-            showSharedItemMessage("success", "VaultKey를 복원했습니다.");
+            showSharedContent();
+            showSharedItemMessage("success", "VaultKey와 공유 private key를 복원했습니다.");
 
             const detailId = new URLSearchParams(window.location.search).get("id");
             if (window.location.pathname === "/shared-item-detail.html" && detailId) {
@@ -137,7 +193,21 @@
             }
         } catch (error) {
             if (input) input.value = "";
-            handleError(error, "Master Password가 올바르지 않거나 VaultKey를 복원할 수 없습니다.");
+            window.__zkvVaultKey = null;
+            window.__zkvSharePrivateKey = null;
+            showVaultRestoreSection();
+
+            if (SharedItemCrypto.isShareKeyRequired(error)) {
+                showSharedItemMessage("warning", "공유 private key가 없어 공유 item 복호화를 진행할 수 없습니다. 공유 키를 먼저 생성해주세요.");
+                return;
+            }
+
+            if (error?.status === 403) {
+                handleError(error, RESTORE_FAILURE_MESSAGE);
+                return;
+            }
+
+            showSharedItemMessage("error", RESTORE_FAILURE_MESSAGE);
         } finally {
             setBusy(button, false);
         }
@@ -206,13 +276,14 @@
     async function loadSharedItems() {
         try {
             if (!await requireVaultAuthOrRedirect()) return;
-            showSharedItemMessage("info", "공유 저장소 목록을 불러오고 있습니다.");
-            const items = await APIClient.get("/api/shared-items");
-            if (!window.__zkvVaultKey) {
-                showVaultRestoreSection();
-                showSharedItemMessage("warning", "공유 item 제목을 복호화하려면 VaultKey 복원이 필요합니다.");
+            if (!isSharedCryptoReady()) {
+                showLockedSection("공유 item을 보려면 VaultKey와 공유 private key 복원이 필요합니다.");
                 return;
             }
+
+            showSharedContent();
+            showSharedItemMessage("info", "공유 저장소 목록을 불러오고 있습니다.");
+            const items = await APIClient.get("/api/shared-items");
             await renderSharedItemList(items);
             showSharedItemMessage("success", "공유 저장소 목록을 불러왔습니다.");
         } catch (error) {
@@ -235,6 +306,11 @@
         setBusy(byId("create-shared-item-btn"), true);
         try {
             if (!await requireVaultAuthOrRedirect()) return;
+            if (!isSharedCryptoReady()) {
+                showLockedSection("공유 item을 만들려면 VaultKey와 공유 private key 복원이 필요합니다.");
+                return;
+            }
+
             showSharedItemMessage("info", "공유 item을 암호화해 생성하고 있습니다.");
             const payload = await SharedItemCrypto.createOwnerSharedItemPayload(title, content);
             const response = await APIClient.post("/api/shared-items", payload);
@@ -281,6 +357,12 @@
     async function loadSharedItemDetail(sharedItemId) {
         try {
             if (!await requireVaultAuthOrRedirect()) return;
+            if (!isSharedCryptoReady()) {
+                showLockedSection("공유 item 상세를 보려면 VaultKey와 공유 private key 복원이 필요합니다.");
+                return;
+            }
+
+            showSharedContent();
             showSharedItemMessage("info", "공유 item 상세를 불러오고 있습니다.");
             const item = await APIClient.get("/api/shared-items/" + encodeURIComponent(sharedItemId));
             const decrypted = await SharedItemCrypto.decryptSharedItem(item, { includeContent: true });
@@ -592,6 +674,8 @@
     }
 
     function bindListPage() {
+        showLockedSection("공유 item을 보려면 VaultKey와 공유 private key 복원이 필요합니다.");
+        byId("show-shared-vault-restore-btn")?.addEventListener("click", showVaultRestoreSection);
         byId("restore-shared-vault-key-btn")?.addEventListener("click", restoreVaultKeyFromPassword);
         byId("create-shared-item-btn")?.addEventListener("click", createSharedItem);
         loadSharedItems();
@@ -604,6 +688,8 @@
             return;
         }
 
+        showLockedSection("공유 item 상세를 보려면 VaultKey와 공유 private key 복원이 필요합니다.");
+        byId("show-shared-vault-restore-btn")?.addEventListener("click", showVaultRestoreSection);
         byId("restore-shared-vault-key-btn")?.addEventListener("click", restoreVaultKeyFromPassword);
         byId("update-shared-item-btn")?.addEventListener("click", function () {
             updateSharedItem(sharedItemId);

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Shared Item Detail - Zero Knowledge Vault</title>
     <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/argon2-browser/dist/argon2-bundled.min.js"></script>
 </head>
 <body class="page share-screen">
 <div class="app-layout">
@@ -18,6 +19,12 @@
 
             <div id="shared-item-message" class="message message-info">공유 item을 불러오고 있습니다.</div>
 
+            <section class="home-card" id="shared-vault-locked-section">
+                <h2 class="home-card-title">공유 item 잠금</h2>
+                <p class="muted">공유 item 상세를 보거나 관리하려면 VaultKey와 공유 private key를 먼저 복원해야 합니다.</p>
+                <button type="button" class="button button-primary storage-button" id="show-shared-vault-restore-btn">VaultKey 복원</button>
+            </section>
+
             <section class="home-card hidden" id="shared-vault-open-section">
                 <h2 class="home-card-title">VaultKey 복원</h2>
                 <p class="muted">공유 item 복호화에는 Vault에 보관된 공유 private key 복호화가 필요합니다.</p>
@@ -28,7 +35,7 @@
                 <button type="button" class="button button-primary storage-button" id="restore-shared-vault-key-btn">VaultKey 복원</button>
             </section>
 
-            <section class="home-card">
+            <section class="home-card hidden" id="shared-detail-section">
                 <h2 id="detail-title" class="home-card-title">-</h2>
                 <p id="detail-meta" class="muted"></p>
                 <pre id="detail-content" class="shared-item-content"></pre>
