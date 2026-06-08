@@ -54,22 +54,22 @@
                 <h2 class="home-card-title">빠른 시작</h2>
                 <div class="action-grid">
                     <button type="button" class="action-card" id="quick-personal-storage-btn">
-                        <span class="action-icon">개</span>
+                        <span class="action-icon action-icon-vault" aria-hidden="true">🔒</span>
                         <strong>개인 금고</strong>
                         <span>나만 보는 비밀</span>
                     </button>
                     <button type="button" class="action-card" id="shared-storage-btn">
-                        <span class="action-icon">공</span>
+                        <span class="action-icon action-icon-share" aria-hidden="true">👥</span>
                         <strong>공유 금고</strong>
                         <span>함께 여는 비밀</span>
                     </button>
                     <button type="button" class="action-card" data-ready-message="안전한 비밀번호 생성기는 준비 중이에요.">
-                        <span class="action-icon">키</span>
+                        <span class="action-icon action-icon-key" aria-hidden="true">🔑</span>
                         <strong>비밀번호 생성기</strong>
                         <span>강한 비밀번호 만들기</span>
                     </button>
                     <button type="button" class="action-card" data-ready-message="보안 도구는 곧 사용할 수 있어요.">
-                        <span class="action-icon">보</span>
+                        <span class="action-icon action-icon-security" aria-hidden="true">🛡️</span>
                         <strong>보안 도구</strong>
                         <span>계정 안전 점검</span>
                     </button>
@@ -77,18 +77,18 @@
             </section>
 
             <section class="app-card warning-card">
-                <h2 class="home-card-title">오늘의 보안 팁</h2>
-                <p class="muted">주기적으로 비밀번호를 변경하고 이중 인증을 사용하면 더 안전해요.</p>
+                <h2 class="home-card-title">보안 뉴스</h2>
+                <p class="muted">최신 보안 소식과 안전한 비밀번호 관리 방법을 확인해보세요.</p>
             </section>
 
             <button type="button" class="button button-danger home-logout-button" onclick="logout()">로그아웃</button>
 
         </div>
         <nav class="bottom-nav" aria-label="주요 메뉴">
-            <a class="active" href="/home.html"><span class="nav-icon">홈</span><span class="nav-label">홈</span></a>
-            <a href="/vault.html"><span class="nav-icon">개</span><span class="nav-label">개인 금고</span></a>
-            <a href="/share.html"><span class="nav-icon">공</span><span class="nav-label">공유 금고</span></a>
-            <button type="button" data-ready-message="설정 화면은 준비 중이에요."><span class="nav-icon">설</span><span class="nav-label">설정</span></button>
+            <a class="nav-item active" href="/home.html"><span class="nav-icon nav-icon-home" aria-hidden="true">🏠</span><span class="nav-label">홈</span></a>
+            <a class="nav-item" href="/vault.html"><span class="nav-icon nav-icon-vault" aria-hidden="true">🔒</span><span class="nav-label">개인 금고</span></a>
+            <a class="nav-item" href="/share.html"><span class="nav-icon nav-icon-share" aria-hidden="true">👥</span><span class="nav-label">공유 금고</span></a>
+            <button type="button" class="nav-item" data-ready-message="설정 화면은 준비 중이에요."><span class="nav-icon nav-icon-settings" aria-hidden="true">⚙️</span><span class="nav-label">설정</span></button>
         </nav>
     </main>
 </div>
