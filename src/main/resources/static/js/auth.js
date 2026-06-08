@@ -22,7 +22,6 @@ function clearSensitiveBrowserState() {
     }
 
     const sensitiveKeys = [
-        "zkv_device_secret_v1",
         "zkv_vault_key",
         "zkv_vault_key_v1",
         "zkv_srp_session",
