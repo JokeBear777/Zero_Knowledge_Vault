@@ -30,11 +30,11 @@ public class VaultItem {
     private String itemId;
 
     @Lob
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "LONGBLOB")
     private byte[] itemKeyCipher;
 
     @Lob
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "LONGBLOB")
     private byte[] itemCipher;
 
     @Column(nullable = false)

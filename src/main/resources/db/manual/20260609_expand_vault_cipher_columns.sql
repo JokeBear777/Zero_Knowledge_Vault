@@ -1,0 +1,6 @@
+ALTER TABLE vault_index
+    MODIFY COLUMN index_cipher LONGBLOB NOT NULL;
+
+ALTER TABLE vault_item
+    MODIFY COLUMN item_key_cipher LONGBLOB NOT NULL,
+    MODIFY COLUMN item_cipher LONGBLOB NOT NULL;

@@ -19,7 +19,7 @@ public class VaultIndex {
     private Long memberId;
 
     @Lob
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "LONGBLOB")
     private byte[] indexCipher;
 
     @Column(nullable = false, length = 32)
