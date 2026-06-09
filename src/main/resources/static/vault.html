@@ -12,33 +12,56 @@
     <div class="app-content">
         <section class="app-card hero-card vault-hero-card">
             <div class="vault-topbar">
-                <div class="vault-session-row">
-                    <span id="vault-session-timer" class="vault-session-timer">남은 시간 --:--</span>
-                    <span id="vault-status" class="vault-open-status status-warning">
+                <div class="vault-status-row">
+                    <span id="vault-session-timer" class="vault-session-timer"><span aria-hidden="true">🕒</span> 남은 시간 --:--</span>
+                    <span id="vault-status" class="vault-lock-status vault-open-status status-warning">
                         <span aria-hidden="true">🔒</span>
                         상태 확인 중
                     </span>
                 </div>
-                <span class="step-badge">개인 공간</span>
-                <h1 class="brand">개인 금고</h1>
-                <p class="subtitle">마스터 비밀번호로 보호되는 나만의 비밀 공간</p>
+                <div class="vault-hero-intro">
+                    <div class="vault-hero-copy">
+                        <span class="step-badge">개인 공간</span>
+                        <h1 class="brand">개인 금고</h1>
+                        <p class="subtitle">마스터 비밀번호로 보호되는<br>나만의 비밀 공간</p>
+                    </div>
+                    <div class="vault-hero-visual" aria-hidden="true">
+                        <div class="vault-safe-art">
+                            <span class="vault-safe-body">▣</span>
+                            <span class="vault-safe-dial">✺</span>
+                            <span class="vault-safe-leaf">◜</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div id="message" class="message">개인 금고 상태를 확인하고 있어요.</div>
 
-            <section id="openVaultSection" class="section hidden">
-                <h2 class="section-title">금고를 열어볼까요?</h2>
-                <p class="muted">마스터 비밀번호를 입력하면 금고 열쇠를 복원해요.</p>
+            <section id="openVaultSection" class="vault-unlock-card hidden">
+                <div class="vault-unlock-header">
+                    <span class="vault-unlock-icon" aria-hidden="true">🛡️</span>
+                    <div>
+                        <h2 class="section-title">금고를 열어볼까요?</h2>
+                        <p class="muted">마스터 비밀번호를 입력하면<br>금고 열쇠를 복원해요.</p>
+                    </div>
+                </div>
 
                 <div class="form-group">
                     <label for="openMasterPassword">마스터 비밀번호</label>
-                    <input class="input" type="password" id="openMasterPassword" autocomplete="current-password"
-                           placeholder="마스터 비밀번호를 입력하세요">
+                    <div class="vault-password-field">
+                        <input class="input" type="password" id="openMasterPassword" autocomplete="current-password"
+                               placeholder="마스터 비밀번호를 입력하세요">
+                        <button type="button" class="vault-password-visibility" aria-label="비밀번호 보기">◉</button>
+                    </div>
                 </div>
 
-                <div class="button-row">
+                <div class="button-row vault-unlock-actions">
                     <button type="button" class="button button-primary" id="openVaultBtn">금고 열기</button>
-                    <a class="button button-secondary" href="/home.html">홈</a>
+                    <div class="vault-divider" aria-hidden="true"><span>또는</span></div>
+                    <a class="button button-secondary vault-home-button" href="/home.html">
+                        <span class="vault-home-icon" aria-hidden="true">⌂</span>
+                        <span>홈으로 이동</span>
+                    </a>
                 </div>
             </section>
 
@@ -234,7 +257,9 @@
         openVaultSection.classList.toggle("hidden", opened);
         vaultContentSection.classList.toggle("hidden", !opened);
         if (vaultStatus) {
-            vaultStatus.className = opened ? "vault-open-status status-success" : "vault-open-status status-warning";
+            vaultStatus.className = opened
+                ? "vault-lock-status vault-open-status status-success"
+                : "vault-lock-status vault-open-status status-warning";
             const statusIcon = document.createElement("span");
             statusIcon.setAttribute("aria-hidden", "true");
             statusIcon.textContent = opened ? "🔓" : "🔒";
@@ -271,19 +296,29 @@
         if (!vaultSessionTimer) return;
 
         if (!state.vaultSessionEndsAt) {
-            vaultSessionTimer.textContent = "남은 시간 --:--";
+            vaultSessionTimer.replaceChildren(createTimerIcon(), document.createTextNode(" 남은 시간 --:--"));
             vaultSessionTimer.classList.remove("is-ending");
             return;
         }
 
         const remainingMs = state.vaultSessionEndsAt - Date.now();
-        vaultSessionTimer.textContent = "남은 시간 " + formatRemainingTime(remainingMs);
+        vaultSessionTimer.replaceChildren(
+            createTimerIcon(),
+            document.createTextNode(" 남은 시간 " + formatRemainingTime(remainingMs))
+        );
         vaultSessionTimer.classList.toggle("is-ending", remainingMs <= 60 * 1000);
 
         if (remainingMs <= 0 && state.vaultSessionTimerId) {
             clearInterval(state.vaultSessionTimerId);
             state.vaultSessionTimerId = null;
         }
+    }
+
+    function createTimerIcon() {
+        const timerIcon = document.createElement("span");
+        timerIcon.setAttribute("aria-hidden", "true");
+        timerIcon.textContent = "🕒";
+        return timerIcon;
     }
 
     function normalizeIndex(indexDocument) {
@@ -813,7 +848,7 @@
                 startVaultSessionTimer();
             }
             setVaultOpened(false);
-            setMessage("금고를 열려면 마스터 비밀번호를 입력해주세요.");
+            setMessage("");
         } catch (error) {
             setMessage(error.userMessage || "개인 금고를 불러오지 못했어요.", error.isConflict ? "warning" : "error");
         }
