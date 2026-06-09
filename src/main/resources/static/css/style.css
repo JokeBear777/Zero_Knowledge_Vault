@@ -1411,6 +1411,241 @@ button:disabled {
     letter-spacing: 0;
 }
 
+.share-screen .app-content {
+    padding-bottom: 18px;
+}
+
+.share-screen .shared-hero-card {
+    display: grid;
+    align-content: start;
+    gap: 18px;
+    min-height: 100%;
+    margin-bottom: 0;
+    padding: 22px 22px 26px;
+    border-radius: 24px;
+    background:
+        radial-gradient(circle at 82% 24%, rgba(221, 247, 238, 0.82), transparent 22%),
+        linear-gradient(180deg, #ffffff 0%, #f8fbf9 100%);
+}
+
+.share-screen .shared-topbar {
+    gap: 34px;
+}
+
+.share-screen .shared-space-label {
+    min-width: 0;
+    flex: 0 1 auto;
+    padding: 8px 12px;
+    border-radius: 14px;
+    color: #25332f;
+}
+
+.share-screen .shared-hero-intro {
+    grid-template-columns: minmax(0, 1fr) 118px;
+}
+
+.share-screen .shared-hero-visual {
+    width: 118px;
+    height: 118px;
+}
+
+.share-screen .shared-safe-art {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 78px;
+    height: 78px;
+    border-radius: 22px;
+    background: linear-gradient(145deg, #cbe6db 0%, #77aa93 100%);
+    box-shadow: 0 14px 28px rgba(47, 125, 104, 0.2);
+}
+
+.share-screen .shared-safe-body {
+    font-size: 30px;
+}
+
+.share-screen .shared-safe-lock {
+    position: absolute;
+    right: -12px;
+    bottom: -8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    background: #ffffff;
+    box-shadow: 0 8px 18px rgba(31, 58, 50, 0.12);
+    font-size: 17px;
+}
+
+.share-screen .shared-top-actions {
+    margin: -6px 0 0;
+}
+
+.share-screen .shared-top-actions .more-button {
+    font-size: 24px;
+    line-height: 1;
+}
+
+.share-screen .shared-inline-message {
+    margin: 0;
+    padding: 9px 12px;
+    border-radius: 14px;
+    font-size: 12.5px;
+    line-height: 1.35;
+}
+
+.share-screen #shared-item-message {
+    margin: 0;
+    padding: 9px 12px;
+    border-radius: 14px;
+    font-size: 12.5px;
+    line-height: 1.35;
+}
+
+.share-screen .shared-unlock-card {
+    margin-top: 0;
+}
+
+.share-screen .shared-unlock-card .storage-button {
+    min-height: 60px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #247b5b 0%, #1d6f54 100%);
+    border-color: transparent;
+    font-size: 17px;
+}
+
+.share-screen .shared-main {
+    display: grid;
+    gap: 16px;
+}
+
+.share-screen .shared-search-panel {
+    grid-template-columns: minmax(0, 1fr) 96px;
+}
+
+.share-screen .shared-add-card {
+    color: var(--text);
+}
+
+.share-screen .shared-list-section {
+    display: grid;
+    gap: 12px;
+}
+
+.share-screen .shared-vault-list {
+    display: grid;
+    gap: 12px;
+}
+
+.share-screen .shared-vault-card {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) auto auto;
+    gap: 12px;
+    align-items: center;
+    min-height: 78px;
+    padding: 14px;
+    border: 1px solid rgba(220, 233, 228, 0.96);
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 10px 24px rgba(31, 58, 50, 0.08);
+    cursor: pointer;
+}
+
+.share-screen .shared-vault-card:focus {
+    outline: none;
+    border-color: rgba(47, 125, 104, 0.65);
+    box-shadow: 0 0 0 4px rgba(47, 125, 104, 0.12), var(--soft-shadow);
+}
+
+.share-screen .shared-vault-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    background: var(--surface-mint);
+    color: var(--primary-dark);
+    font-size: 14px;
+    font-weight: 900;
+    overflow: hidden;
+}
+
+.share-screen .shared-vault-main {
+    min-width: 0;
+}
+
+.share-screen .shared-vault-title {
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 900;
+    line-height: 1.28;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.share-screen .shared-vault-preview,
+.share-screen .updated-at {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+.share-screen .shared-vault-preview {
+    margin-top: 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.share-screen .shared-vault-meta {
+    display: grid;
+    justify-items: end;
+    gap: 5px;
+    white-space: nowrap;
+}
+
+.share-screen .role-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.share-screen .role-badge.owner {
+    background: linear-gradient(135deg, var(--surface-yellow), var(--surface-mint));
+    color: var(--warning);
+}
+
+.share-screen .role-badge.participant {
+    background: var(--blue-bg);
+    color: var(--blue);
+}
+
+.share-screen .chevron {
+    color: var(--muted);
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.share-screen .shared-invite-note {
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: var(--surface-soft);
+    color: var(--muted);
+    font-size: 12.5px;
+    line-height: 1.45;
+}
+
 .secret-inline-action {
     min-height: 32px;
     padding: 6px 10px;
@@ -1784,5 +2019,48 @@ code {
         width: 62px;
         height: 62px;
         font-size: 28px;
+    }
+
+    .share-screen .app-content {
+        padding: 14px 12px 14px;
+    }
+
+    .share-screen .shared-hero-card {
+        padding: 18px 18px 24px;
+    }
+
+    .share-screen .shared-topbar {
+        gap: 30px;
+    }
+
+    .share-screen .shared-hero-intro {
+        grid-template-columns: minmax(0, 1fr) 104px;
+        gap: 10px;
+    }
+
+    .share-screen .shared-hero-visual {
+        width: 104px;
+        height: 104px;
+    }
+
+    .share-screen .shared-safe-art {
+        width: 68px;
+        height: 68px;
+    }
+
+    .share-screen .shared-safe-body {
+        font-size: 26px;
+    }
+
+    .share-screen .shared-vault-card {
+        grid-template-columns: 42px minmax(0, 1fr) auto;
+    }
+
+    .share-screen .shared-vault-card .chevron {
+        display: none;
+    }
+
+    .share-screen .shared-vault-meta {
+        max-width: 84px;
     }
 }
