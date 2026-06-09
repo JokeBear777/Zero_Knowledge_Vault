@@ -3,33 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Shared Invite - Zero Knowledge Vault</title>
+    <title>공유 금고 초대 - Zero Knowledge Vault</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body class="page share-screen">
 <div class="app-layout">
     <main class="mobile-shell">
-        <div class="mobile-frame">
-            <header class="screen-header">
-                <span class="step-badge">Invite</span>
-                <h1 class="app-title">공유 item 초대</h1>
-                <p class="app-subtitle">초대 링크는 참여 요청만 생성합니다. Owner 승인 후 접근할 수 있습니다.</p>
+        <div class="mobile-frame app-content">
+            <header class="app-header">
+                <div class="app-header-main">
+                    <div class="brand-mark"><span class="brand-dot">초</span> 공유 금고 초대</div>
+                    <h1 class="app-title">공유 금고 초대</h1>
+                    <p class="app-subtitle">이 링크로 공유 비밀 참여를 요청할 수 있어요.</p>
+                </div>
+                <a class="icon-button" href="/home.html" aria-label="홈으로 이동">홈</a>
             </header>
 
-            <div id="shared-invite-message" class="message message-info">초대 링크를 확인하고 있습니다.</div>
+            <div id="shared-invite-message" class="message message-info">초대 링크를 확인하고 있어요.</div>
 
-            <section class="home-card">
-                <h2 class="home-card-title">참여 요청</h2>
-                <p class="muted">공유키가 없는 계정은 먼저 공유키를 생성해야 승인 후 item 키를 받을 수 있습니다.</p>
-                <button type="button" class="button button-primary storage-button" id="create-join-request-btn">참여 요청 보내기</button>
-                <a class="button button-secondary storage-button hidden" id="unlock-for-invite" href="/unlock.html?next=/shared-items.html">Vault 잠금 해제</a>
+            <section class="app-card hero-card">
+                <div class="card-header-row">
+                    <div>
+                        <h2 class="home-card-title">참여 요청</h2>
+                        <p class="muted">owner가 승인하면 공유 금고에서 확인할 수 있어요.</p>
+                    </div>
+                    <span class="hero-emoji">공유</span>
+                </div>
+                <ul class="soft-list">
+                    <li>요청을 보내려면 먼저 로그인과 금고 열기가 필요해요.</li>
+                    <li>이미 참여 중이거나 만료된 링크라면 안내 메시지를 보여드려요.</li>
+                </ul>
+                <div class="button-row">
+                    <button type="button" class="button button-primary storage-button" id="create-join-request-btn">참여 요청 보내기</button>
+                    <a class="button button-secondary storage-button hidden" id="unlock-for-invite" href="/unlock.html?next=/shared-items.html">금고 열기</a>
+                </div>
             </section>
 
-            <div class="bottom-actions">
-                <a class="button button-secondary" href="/share.html">공유키 관리</a>
-                <a class="button button-secondary" href="/home.html">Home</a>
-            </div>
         </div>
+        <nav class="bottom-nav" aria-label="주요 메뉴">
+            <a class="nav-item" href="/home.html"><span class="nav-icon nav-icon-home" aria-hidden="true">🏠</span><span class="nav-label">홈</span></a>
+            <a class="nav-item" href="/vault.html"><span class="nav-icon nav-icon-vault" aria-hidden="true">🔒</span><span class="nav-label">개인 금고</span></a>
+            <a class="nav-item active" href="/share.html"><span class="nav-icon nav-icon-share" aria-hidden="true">👥</span><span class="nav-label">공유 금고</span></a>
+            <button type="button" class="nav-item" disabled><span class="nav-icon nav-icon-settings" aria-hidden="true">⚙️</span><span class="nav-label">설정</span></button>
+        </nav>
     </main>
 </div>
 

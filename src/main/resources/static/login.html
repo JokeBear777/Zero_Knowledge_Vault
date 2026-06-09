@@ -3,25 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Login - Zero Knowledge Vault</title>
+    <title>로그인 - Zero Knowledge Vault</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body class="page">
 <main class="page-shell">
-    <section class="card">
-        <span class="step-badge">Account</span>
+    <section class="app-card hero-card">
+        <span class="step-badge">계정</span>
         <h1 class="brand">계정 로그인</h1>
-        <p class="subtitle">로그인 후 Vault 접근을 위해 Master Password 확인이 필요합니다.</p>
+        <p class="subtitle">로그인 후 금고를 열 때 마스터 비밀번호 확인이 필요해요.</p>
 
         <a class="button button-primary" href="/oauth2/authorization/naver">네이버로 로그인</a>
 
         <div class="divider"></div>
         <ol class="flow-list">
-            <li>OAuth2 Login</li>
-            <li>PRE_AUTH JWT</li>
-            <li>Master Password 기반 보안 확인</li>
-            <li>민감정보 영역 잠금 해제</li>
-            <li>Vault 접근</li>
+            <li>계정 로그인</li>
+            <li>마스터 비밀번호 확인</li>
+            <li>금고 열쇠 복원</li>
+            <li>개인 금고 접근</li>
         </ol>
     </section>
 </main>

@@ -3,41 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Vault - Zero Knowledge Vault</title>
+    <title>개인 금고 - Zero Knowledge Vault</title>
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/argon2-browser/dist/argon2-bundled.min.js"></script>
 </head>
-<body class="page">
-<main class="page-shell-wide">
-    <section class="card-wide">
+<body class="page vault-screen">
+<main class="page-shell-wide app-shell">
+    <div class="app-content">
+    <section class="app-card hero-card">
         <div class="toolbar">
             <div>
-                <span class="step-badge">Vault</span>
-                <h1 class="brand">Vault</h1>
-                <p class="subtitle">민감정보 영역은 별도 잠금 해제가 필요합니다.</p>
+                <span class="step-badge">개인 금고</span>
+                <h1 class="brand">개인 금고</h1>
+                <p class="subtitle">마스터 비밀번호로 연 뒤에만 비밀을 확인할 수 있어요.</p>
             </div>
             <span id="vault-status" class="status-badge status-warning">상태 확인 중</span>
         </div>
 
         <div class="message message-warning security-note">
-            이 페이지를 벗어나거나 일정 시간이 지나면 다시 잠금 해제가 필요할 수 있습니다.
+            이 페이지를 벗어나거나 일정 시간이 지나면 다시 금고 열기가 필요할 수 있어요.
         </div>
 
-        <div id="message" class="message">Vault 상태를 확인하고 있습니다.</div>
+        <div id="message" class="message">개인 금고 상태를 확인하고 있어요.</div>
 
         <section id="openVaultSection" class="section hidden">
-            <h2 class="section-title">Vault 열기</h2>
-            <p class="muted">Master Password를 입력해 개인 Vault 접근을 확인합니다.</p>
+            <h2 class="section-title">금고를 열어볼까요?</h2>
+            <p class="muted">마스터 비밀번호를 입력하면 금고 열쇠를 복원해요.</p>
 
             <div class="form-group">
-                <label for="openMasterPassword">Master Password</label>
+                <label for="openMasterPassword">마스터 비밀번호</label>
                 <input class="input" type="password" id="openMasterPassword" autocomplete="current-password"
-                       placeholder="Master Password를 입력하세요">
+                       placeholder="마스터 비밀번호를 입력하세요">
             </div>
 
             <div class="button-row">
-                <button type="button" class="button button-primary" id="openVaultBtn">Vault 열기</button>
-                <a class="button button-secondary" href="/home.html">Home</a>
+                <button type="button" class="button button-primary" id="openVaultBtn">금고 열기</button>
+                <a class="button button-secondary" href="/home.html">홈</a>
             </div>
         </section>
 
@@ -45,8 +46,8 @@
             <section class="section">
                 <div class="toolbar">
                     <div>
-                        <h2 class="section-title">새 항목 추가</h2>
-                        <p class="muted">제목과 내용을 입력해 새 비밀 항목을 저장합니다.</p>
+                        <h2 class="section-title">새 비밀 추가</h2>
+                        <p class="muted">제목과 내용을 입력하면 브라우저에서 암호화해 저장해요.</p>
                     </div>
                     <button type="button" class="button button-secondary" id="refreshBtn">새로고침</button>
                 </div>
@@ -59,7 +60,7 @@
 
                     <div class="form-group">
                         <label for="itemContent">내용</label>
-                        <textarea id="itemContent" placeholder="저장할 비밀 내용을 입력하세요"></textarea>
+                        <textarea id="itemContent" placeholder="저장할 비밀 내용을 입력하세요."></textarea>
                     </div>
 
                     <div class="button-row">
@@ -70,19 +71,22 @@
             </section>
 
             <section class="section">
-                <h2 class="section-title">저장된 항목</h2>
+                <h2 class="section-title">저장된 비밀</h2>
                 <div id="emptyState" class="empty-state hidden">
-                    아직 저장된 항목이 없습니다. 첫 번째 항목을 추가해보세요.
+                    아직 저장된 비밀이 없어요. 첫 번째 비밀을 추가해보세요.
                 </div>
                 <div id="itemList" class="item-list"></div>
             </section>
         </section>
 
-        <div class="bottom-actions">
-            <a class="button button-secondary" href="/home.html">Home</a>
-            <button type="button" class="button button-danger" onclick="logout()">로그아웃</button>
-        </div>
     </section>
+    </div>
+    <nav class="bottom-nav" aria-label="주요 메뉴">
+        <a class="nav-item" href="/home.html"><span class="nav-icon nav-icon-home" aria-hidden="true">🏠</span><span class="nav-label">홈</span></a>
+        <a class="nav-item active" href="/vault.html"><span class="nav-icon nav-icon-vault" aria-hidden="true">🔒</span><span class="nav-label">개인 금고</span></a>
+        <a class="nav-item" href="/share.html"><span class="nav-icon nav-icon-share" aria-hidden="true">👥</span><span class="nav-label">공유 금고</span></a>
+        <button type="button" class="nav-item" disabled><span class="nav-icon nav-icon-settings" aria-hidden="true">⚙️</span><span class="nav-label">설정</span></button>
+    </nav>
 </main>
 
 <script src="/js/storageCleaner.js"></script>
@@ -124,7 +128,7 @@
         const status = document.getElementById("vault-status");
         if (status) {
             status.className = opened ? "status-badge status-success" : "status-badge status-warning";
-            status.textContent = opened ? "상태: 열림" : "상태: 잠김";
+            status.textContent = opened ? "열려 있어요" : "잠겨 있어요";
         }
     }
 
@@ -238,12 +242,12 @@
         const masterPassword = openMasterPasswordInput.value;
 
         if (!masterPassword) {
-            setMessage("Master Password를 입력해주세요.", "error");
+            setMessage("마스터 비밀번호를 입력해주세요.", "error");
             return;
         }
 
         openVaultBtn.disabled = true;
-        setMessage("개인 Vault를 여는 중입니다.");
+        setMessage("개인 금고를 여는 중이에요.");
 
         try {
             const keyMaterial = await APIClient.get("/api/vault/key-material");
@@ -264,7 +268,7 @@
         } catch (error) {
             state.vaultKey = null;
             openMasterPasswordInput.value = "";
-            const fallback = "Master Password가 올바르지 않거나 Vault 데이터 상태를 확인할 수 없습니다.";
+            const fallback = "마스터 비밀번호가 올바르지 않거나 금고 상태를 확인할 수 없어요.";
             setMessage(error.userMessage || fallback, error.isConflict ? "warning" : "error");
         } finally {
             openVaultBtn.disabled = false;
@@ -273,11 +277,11 @@
 
     async function loadIndex() {
         if (!state.vaultKey) {
-            setMessage("Vault를 먼저 열어주세요.", "warning");
+            setMessage("금고를 먼저 열어주세요.", "warning");
             return;
         }
 
-        setMessage("Vault 항목을 복호화하고 있습니다.");
+        setMessage("개인 금고 목록을 여는 중이에요.");
 
         try {
             const data = await APIClient.get("/api/vault/index");
@@ -285,21 +289,21 @@
             state.indexVersion = data.version;
             state.items = normalizeIndex(indexDocument);
             renderItems();
-            setMessage("Vault를 열었습니다.", "success");
+            setMessage("개인 금고가 열렸어요.", "success");
         } catch (error) {
-            const fallback = "Master Password가 올바르지 않거나 Vault 데이터 상태를 확인할 수 없습니다.";
+            const fallback = "마스터 비밀번호가 올바르지 않거나 금고 상태를 확인할 수 없어요.";
             setMessage(error.userMessage || fallback, error.isConflict ? "warning" : "error");
         }
     }
 
     async function openItem(itemId) {
         if (!state.vaultKey) {
-            setMessage("Vault를 먼저 열어주세요.", "warning");
+            setMessage("금고를 먼저 열어주세요.", "warning");
             return;
         }
 
         try {
-            setMessage("항목을 복호화하고 있습니다.");
+            setMessage("비밀을 여는 중이에요.");
             const data = await APIClient.get("/api/vault/item/" + encodeURIComponent(itemId));
             const itemKey = await VaultCrypto.unwrapVaultKey(data.itemKeyCipherBase64, state.vaultKey);
             const itemDocument = await VaultCrypto.decryptJson(itemKey, data.itemCipherBase64);
@@ -310,9 +314,9 @@
             contentInput.value = itemDocument.content || "";
             saveBtn.textContent = "수정 저장";
             cancelEditBtn.classList.remove("hidden");
-            setMessage("항목을 열었습니다.", "success");
+            setMessage("비밀을 열었어요.", "success");
         } catch (error) {
-            const fallback = "항목을 열 수 없습니다. Master Password 또는 Vault 데이터 상태를 확인해주세요.";
+            const fallback = "이 항목을 열 수 없어요. 금고 열쇠를 다시 확인해주세요.";
             setMessage(error.userMessage || fallback, error.isConflict ? "warning" : "error");
         }
     }
@@ -321,7 +325,7 @@
         event.preventDefault();
 
         if (!state.vaultKey) {
-            setMessage("Vault를 먼저 열어주세요.", "warning");
+            setMessage("금고를 먼저 열어주세요.", "warning");
             return;
         }
 
@@ -371,9 +375,9 @@
 
             resetForm();
             await loadIndex();
-            setMessage("저장되었습니다.", "success");
+            setMessage("저장했어요.", "success");
         } catch (error) {
-            setMessage(error.userMessage || "저장에 실패했습니다.", error.isConflict ? "warning" : "error");
+            setMessage(error.userMessage || "저장하지 못했어요.", error.isConflict ? "warning" : "error");
         } finally {
             saveBtn.disabled = false;
         }
@@ -381,16 +385,16 @@
 
     async function deleteItem(itemId) {
         if (!state.vaultKey) {
-            setMessage("Vault를 먼저 열어주세요.", "warning");
+            setMessage("금고를 먼저 열어주세요.", "warning");
             return;
         }
 
-        if (!confirm("이 항목을 삭제할까요?")) {
+        if (!confirm("이 비밀을 삭제할까요?")) {
             return;
         }
 
         try {
-            setMessage("항목을 삭제하고 있습니다.");
+            setMessage("비밀을 삭제하고 있어요.");
             const currentItem = await APIClient.get("/api/vault/item/" + encodeURIComponent(itemId));
             const nextItems = state.items.filter(item => item.itemId !== itemId);
             const indexPayload = await buildIndexPayload(nextItems);
@@ -408,9 +412,9 @@
             }
 
             await loadIndex();
-            setMessage("삭제되었습니다.", "success");
+            setMessage("삭제했어요.", "success");
         } catch (error) {
-            setMessage(error.userMessage || "삭제에 실패했습니다.", error.isConflict ? "warning" : "error");
+            setMessage(error.userMessage || "삭제하지 못했어요.", error.isConflict ? "warning" : "error");
         }
     }
 
@@ -446,9 +450,9 @@
             }
 
             setVaultOpened(false);
-            setMessage("Vault를 열려면 Master Password를 입력해주세요.");
+            setMessage("금고를 열려면 마스터 비밀번호를 입력해주세요.");
         } catch (error) {
-            setMessage(error.userMessage || "Vault를 불러오지 못했습니다.", error.isConflict ? "warning" : "error");
+            setMessage(error.userMessage || "개인 금고를 불러오지 못했어요.", error.isConflict ? "warning" : "error");
         }
     }
 

@@ -3,35 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Master Password Setup - Zero Knowledge Vault</title>
+    <title>마스터 비밀번호 설정 - Zero Knowledge Vault</title>
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/argon2-browser/dist/argon2-bundled.min.js"></script>
     <script src="/js/apiClient.js"></script>
 </head>
-<body class="page">
+<body class="page setup-screen">
 <main class="page-shell">
-    <section class="card">
-        <span class="step-badge">Security Setup</span>
-        <h1 class="brand">Master Password 설정</h1>
-        <p class="subtitle">서버에는 Master Password 평문이 전송되지 않습니다.</p>
+    <section class="app-card hero-card">
+        <span class="step-badge">처음 설정</span>
+        <h1 class="brand">마스터 비밀번호 설정</h1>
+        <p class="subtitle">이 비밀번호는 서버에 저장되지 않아요.</p>
 
         <div class="message message-warning security-note">
-            이 비밀번호는 Vault 접근에 사용됩니다. 분실하지 않도록 안전하게 보관하세요.
+            잊어버리면 복구가 어려울 수 있어요. 나만 알 수 있는 안전한 비밀번호로 설정해주세요.
         </div>
 
         <div class="form-group">
-            <label for="newMp">Master Password</label>
-            <input class="input" type="password" id="newMp" placeholder="새 Master Password" autocomplete="new-password">
+            <label for="newMp">마스터 비밀번호</label>
+            <input class="input" type="password" id="newMp" placeholder="새 마스터 비밀번호" autocomplete="new-password">
         </div>
 
         <div class="form-group">
-            <label for="confirmMp">Master Password 확인</label>
+            <label for="confirmMp">마스터 비밀번호 확인</label>
             <input class="input" type="password" id="confirmMp" placeholder="다시 입력" autocomplete="new-password">
         </div>
 
         <div class="button-row">
-            <button id="btn" class="button button-primary" type="button">등록</button>
-            <a class="button button-secondary" href="/home.html">Home</a>
+            <button id="btn" class="button button-primary" type="button">설정 완료</button>
+            <a class="button button-secondary" href="/home.html">홈</a>
         </div>
 
         <div id="status" class="message message-info"></div>
@@ -172,10 +172,10 @@
         try {
             const mp = document.getElementById("newMp").value;
             const confirmMp = document.getElementById("confirmMp").value;
-            if (!mp || mp.length < 8) throw new Error("Master Password는 최소 8자 이상이어야 합니다.");
-            if (mp !== confirmMp) throw new Error("Master Password 확인 값이 일치하지 않습니다.");
+            if (!mp || mp.length < 8) throw new Error("마스터 비밀번호는 최소 8자 이상이어야 해요.");
+            if (mp !== confirmMp) throw new Error("마스터 비밀번호 확인 값이 일치하지 않아요.");
 
-            setStatus("보안 설정 정보를 요청하고 있습니다.");
+            setStatus("안전한 설정을 준비하고 있어요.");
             const init = await initPake();
 
             const saltAuth = init.saltAuth;
@@ -196,20 +196,20 @@
             const deviceSecretB64 = getOrCreateDeviceSecretBase64();
             const P = `${mp}||${deviceSecretB64}`;
 
-            setStatus("보안 등록값을 계산하고 있습니다.");
+            setStatus("마스터 비밀번호를 안전하게 확인할 준비를 하고 있어요.");
             const xBytes = await deriveX({ P, saltAuthB64: saltAuth, kdfAlgorithm, kdfParams });
             const x = BigInt("0x" + bytesToHex(xBytes));
 
-            setStatus("보안 등록값을 준비하고 있습니다.");
+            setStatus("등록 정보를 안전하게 만들고 있어요.");
             const v = modPow(g, x, N);
 
-            setStatus("등록 정보를 전송하고 있습니다.");
+            setStatus("설정을 저장하고 있어요.");
             await registerVerifier({
                 verifierHex: v.toString(16),
                 saltAuth
             });
 
-            setStatus("등록이 완료되었습니다. Home으로 이동합니다.");
+            setStatus("설정이 완료됐어요. 홈으로 이동할게요.");
             window.location.href = "/home.html";
         } catch (e) {
             setStatus(String(e?.userMessage ?? e?.message ?? e), false);

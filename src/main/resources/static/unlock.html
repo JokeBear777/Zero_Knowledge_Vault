@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Vault Unlock - Zero Knowledge Vault</title>
+    <title>금고 열기 - Zero Knowledge Vault</title>
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/argon2-browser/dist/argon2-bundled.min.js"></script>
     <script src="/js/apiClient.js"></script>
@@ -11,23 +11,23 @@
     <script src="/js/shareKeyCrypto.js"></script>
     <script src="/js/shareKeyIntent.js"></script>
 </head>
-<body class="page">
+<body class="page unlock-screen">
 <main class="page-shell">
-    <section class="card">
-        <span class="step-badge">Vault</span>
-        <h1 class="brand">Vault 열기</h1>
-        <p class="subtitle">Master Password로 민감정보 영역을 잠금 해제합니다.</p>
+    <section class="app-card hero-card">
+        <span class="step-badge">보안 확인</span>
+        <h1 class="brand">금고를 열어볼까요?</h1>
+        <p class="subtitle">마스터 비밀번호로 금고 열쇠를 복원해요.</p>
 
         <div id="unlock-message" class="message message-info"></div>
 
         <div class="form-group">
-            <label for="mp">Master Password</label>
-            <input class="input" type="password" id="mp" placeholder="Master Password" autocomplete="current-password">
+            <label for="mp">마스터 비밀번호</label>
+            <input class="input" type="password" id="mp" placeholder="마스터 비밀번호" autocomplete="current-password">
         </div>
 
         <div class="button-row">
-            <button type="button" class="button button-primary" id="unlockBtn" onclick="unlock()">Vault 열기</button>
-            <a class="button button-secondary" href="/home.html">Home으로 돌아가기</a>
+            <button type="button" class="button button-primary" id="unlockBtn" onclick="unlock()">금고 열기</button>
+            <a class="button button-secondary" href="/home.html">홈으로 돌아가기</a>
         </div>
     </section>
 </main>
@@ -218,7 +218,7 @@
         let ds = localStorage.getItem(DEVICE_SECRET_KEY);
         if (ds) return ds;
 
-        throw new Error("이 브라우저의 디바이스 키가 없어 Vault 잠금 해제를 진행할 수 없습니다. 이 기기에서 Master Password를 다시 등록하거나 개발 환경에서는 데이터를 초기화해야 합니다.");
+        throw new Error("이 브라우저에 필요한 기기 정보가 없어 금고를 열 수 없어요. 이 기기에서 마스터 비밀번호를 다시 설정해주세요.");
     }
 
     async function kdfPbkdf2Sha256({ passwordStr, saltBytes, iterations, outBits = 256 }) {
@@ -278,13 +278,13 @@
             const mp = document.getElementById("mp").value;
             if (!mp) {
                 message.className = "message message-error";
-                message.textContent = "Master Password를 입력해주세요.";
+                message.textContent = "마스터 비밀번호를 입력해주세요.";
                 return;
             }
 
             button.disabled = true;
             message.className = "message";
-            message.textContent = "Vault 잠금 해제를 진행하고 있습니다.";
+            message.textContent = "금고를 여는 중이에요.";
 
             const a = randomBigInt(32);
             const A = modPow(g, a, N);
@@ -338,11 +338,11 @@
             }
 
             message.className = "message message-success";
-            message.textContent = "Vault가 열렸습니다. 이동합니다.";
+            message.textContent = "금고가 열렸어요. 이동할게요.";
             window.location.href = navigation.target;
         } catch (e) {
             message.className = "message message-error";
-            message.textContent = String(e?.userMessage ?? e?.message ?? e);
+            message.textContent = String(e?.userMessage ?? e?.message ?? "금고를 열 수 없어요. 마스터 비밀번호를 다시 확인해주세요.");
         } finally {
             button.disabled = false;
         }

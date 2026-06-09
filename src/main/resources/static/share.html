@@ -3,48 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Share - Zero Knowledge Vault</title>
+    <title>공유 금고 - Zero Knowledge Vault</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body class="page share-screen">
 <div class="app-layout">
     <main class="mobile-shell">
-        <div class="mobile-frame">
-            <header class="screen-header">
-                <span class="step-badge">Share</span>
-                <h1 class="app-title">Zero Knowledge Vault</h1>
-                <p class="app-subtitle">공유 저장소</p>
+        <div class="mobile-frame app-content">
+            <header class="app-header">
+                <div class="app-header-main">
+                    <div class="brand-mark"><span class="brand-dot">공</span> 공유 금고</div>
+                    <h1 class="app-title">함께 사용하는 비밀도 안전하게 관리해요.</h1>
+                    <p class="app-subtitle">초대와 권한 관리는 금고 열쇠를 연 뒤 사용할 수 있어요.</p>
+                </div>
+                <a class="icon-button" href="/home.html" aria-label="홈으로 이동">홈</a>
             </header>
 
-            <div id="share-message" class="message message-info">공유키 상태를 확인하고 있습니다.</div>
+            <div id="share-message" class="message message-info">공유키 상태를 확인하고 있어요.</div>
 
-            <section class="home-card share-key-card">
-                <h2 class="home-card-title">공유키 상태</h2>
+            <section class="status-card share-key-card">
+                <div class="card-header-row">
+                    <div>
+                        <p class="status-label">공유키 상태</p>
+                        <p class="status-value">확인 중</p>
+                    </div>
+                    <span class="pill-badge">공유 준비</span>
+                </div>
                 <div id="share-status-card" class="share-status-card">
-                    <p class="muted">상태를 불러오는 중입니다.</p>
+                    <p class="muted">잠시만 기다려주세요.</p>
                 </div>
             </section>
 
-            <section class="home-card">
-                <h2 class="home-card-title">공유키 관리</h2>
+            <section class="app-card">
+                <h2 class="home-card-title">공유 금고 관리</h2>
+                <p class="muted">공유 비밀을 만들고 초대하려면 이 브라우저에서 공유키가 준비되어 있어야 해요.</p>
                 <div class="share-action-row">
-                    <button type="button" class="button button-primary" id="createShareKeyBtn">공유키 생성</button>
-                    <button type="button" class="button button-secondary hidden" id="regenerateShareKeyBtn">공유키 재생성</button>
+                    <button type="button" class="button button-primary" id="createShareKeyBtn">공유키 만들기</button>
+                    <button type="button" class="button button-secondary hidden" id="regenerateShareKeyBtn">공유키 다시 만들기</button>
                     <button type="button" class="button button-danger hidden" id="deleteShareKeyBtn">공유키 삭제</button>
                 </div>
             </section>
 
-            <section class="home-card">
-                <h2 class="home-card-title">공유 item</h2>
-                <p class="muted">공유키가 준비되면 공유 저장소에서 암호화된 item을 생성하고 관리할 수 있습니다.</p>
-                <button type="button" class="button button-secondary storage-button" id="sharedItemsBtn">공유 item 보기</button>
+            <section class="app-card hero-card">
+                <div class="card-header-row">
+                    <div>
+                        <h2 class="home-card-title">공유 금고</h2>
+                        <p class="muted">승인된 사람끼리만 공유 비밀을 열어볼 수 있어요.</p>
+                    </div>
+                    <span class="hero-emoji">금고</span>
+                </div>
+                <button type="button" class="button button-primary storage-button" id="sharedItemsBtn">공유 금고 보기</button>
             </section>
 
-            <div class="bottom-actions">
-                <a class="button button-secondary" href="/home.html">Home</a>
-                <button type="button" class="button button-danger" onclick="logout()">로그아웃</button>
-            </div>
         </div>
+        <nav class="bottom-nav" aria-label="주요 메뉴">
+            <a class="nav-item" href="/home.html"><span class="nav-icon nav-icon-home" aria-hidden="true">🏠</span><span class="nav-label">홈</span></a>
+            <a class="nav-item" href="/vault.html"><span class="nav-icon nav-icon-vault" aria-hidden="true">🔒</span><span class="nav-label">개인 금고</span></a>
+            <a class="nav-item active" href="/share.html"><span class="nav-icon nav-icon-share" aria-hidden="true">👥</span><span class="nav-label">공유 금고</span></a>
+            <button type="button" class="nav-item" disabled><span class="nav-icon nav-icon-settings" aria-hidden="true">⚙️</span><span class="nav-label">설정</span></button>
+        </nav>
     </main>
 </div>
 
