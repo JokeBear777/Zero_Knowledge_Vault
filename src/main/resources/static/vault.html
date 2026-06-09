@@ -10,77 +10,94 @@
 <body class="page vault-screen">
 <main class="page-shell-wide app-shell">
     <div class="app-content">
-    <section class="app-card hero-card">
-        <div class="toolbar">
-            <div>
-                <span class="step-badge">개인 금고</span>
-                <h1 class="brand">개인 금고</h1>
-                <p class="subtitle">마스터 비밀번호로 연 뒤에만 비밀을 확인할 수 있어요.</p>
+        <section class="app-card hero-card vault-hero-card">
+            <div class="vault-topbar">
+                <div class="vault-status-row">
+                    <span id="vault-session-timer" class="vault-session-timer"><span aria-hidden="true">🕒</span> 남은 시간 --:--</span>
+                    <span id="vault-status" class="vault-lock-status vault-open-status status-warning">
+                        <span aria-hidden="true">🔒</span>
+                        상태 확인 중
+                    </span>
+                </div>
+                <div class="vault-hero-intro">
+                    <div class="vault-hero-copy">
+                        <span class="step-badge">개인 공간</span>
+                        <h1 class="brand">개인 금고</h1>
+                        <p class="subtitle">마스터 비밀번호로 보호되는<br>나만의 비밀 공간</p>
+                    </div>
+                    <div class="vault-hero-visual" aria-hidden="true">
+                        <div class="vault-safe-art">
+                            <span class="vault-safe-body">▣</span>
+                            <span class="vault-safe-dial">✺</span>
+                            <span class="vault-safe-leaf">◜</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <span id="vault-status" class="status-badge status-warning">상태 확인 중</span>
-        </div>
 
-        <div class="message message-warning security-note">
-            이 페이지를 벗어나거나 일정 시간이 지나면 다시 금고 열기가 필요할 수 있어요.
-        </div>
+            <div id="message" class="message">개인 금고 상태를 확인하고 있어요.</div>
 
-        <div id="message" class="message">개인 금고 상태를 확인하고 있어요.</div>
-
-        <section id="openVaultSection" class="section hidden">
-            <h2 class="section-title">금고를 열어볼까요?</h2>
-            <p class="muted">마스터 비밀번호를 입력하면 금고 열쇠를 복원해요.</p>
-
-            <div class="form-group">
-                <label for="openMasterPassword">마스터 비밀번호</label>
-                <input class="input" type="password" id="openMasterPassword" autocomplete="current-password"
-                       placeholder="마스터 비밀번호를 입력하세요">
-            </div>
-
-            <div class="button-row">
-                <button type="button" class="button button-primary" id="openVaultBtn">금고 열기</button>
-                <a class="button button-secondary" href="/home.html">홈</a>
-            </div>
-        </section>
-
-        <section id="vaultContentSection" class="hidden">
-            <section class="section">
-                <div class="toolbar">
+            <section id="openVaultSection" class="vault-unlock-card hidden">
+                <div class="vault-unlock-header">
+                    <span class="vault-unlock-icon" aria-hidden="true">🛡️</span>
                     <div>
-                        <h2 class="section-title">새 비밀 추가</h2>
-                        <p class="muted">제목과 내용을 입력하면 브라우저에서 암호화해 저장해요.</p>
+                        <h2 class="section-title">금고를 열어볼까요?</h2>
+                        <p class="muted">마스터 비밀번호를 입력하면<br>금고 열쇠를 복원해요.</p>
                     </div>
-                    <button type="button" class="button button-secondary" id="refreshBtn">새로고침</button>
                 </div>
 
-                <form id="itemForm">
-                    <div class="form-group">
-                        <label for="itemTitle">제목</label>
-                        <input class="input" type="text" id="itemTitle" placeholder="예: 은행 메모" autocomplete="off">
+                <div class="form-group">
+                    <label for="openMasterPassword">마스터 비밀번호</label>
+                    <div class="vault-password-field">
+                        <input class="input" type="password" id="openMasterPassword" autocomplete="current-password"
+                               placeholder="마스터 비밀번호를 입력하세요">
+                        <button type="button" class="vault-password-visibility" aria-label="비밀번호 보기">◉</button>
                     </div>
+                </div>
 
-                    <div class="form-group">
-                        <label for="itemContent">내용</label>
-                        <textarea id="itemContent" placeholder="저장할 비밀 내용을 입력하세요."></textarea>
-                    </div>
-
-                    <div class="button-row">
-                        <button type="submit" class="button button-primary" id="saveBtn">저장</button>
-                        <button type="button" class="button button-ghost hidden" id="cancelEditBtn">취소</button>
-                    </div>
-                </form>
+                <div class="button-row vault-unlock-actions">
+                    <button type="button" class="button button-primary" id="openVaultBtn">금고 열기</button>
+                    <div class="vault-divider" aria-hidden="true"><span>또는</span></div>
+                    <a class="button button-secondary vault-home-button" href="/home.html">
+                        <span class="vault-home-icon" aria-hidden="true">⌂</span>
+                        <span>홈으로 이동</span>
+                    </a>
+                </div>
             </section>
 
-            <section class="section">
-                <h2 class="section-title">저장된 비밀</h2>
-                <div id="emptyState" class="empty-state hidden">
-                    아직 저장된 비밀이 없어요. 첫 번째 비밀을 추가해보세요.
-                </div>
-                <div id="itemList" class="item-list"></div>
+            <section id="vaultContentSection" class="vault-main hidden">
+                <section class="vault-search-panel">
+                    <label class="sr-only" for="secretSearchInput">비밀 검색</label>
+                    <input class="input vault-search-input" type="search" id="secretSearchInput" placeholder="비밀 검색" autocomplete="off">
+                    <label class="sr-only" for="secretSortSelect">정렬</label>
+                    <select id="secretSortSelect" class="vault-sort-select" aria-label="저장된 비밀 정렬">
+                        <option value="latest">최신순</option>
+                        <option value="title">제목순</option>
+                    </select>
+                    <button type="button" class="button button-secondary vault-refresh-button hidden" id="refreshBtn">새로고침</button>
+                </section>
+
+                <button type="button" class="vault-add-card" id="openCreateSecretBtn">
+                    <span class="vault-add-icon" aria-hidden="true">+</span>
+                    <span class="vault-add-copy">
+                        <strong>새 비밀 추가</strong>
+                        <span>새로운 비밀을 안전하게 저장하세요.</span>
+                    </span>
+                </button>
+
+                <section class="vault-list-section" aria-labelledby="vaultListTitle">
+                    <div class="vault-list-header">
+                        <h2 class="section-title" id="vaultListTitle">저장된 비밀 <span id="secretCount">(0)</span></h2>
+                    </div>
+                    <div id="emptyState" class="empty-state hidden">
+                        아직 저장된 비밀이 없어요. 첫 번째 비밀을 추가해보세요.
+                    </div>
+                    <div id="itemList" class="vault-secret-list"></div>
+                </section>
             </section>
         </section>
-
-    </section>
     </div>
+
     <nav class="bottom-nav" aria-label="주요 메뉴">
         <a class="nav-item" href="/home.html"><span class="nav-icon nav-icon-home" aria-hidden="true">🏠</span><span class="nav-label">홈</span></a>
         <a class="nav-item active" href="/vault.html"><span class="nav-icon nav-icon-vault" aria-hidden="true">🔒</span><span class="nav-label">개인 금고</span></a>
@@ -88,6 +105,90 @@
         <button type="button" class="nav-item" disabled><span class="nav-icon nav-icon-settings" aria-hidden="true">⚙️</span><span class="nav-label">설정</span></button>
     </nav>
 </main>
+
+<div class="modal-backdrop bottom-sheet-backdrop hidden" id="createSecretSheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle">
+    <section class="modal-card bottom-sheet">
+        <div class="sheet-handle" aria-hidden="true"></div>
+        <div class="sheet-header">
+            <div>
+                <h2 class="section-title" id="createSheetTitle">새 비밀 추가</h2>
+                <p class="muted">새로운 비밀을 안전하게 저장하세요.</p>
+            </div>
+            <button type="button" class="sheet-close-button" id="closeCreateSheetBtn" aria-label="새 비밀 추가 닫기">×</button>
+        </div>
+
+        <form id="createSecretForm">
+            <div class="form-group">
+                <label for="createSecretTitle">제목</label>
+                <input class="input" type="text" id="createSecretTitle" placeholder="예: 은행 계정, 이메일, SNS 등" autocomplete="off">
+            </div>
+
+            <div class="form-group">
+                <label for="createSecretContent">내용</label>
+                <textarea id="createSecretContent" placeholder="비밀번호 또는 비밀 내용을 입력하세요."></textarea>
+            </div>
+
+            <div class="button-row two">
+                <button type="button" class="button button-ghost" id="cancelCreateSecretBtn">취소</button>
+                <button type="submit" class="button button-primary" id="saveCreateSecretBtn">저장</button>
+            </div>
+        </form>
+    </section>
+</div>
+
+<div class="modal-backdrop bottom-sheet-backdrop hidden" id="secretDetailSheet" role="dialog" aria-modal="true" aria-labelledby="detailSheetTitle">
+    <section class="modal-card bottom-sheet">
+        <div class="sheet-handle" aria-hidden="true"></div>
+        <div class="sheet-header">
+            <div>
+                <h2 class="section-title" id="detailSheetTitle">비밀 상세</h2>
+                <p class="muted" id="detailUpdatedAt">저장된 비밀을 확인해요.</p>
+            </div>
+            <button type="button" class="sheet-close-button" id="closeDetailSheetBtn" aria-label="비밀 상세 닫기">×</button>
+        </div>
+
+        <div id="secretDetailView" class="secret-detail-view">
+            <div class="secret-detail-title-row">
+                <span class="secret-icon large" aria-hidden="true">🔐</span>
+                <div>
+                    <p class="status-label">제목</p>
+                    <h3 id="detailSecretTitle" class="secret-detail-title"></h3>
+                </div>
+            </div>
+
+            <div class="secret-field-block">
+                <div class="status-row">
+                    <p class="status-label">내용</p>
+                    <button type="button" class="secret-inline-action" id="toggleSecretVisibilityBtn">보기</button>
+                </div>
+                <pre id="detailSecretContent" class="secret-content-box is-masked"></pre>
+            </div>
+
+            <div class="button-row">
+                <button type="button" class="button button-secondary" id="editSecretBtn">수정</button>
+                <button type="button" class="button button-danger" id="deleteSecretBtn">삭제</button>
+                <button type="button" class="button button-ghost" id="closeDetailActionBtn">닫기</button>
+            </div>
+        </div>
+
+        <form id="secretEditForm" class="hidden">
+            <div class="form-group">
+                <label for="editSecretTitle">제목</label>
+                <input class="input" type="text" id="editSecretTitle" autocomplete="off">
+            </div>
+
+            <div class="form-group">
+                <label for="editSecretContent">내용</label>
+                <textarea id="editSecretContent"></textarea>
+            </div>
+
+            <div class="button-row two">
+                <button type="button" class="button button-ghost" id="cancelEditSecretBtn">취소</button>
+                <button type="submit" class="button button-primary" id="saveEditSecretBtn">수정 저장</button>
+            </div>
+        </form>
+    </section>
+</div>
 
 <script src="/js/storageCleaner.js"></script>
 <script src="/js/apiClient.js"></script>
@@ -102,20 +203,50 @@
     const openVaultBtn = document.getElementById("openVaultBtn");
     const itemList = document.getElementById("itemList");
     const emptyState = document.getElementById("emptyState");
-    const itemForm = document.getElementById("itemForm");
-    const saveBtn = document.getElementById("saveBtn");
-    const cancelEditBtn = document.getElementById("cancelEditBtn");
+    const secretCount = document.getElementById("secretCount");
     const refreshBtn = document.getElementById("refreshBtn");
-    const titleInput = document.getElementById("itemTitle");
-    const contentInput = document.getElementById("itemContent");
+    const searchInput = document.getElementById("secretSearchInput");
+    const sortSelect = document.getElementById("secretSortSelect");
+    const vaultSessionTimer = document.getElementById("vault-session-timer");
+    const vaultStatus = document.getElementById("vault-status");
+
+    const createSecretSheet = document.getElementById("createSecretSheet");
+    const openCreateSecretBtn = document.getElementById("openCreateSecretBtn");
+    const closeCreateSheetBtn = document.getElementById("closeCreateSheetBtn");
+    const cancelCreateSecretBtn = document.getElementById("cancelCreateSecretBtn");
+    const createSecretForm = document.getElementById("createSecretForm");
+    const createSecretTitle = document.getElementById("createSecretTitle");
+    const createSecretContent = document.getElementById("createSecretContent");
+    const saveCreateSecretBtn = document.getElementById("saveCreateSecretBtn");
+
+    const secretDetailSheet = document.getElementById("secretDetailSheet");
+    const detailSheetTitle = document.getElementById("detailSheetTitle");
+    const detailUpdatedAt = document.getElementById("detailUpdatedAt");
+    const closeDetailSheetBtn = document.getElementById("closeDetailSheetBtn");
+    const closeDetailActionBtn = document.getElementById("closeDetailActionBtn");
+    const secretDetailView = document.getElementById("secretDetailView");
+    const detailSecretTitle = document.getElementById("detailSecretTitle");
+    const detailSecretContent = document.getElementById("detailSecretContent");
+    const toggleSecretVisibilityBtn = document.getElementById("toggleSecretVisibilityBtn");
+    const editSecretBtn = document.getElementById("editSecretBtn");
+    const deleteSecretBtn = document.getElementById("deleteSecretBtn");
+    const secretEditForm = document.getElementById("secretEditForm");
+    const editSecretTitle = document.getElementById("editSecretTitle");
+    const editSecretContent = document.getElementById("editSecretContent");
+    const cancelEditSecretBtn = document.getElementById("cancelEditSecretBtn");
+    const saveEditSecretBtn = document.getElementById("saveEditSecretBtn");
 
     const state = {
+        mode: "list",
         vaultKey: null,
         indexVersion: null,
         items: [],
-        editingItemId: null,
-        editingItemVersion: null
+        selectedItem: null,
+        secretVisible: false,
+        vaultSessionEndsAt: null,
+        vaultSessionTimerId: null
     };
+    const VAULT_SESSION_DURATION_MS = 60 * 60 * 1000;
 
     function setMessage(text, type = "") {
         message.className = type ? "message message-" + type : "message";
@@ -125,11 +256,69 @@
     function setVaultOpened(opened) {
         openVaultSection.classList.toggle("hidden", opened);
         vaultContentSection.classList.toggle("hidden", !opened);
-        const status = document.getElementById("vault-status");
-        if (status) {
-            status.className = opened ? "status-badge status-success" : "status-badge status-warning";
-            status.textContent = opened ? "열려 있어요" : "잠겨 있어요";
+        if (vaultStatus) {
+            vaultStatus.className = opened
+                ? "vault-lock-status vault-open-status status-success"
+                : "vault-lock-status vault-open-status status-warning";
+            const statusIcon = document.createElement("span");
+            statusIcon.setAttribute("aria-hidden", "true");
+            statusIcon.textContent = opened ? "🔓" : "🔒";
+            vaultStatus.replaceChildren(statusIcon, document.createTextNode(opened ? " 열려 있어요" : " 잠겨 있어요"));
         }
+        updateVaultSessionTimer();
+    }
+
+    function startVaultSessionTimer() {
+        state.vaultSessionEndsAt = Date.now() + VAULT_SESSION_DURATION_MS;
+        updateVaultSessionTimer();
+
+        if (state.vaultSessionTimerId) {
+            clearInterval(state.vaultSessionTimerId);
+        }
+
+        state.vaultSessionTimerId = window.setInterval(updateVaultSessionTimer, 1000);
+    }
+
+    function formatRemainingTime(remainingMs) {
+        const totalSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+
+        if (hours > 0) {
+            return hours + ":" + String(minutes).padStart(2, "0") + ":" + String(seconds).padStart(2, "0");
+        }
+
+        return String(minutes).padStart(2, "0") + ":" + String(seconds).padStart(2, "0");
+    }
+
+    function updateVaultSessionTimer() {
+        if (!vaultSessionTimer) return;
+
+        if (!state.vaultSessionEndsAt) {
+            vaultSessionTimer.replaceChildren(createTimerIcon(), document.createTextNode(" 남은 시간 --:--"));
+            vaultSessionTimer.classList.remove("is-ending");
+            return;
+        }
+
+        const remainingMs = state.vaultSessionEndsAt - Date.now();
+        vaultSessionTimer.replaceChildren(
+            createTimerIcon(),
+            document.createTextNode(" 남은 시간 " + formatRemainingTime(remainingMs))
+        );
+        vaultSessionTimer.classList.toggle("is-ending", remainingMs <= 60 * 1000);
+
+        if (remainingMs <= 0 && state.vaultSessionTimerId) {
+            clearInterval(state.vaultSessionTimerId);
+            state.vaultSessionTimerId = null;
+        }
+    }
+
+    function createTimerIcon() {
+        const timerIcon = document.createElement("span");
+        timerIcon.setAttribute("aria-hidden", "true");
+        timerIcon.textContent = "🕒";
+        return timerIcon;
     }
 
     function normalizeIndex(indexDocument) {
@@ -189,53 +378,201 @@
         return date.toLocaleString();
     }
 
-    function resetForm() {
-        state.editingItemId = null;
-        state.editingItemVersion = null;
-        titleInput.value = "";
-        contentInput.value = "";
-        saveBtn.textContent = "저장";
-        cancelEditBtn.classList.add("hidden");
+    function formatShortDate(value) {
+        if (!value) return "저장됨";
+
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+            return value;
+        }
+
+        const diffMs = Date.now() - date.getTime();
+        const minute = 60 * 1000;
+        const hour = 60 * minute;
+        const day = 24 * hour;
+
+        if (diffMs >= 0 && diffMs < minute) return "방금";
+        if (diffMs >= 0 && diffMs < hour) return Math.floor(diffMs / minute) + "분 전";
+        if (diffMs >= 0 && diffMs < day) return Math.floor(diffMs / hour) + "시간 전";
+
+        return date.toLocaleDateString();
+    }
+
+    function getVisibleItems() {
+        const keyword = searchInput.value.trim().toLowerCase();
+        const filtered = keyword
+            ? state.items.filter(item => item.title.toLowerCase().includes(keyword))
+            : [...state.items];
+
+        if (sortSelect.value === "title") {
+            filtered.sort((a, b) => a.title.localeCompare(b.title, "ko"));
+            return filtered;
+        }
+
+        filtered.sort((a, b) => {
+            const left = new Date(a.updatedAt || a.createdAt || 0).getTime();
+            const right = new Date(b.updatedAt || b.createdAt || 0).getTime();
+            return right - left;
+        });
+        return filtered;
+    }
+
+    function resetCreateSecretForm() {
+        createSecretTitle.value = "";
+        createSecretContent.value = "";
+    }
+
+    function openCreateSecretSheet() {
+        closeSecretDetail();
+        state.mode = "create";
+        resetCreateSecretForm();
+        createSecretSheet.classList.remove("hidden");
+        createSecretTitle.focus();
+    }
+
+    function closeCreateSecretSheet() {
+        resetCreateSecretForm();
+        createSecretSheet.classList.add("hidden");
+        if (state.mode === "create") {
+            state.mode = "list";
+        }
+    }
+
+    function maskSecretContent(content) {
+        if (!content) {
+            return "저장된 내용이 없어요.";
+        }
+        const lineCount = Math.max(content.split(/\r?\n/).length, 1);
+        return Array.from({ length: lineCount }, () => "••••••••").join("\n");
+    }
+
+    function renderSecretDetail() {
+        if (!state.selectedItem) return;
+
+        detailSecretTitle.textContent = state.selectedItem.title;
+        detailUpdatedAt.textContent = "수정: " + formatDate(state.selectedItem.updatedAt || state.selectedItem.createdAt);
+        detailSecretContent.textContent = state.secretVisible
+            ? state.selectedItem.content
+            : maskSecretContent(state.selectedItem.content);
+        detailSecretContent.classList.toggle("is-masked", !state.secretVisible);
+        toggleSecretVisibilityBtn.textContent = state.secretVisible ? "숨기기" : "보기";
+    }
+
+    function openSecretDetailSheet() {
+        state.mode = "detail";
+        state.secretVisible = false;
+        detailSheetTitle.textContent = "비밀 상세";
+        secretDetailView.classList.remove("hidden");
+        secretEditForm.classList.add("hidden");
+        renderSecretDetail();
+        secretDetailSheet.classList.remove("hidden");
+    }
+
+    function closeSecretDetail() {
+        state.mode = "list";
+        state.selectedItem = null;
+        state.secretVisible = false;
+        secretDetailSheet.classList.add("hidden");
+        secretDetailView.classList.remove("hidden");
+        secretEditForm.classList.add("hidden");
+        detailSecretContent.textContent = "";
+        editSecretTitle.value = "";
+        editSecretContent.value = "";
+    }
+
+    function enterSecretEditMode() {
+        if (!state.selectedItem) return;
+
+        state.mode = "edit";
+        detailSheetTitle.textContent = "비밀 수정";
+        editSecretTitle.value = state.selectedItem.title;
+        editSecretContent.value = state.selectedItem.content;
+        secretDetailView.classList.add("hidden");
+        secretEditForm.classList.remove("hidden");
+        editSecretTitle.focus();
+    }
+
+    function cancelSecretEditMode() {
+        if (!state.selectedItem) {
+            closeSecretDetail();
+            return;
+        }
+
+        state.mode = "detail";
+        detailSheetTitle.textContent = "비밀 상세";
+        secretEditForm.classList.add("hidden");
+        secretDetailView.classList.remove("hidden");
+        editSecretTitle.value = "";
+        editSecretContent.value = "";
+        renderSecretDetail();
     }
 
     function renderItems() {
         itemList.textContent = "";
-        emptyState.classList.toggle("hidden", state.items.length > 0);
+        const visibleItems = getVisibleItems();
+        const hasItems = state.items.length > 0;
+        const hasVisibleItems = visibleItems.length > 0;
 
-        for (const item of state.items) {
+        emptyState.classList.toggle("hidden", hasVisibleItems);
+        emptyState.textContent = hasItems
+            ? "검색 결과가 없어요."
+            : "아직 저장된 비밀이 없어요. 첫 번째 비밀을 추가해보세요.";
+        secretCount.textContent = "(" + state.items.length + ")";
+
+        for (const item of visibleItems) {
             const card = document.createElement("article");
-            card.className = "item-card";
+            card.className = "vault-secret-card";
+            card.tabIndex = 0;
 
-            const title = document.createElement("h3");
+            const icon = document.createElement("div");
+            icon.className = "secret-icon";
+            icon.textContent = getSecretIconLabel(item.title);
+
+            const main = document.createElement("div");
+            main.className = "secret-main";
+
+            const title = document.createElement("div");
+            title.className = "secret-title";
             title.textContent = item.title;
 
-            const meta = document.createElement("p");
-            meta.className = "muted";
-            meta.textContent = item.updatedAt ? "수정: " + formatDate(item.updatedAt) : "저장된 항목";
+            const preview = document.createElement("div");
+            preview.className = "secret-preview-text";
+            preview.textContent = "••••••••";
 
-            const actions = document.createElement("div");
-            actions.className = "button-row";
+            main.append(title, preview);
 
-            const openBtn = document.createElement("button");
-            openBtn.type = "button";
-            openBtn.className = "button button-secondary";
-            openBtn.textContent = "열기";
-            openBtn.addEventListener("click", function () {
-                openItem(item.itemId);
+            const meta = document.createElement("div");
+            meta.className = "secret-meta";
+            meta.textContent = formatShortDate(item.updatedAt || item.createdAt);
+
+            const arrow = document.createElement("span");
+            arrow.className = "secret-arrow";
+            arrow.setAttribute("aria-hidden", "true");
+            arrow.textContent = ">";
+
+            card.addEventListener("click", function () {
+                openSecretDetail(item.itemId);
+            });
+            card.addEventListener("keydown", function (event) {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    openSecretDetail(item.itemId);
+                }
             });
 
-            const deleteBtn = document.createElement("button");
-            deleteBtn.type = "button";
-            deleteBtn.className = "button button-danger";
-            deleteBtn.textContent = "삭제";
-            deleteBtn.addEventListener("click", function () {
-                deleteItem(item.itemId);
-            });
-
-            actions.append(openBtn, deleteBtn);
-            card.append(title, meta, actions);
+            card.append(icon, main, meta, arrow);
             itemList.appendChild(card);
         }
+    }
+
+    function getSecretIconLabel(title) {
+        const normalizedTitle = String(title || "").trim().toLowerCase();
+        if (normalizedTitle.includes("github")) return "GH";
+        if (normalizedTitle.includes("google")) return "G";
+        if (normalizedTitle.includes("학교")) return "학";
+        if (normalizedTitle.includes("은행")) return "₩";
+        if (normalizedTitle.includes("email") || normalizedTitle.includes("이메일")) return "@";
+        return "🔒";
     }
 
     async function openVault() {
@@ -264,6 +601,7 @@
             );
             openMasterPasswordInput.value = "";
             setVaultOpened(true);
+            startVaultSessionTimer();
             await loadIndex();
         } catch (error) {
             state.vaultKey = null;
@@ -289,31 +627,37 @@
             state.indexVersion = data.version;
             state.items = normalizeIndex(indexDocument);
             renderItems();
-            setMessage("개인 금고가 열렸어요.", "success");
+            setMessage("");
         } catch (error) {
             const fallback = "마스터 비밀번호가 올바르지 않거나 금고 상태를 확인할 수 없어요.";
             setMessage(error.userMessage || fallback, error.isConflict ? "warning" : "error");
         }
     }
 
-    async function openItem(itemId) {
+    async function openSecretDetail(itemId) {
         if (!state.vaultKey) {
             setMessage("금고를 먼저 열어주세요.", "warning");
             return;
         }
+
+        closeCreateSecretSheet();
 
         try {
             setMessage("비밀을 여는 중이에요.");
             const data = await APIClient.get("/api/vault/item/" + encodeURIComponent(itemId));
             const itemKey = await VaultCrypto.unwrapVaultKey(data.itemKeyCipherBase64, state.vaultKey);
             const itemDocument = await VaultCrypto.decryptJson(itemKey, data.itemCipherBase64);
+            const meta = state.items.find(item => item.itemId === data.itemId) || {};
 
-            state.editingItemId = data.itemId;
-            state.editingItemVersion = data.version;
-            titleInput.value = itemDocument.title || "";
-            contentInput.value = itemDocument.content || "";
-            saveBtn.textContent = "수정 저장";
-            cancelEditBtn.classList.remove("hidden");
+            state.selectedItem = {
+                itemId: data.itemId,
+                version: data.version,
+                title: itemDocument.title || meta.title || "",
+                content: itemDocument.content || "",
+                createdAt: itemDocument.createdAt || meta.createdAt || "",
+                updatedAt: itemDocument.updatedAt || meta.updatedAt || ""
+            };
+            openSecretDetailSheet();
             setMessage("비밀을 열었어요.", "success");
         } catch (error) {
             const fallback = "이 항목을 열 수 없어요. 금고 열쇠를 다시 확인해주세요.";
@@ -321,7 +665,50 @@
         }
     }
 
-    async function saveItem(event) {
+    async function saveVaultItem({ itemId, expectedItemVersion, title, content, createdAt }) {
+        const now = new Date().toISOString();
+        const nextItemId = itemId || createItemId();
+        const nextCreatedAt = createdAt || now;
+        const nextItems = state.items.filter(item => item.itemId !== nextItemId);
+        nextItems.unshift({
+            itemId: nextItemId,
+            title,
+            createdAt: nextCreatedAt,
+            updatedAt: now
+        });
+
+        const itemKey = await VaultCrypto.generateAesKey();
+        const itemCipherBase64 = await VaultCrypto.encryptJson(itemKey, {
+            schemaVersion: 1,
+            title,
+            content,
+            createdAt: nextCreatedAt,
+            updatedAt: now
+        });
+        const itemKeyCipherBase64 = await VaultCrypto.wrapVaultKey(itemKey, state.vaultKey);
+        const indexPayload = await buildIndexPayload(nextItems);
+
+        await APIClient.post("/api/vault/item", {
+            itemId: nextItemId,
+            expectedItemVersion,
+            expectedIndexVersion: state.indexVersion,
+            itemKeyCipherBase64,
+            itemCipherBase64,
+            newIndexCipherBase64: indexPayload.newIndexCipherBase64,
+            newCommitHashBase64: indexPayload.newCommitHashBase64
+        });
+
+        return {
+            itemId: nextItemId,
+            version: expectedItemVersion,
+            title,
+            content,
+            createdAt: nextCreatedAt,
+            updatedAt: now
+        };
+    }
+
+    async function saveNewSecret(event) {
         event.preventDefault();
 
         if (!state.vaultKey) {
@@ -329,69 +716,80 @@
             return;
         }
 
-        const title = titleInput.value.trim();
-        const content = contentInput.value.trim();
+        const title = createSecretTitle.value.trim();
+        const content = createSecretContent.value.trim();
 
         if (!title || !content) {
             setMessage("제목과 내용을 입력해주세요.", "error");
             return;
         }
 
-        saveBtn.disabled = true;
+        saveCreateSecretBtn.disabled = true;
 
         try {
-            const now = new Date().toISOString();
-            const itemId = state.editingItemId || createItemId();
-            const existingMeta = state.items.find(item => item.itemId === itemId);
-            const createdAt = existingMeta?.createdAt || now;
-            const nextItems = state.items.filter(item => item.itemId !== itemId);
-            nextItems.unshift({
-                itemId,
+            await saveVaultItem({
                 title,
-                createdAt,
-                updatedAt: now
+                content
             });
 
-            const itemKey = await VaultCrypto.generateAesKey();
-            const itemCipherBase64 = await VaultCrypto.encryptJson(itemKey, {
-                schemaVersion: 1,
-                title,
-                content,
-                createdAt,
-                updatedAt: now
-            });
-            const itemKeyCipherBase64 = await VaultCrypto.wrapVaultKey(itemKey, state.vaultKey);
-            const indexPayload = await buildIndexPayload(nextItems);
-
-            await APIClient.post("/api/vault/item", {
-                itemId,
-                expectedItemVersion: state.editingItemVersion,
-                expectedIndexVersion: state.indexVersion,
-                itemKeyCipherBase64,
-                itemCipherBase64,
-                newIndexCipherBase64: indexPayload.newIndexCipherBase64,
-                newCommitHashBase64: indexPayload.newCommitHashBase64
-            });
-
-            resetForm();
+            closeCreateSecretSheet();
             await loadIndex();
             setMessage("저장했어요.", "success");
         } catch (error) {
             setMessage(error.userMessage || "저장하지 못했어요.", error.isConflict ? "warning" : "error");
         } finally {
-            saveBtn.disabled = false;
+            saveCreateSecretBtn.disabled = false;
         }
     }
 
-    async function deleteItem(itemId) {
-        if (!state.vaultKey) {
-            setMessage("금고를 먼저 열어주세요.", "warning");
+    async function updateExistingSecret(event) {
+        event.preventDefault();
+
+        if (!state.vaultKey || !state.selectedItem) {
+            setMessage("수정할 비밀을 먼저 열어주세요.", "warning");
+            return;
+        }
+
+        const title = editSecretTitle.value.trim();
+        const content = editSecretContent.value.trim();
+
+        if (!title || !content) {
+            setMessage("제목과 내용을 입력해주세요.", "error");
+            return;
+        }
+
+        saveEditSecretBtn.disabled = true;
+
+        try {
+            await saveVaultItem({
+                itemId: state.selectedItem.itemId,
+                expectedItemVersion: state.selectedItem.version,
+                title,
+                content,
+                createdAt: state.selectedItem.createdAt
+            });
+
+            closeSecretDetail();
+            await loadIndex();
+            setMessage("수정했어요.", "success");
+        } catch (error) {
+            setMessage(error.userMessage || "수정하지 못했어요.", error.isConflict ? "warning" : "error");
+        } finally {
+            saveEditSecretBtn.disabled = false;
+        }
+    }
+
+    async function deleteExistingSecret() {
+        if (!state.vaultKey || !state.selectedItem) {
+            setMessage("삭제할 비밀을 먼저 열어주세요.", "warning");
             return;
         }
 
         if (!confirm("이 비밀을 삭제할까요?")) {
             return;
         }
+
+        const itemId = state.selectedItem.itemId;
 
         try {
             setMessage("비밀을 삭제하고 있어요.");
@@ -407,10 +805,7 @@
                 newCommitHashBase64: indexPayload.newCommitHashBase64
             });
 
-            if (state.editingItemId === itemId) {
-                resetForm();
-            }
-
+            closeSecretDetail();
             await loadIndex();
             setMessage("삭제했어요.", "success");
         } catch (error) {
@@ -449,16 +844,45 @@
                 return;
             }
 
+            if (member.authLevel === "VAULT_AUTH") {
+                startVaultSessionTimer();
+            }
             setVaultOpened(false);
-            setMessage("금고를 열려면 마스터 비밀번호를 입력해주세요.");
+            setMessage("");
         } catch (error) {
             setMessage(error.userMessage || "개인 금고를 불러오지 못했어요.", error.isConflict ? "warning" : "error");
         }
     }
 
-    itemForm.addEventListener("submit", saveItem);
-    cancelEditBtn.addEventListener("click", resetForm);
+    createSecretForm.addEventListener("submit", saveNewSecret);
+    openCreateSecretBtn.addEventListener("click", openCreateSecretSheet);
+    closeCreateSheetBtn.addEventListener("click", closeCreateSecretSheet);
+    cancelCreateSecretBtn.addEventListener("click", closeCreateSecretSheet);
+    createSecretSheet.addEventListener("click", function (event) {
+        if (event.target === createSecretSheet) {
+            closeCreateSecretSheet();
+        }
+    });
+
+    secretEditForm.addEventListener("submit", updateExistingSecret);
+    closeDetailSheetBtn.addEventListener("click", closeSecretDetail);
+    closeDetailActionBtn.addEventListener("click", closeSecretDetail);
+    cancelEditSecretBtn.addEventListener("click", cancelSecretEditMode);
+    editSecretBtn.addEventListener("click", enterSecretEditMode);
+    deleteSecretBtn.addEventListener("click", deleteExistingSecret);
+    toggleSecretVisibilityBtn.addEventListener("click", function () {
+        state.secretVisible = !state.secretVisible;
+        renderSecretDetail();
+    });
+    secretDetailSheet.addEventListener("click", function (event) {
+        if (event.target === secretDetailSheet) {
+            closeSecretDetail();
+        }
+    });
+
     refreshBtn.addEventListener("click", loadIndex);
+    searchInput.addEventListener("input", renderItems);
+    sortSelect.addEventListener("change", renderItems);
     openVaultBtn.addEventListener("click", openVault);
     openMasterPasswordInput.addEventListener("keydown", function (event) {
         if (event.key === "Enter") {
