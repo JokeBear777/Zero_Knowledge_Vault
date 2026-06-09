@@ -11,17 +11,17 @@
 <main class="page-shell-wide app-shell">
     <div class="app-content">
         <section class="app-card hero-card vault-hero-card">
-            <div class="toolbar vault-topbar">
-                <div>
-                    <span class="step-badge">개인 공간</span>
-                    <h1 class="brand">개인 금고</h1>
-                    <p class="subtitle">마스터 비밀번호로 보호되는 나만의 비밀 공간</p>
+            <div class="vault-topbar">
+                <div class="vault-session-row">
+                    <span id="vault-session-timer" class="vault-session-timer">남은 시간 --:--</span>
+                    <span id="vault-status" class="vault-open-status status-warning">
+                        <span aria-hidden="true">🔒</span>
+                        상태 확인 중
+                    </span>
                 </div>
-                <span id="vault-status" class="status-badge status-warning">상태 확인 중</span>
-            </div>
-
-            <div class="message message-warning security-note">
-                이 페이지를 벗어나거나 일정 시간이 지나면 다시 금고 열기가 필요할 수 있어요.
+                <span class="step-badge">개인 공간</span>
+                <h1 class="brand">개인 금고</h1>
+                <p class="subtitle">마스터 비밀번호로 보호되는 나만의 비밀 공간</p>
             </div>
 
             <div id="message" class="message">개인 금고 상태를 확인하고 있어요.</div>
@@ -51,7 +51,7 @@
                         <option value="latest">최신순</option>
                         <option value="title">제목순</option>
                     </select>
-                    <button type="button" class="button button-secondary vault-refresh-button" id="refreshBtn">새로고침</button>
+                    <button type="button" class="button button-secondary vault-refresh-button hidden" id="refreshBtn">새로고침</button>
                 </section>
 
                 <button type="button" class="vault-add-card" id="openCreateSecretBtn">
@@ -184,6 +184,8 @@
     const refreshBtn = document.getElementById("refreshBtn");
     const searchInput = document.getElementById("secretSearchInput");
     const sortSelect = document.getElementById("secretSortSelect");
+    const vaultSessionTimer = document.getElementById("vault-session-timer");
+    const vaultStatus = document.getElementById("vault-status");
 
     const createSecretSheet = document.getElementById("createSecretSheet");
     const openCreateSecretBtn = document.getElementById("openCreateSecretBtn");
@@ -217,8 +219,11 @@
         indexVersion: null,
         items: [],
         selectedItem: null,
-        secretVisible: false
+        secretVisible: false,
+        vaultSessionEndsAt: null,
+        vaultSessionTimerId: null
     };
+    const VAULT_SESSION_DURATION_MS = 60 * 60 * 1000;
 
     function setMessage(text, type = "") {
         message.className = type ? "message message-" + type : "message";
@@ -228,10 +233,56 @@
     function setVaultOpened(opened) {
         openVaultSection.classList.toggle("hidden", opened);
         vaultContentSection.classList.toggle("hidden", !opened);
-        const status = document.getElementById("vault-status");
-        if (status) {
-            status.className = opened ? "status-badge status-success" : "status-badge status-warning";
-            status.textContent = opened ? "열려 있어요" : "잠겨 있어요";
+        if (vaultStatus) {
+            vaultStatus.className = opened ? "vault-open-status status-success" : "vault-open-status status-warning";
+            const statusIcon = document.createElement("span");
+            statusIcon.setAttribute("aria-hidden", "true");
+            statusIcon.textContent = opened ? "🔓" : "🔒";
+            vaultStatus.replaceChildren(statusIcon, document.createTextNode(opened ? " 열려 있어요" : " 잠겨 있어요"));
+        }
+        updateVaultSessionTimer();
+    }
+
+    function startVaultSessionTimer() {
+        state.vaultSessionEndsAt = Date.now() + VAULT_SESSION_DURATION_MS;
+        updateVaultSessionTimer();
+
+        if (state.vaultSessionTimerId) {
+            clearInterval(state.vaultSessionTimerId);
+        }
+
+        state.vaultSessionTimerId = window.setInterval(updateVaultSessionTimer, 1000);
+    }
+
+    function formatRemainingTime(remainingMs) {
+        const totalSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+
+        if (hours > 0) {
+            return hours + ":" + String(minutes).padStart(2, "0") + ":" + String(seconds).padStart(2, "0");
+        }
+
+        return String(minutes).padStart(2, "0") + ":" + String(seconds).padStart(2, "0");
+    }
+
+    function updateVaultSessionTimer() {
+        if (!vaultSessionTimer) return;
+
+        if (!state.vaultSessionEndsAt) {
+            vaultSessionTimer.textContent = "남은 시간 --:--";
+            vaultSessionTimer.classList.remove("is-ending");
+            return;
+        }
+
+        const remainingMs = state.vaultSessionEndsAt - Date.now();
+        vaultSessionTimer.textContent = "남은 시간 " + formatRemainingTime(remainingMs);
+        vaultSessionTimer.classList.toggle("is-ending", remainingMs <= 60 * 1000);
+
+        if (remainingMs <= 0 && state.vaultSessionTimerId) {
+            clearInterval(state.vaultSessionTimerId);
+            state.vaultSessionTimerId = null;
         }
     }
 
@@ -337,6 +388,7 @@
     }
 
     function openCreateSecretSheet() {
+        closeSecretDetail();
         state.mode = "create";
         resetCreateSecretForm();
         createSecretSheet.classList.remove("hidden");
@@ -439,7 +491,7 @@
 
             const icon = document.createElement("div");
             icon.className = "secret-icon";
-            icon.textContent = (item.title || "비").trim().slice(0, 1);
+            icon.textContent = getSecretIconLabel(item.title);
 
             const main = document.createElement("div");
             main.className = "secret-main";
@@ -450,22 +502,13 @@
 
             const preview = document.createElement("div");
             preview.className = "secret-preview-text";
-            preview.textContent = "마스터 비밀번호로 보호됨";
+            preview.textContent = "••••••••";
 
             main.append(title, preview);
 
             const meta = document.createElement("div");
             meta.className = "secret-meta";
             meta.textContent = formatShortDate(item.updatedAt || item.createdAt);
-
-            const openBtn = document.createElement("button");
-            openBtn.type = "button";
-            openBtn.className = "secret-open-button";
-            openBtn.textContent = "열기";
-            openBtn.addEventListener("click", function (event) {
-                event.stopPropagation();
-                openSecretDetail(item.itemId);
-            });
 
             const arrow = document.createElement("span");
             arrow.className = "secret-arrow";
@@ -482,9 +525,19 @@
                 }
             });
 
-            card.append(icon, main, meta, openBtn, arrow);
+            card.append(icon, main, meta, arrow);
             itemList.appendChild(card);
         }
+    }
+
+    function getSecretIconLabel(title) {
+        const normalizedTitle = String(title || "").trim().toLowerCase();
+        if (normalizedTitle.includes("github")) return "GH";
+        if (normalizedTitle.includes("google")) return "G";
+        if (normalizedTitle.includes("학교")) return "학";
+        if (normalizedTitle.includes("은행")) return "₩";
+        if (normalizedTitle.includes("email") || normalizedTitle.includes("이메일")) return "@";
+        return "🔒";
     }
 
     async function openVault() {
@@ -513,6 +566,7 @@
             );
             openMasterPasswordInput.value = "";
             setVaultOpened(true);
+            startVaultSessionTimer();
             await loadIndex();
         } catch (error) {
             state.vaultKey = null;
@@ -538,7 +592,7 @@
             state.indexVersion = data.version;
             state.items = normalizeIndex(indexDocument);
             renderItems();
-            setMessage("개인 금고가 열렸어요.", "success");
+            setMessage("");
         } catch (error) {
             const fallback = "마스터 비밀번호가 올바르지 않거나 금고 상태를 확인할 수 없어요.";
             setMessage(error.userMessage || fallback, error.isConflict ? "warning" : "error");
@@ -755,6 +809,9 @@
                 return;
             }
 
+            if (member.authLevel === "VAULT_AUTH") {
+                startVaultSessionTimer();
+            }
             setVaultOpened(false);
             setMessage("금고를 열려면 마스터 비밀번호를 입력해주세요.");
         } catch (error) {

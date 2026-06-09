@@ -790,39 +790,113 @@ button:disabled {
 
 .vault-hero-card {
     display: grid;
-    gap: 14px;
+    align-content: start;
+    gap: 18px;
 }
 
 .vault-topbar {
-    align-items: flex-start;
+    display: grid;
+    gap: 10px;
     margin-bottom: 0;
 }
 
-.vault-topbar .status-badge {
-    margin-top: 3px;
+.vault-screen .app-content {
+    padding: 18px 16px 10px;
+}
+
+.vault-screen .app-shell {
+    padding: 0;
+}
+
+.vault-screen .vault-hero-card {
+    min-height: 100%;
+    margin-bottom: 0;
+    padding: 22px;
+    border-radius: 20px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbf9 100%);
+}
+
+.vault-session-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-width: 0;
+}
+
+.vault-session-timer,
+.vault-open-status {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 900;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.vault-session-timer {
+    min-width: 0;
+    color: #25332f;
+}
+
+.vault-session-timer.is-ending {
+    color: var(--warning);
+}
+
+.vault-open-status {
+    justify-content: flex-end;
+    gap: 5px;
+    color: var(--muted);
+}
+
+.vault-open-status.status-success {
+    color: var(--primary-dark);
+}
+
+.vault-open-status.status-warning {
+    color: var(--muted);
+}
+
+.vault-screen .step-badge {
+    margin-top: 2px;
+}
+
+.vault-screen .brand {
+    margin-top: 0;
+    font-size: 28px;
+    letter-spacing: 0;
+}
+
+.vault-screen .subtitle {
+    max-width: 250px;
+    margin-top: 2px;
+    line-height: 1.45;
 }
 
 .vault-main {
     display: grid;
-    gap: 14px;
+    gap: 16px;
 }
 
 .vault-search-panel {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 104px;
-    gap: 9px;
+    grid-template-columns: minmax(0, 1fr) 96px;
+    gap: 10px;
     align-items: center;
-    padding: 12px;
-    border: 1px solid rgba(220, 233, 228, 0.92);
-    border-radius: 22px;
-    background: rgba(255, 255, 255, 0.76);
-    box-shadow: var(--soft-shadow);
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
 }
 
 .vault-search-input,
 .vault-sort-select {
-    min-height: 46px;
-    border-radius: 16px;
+    min-height: 48px;
+    border-radius: 17px;
+    box-shadow: 0 6px 18px rgba(31, 58, 50, 0.04);
 }
 
 .vault-refresh-button {
@@ -836,14 +910,14 @@ button:disabled {
     justify-content: flex-start;
     gap: 12px;
     width: 100%;
-    min-height: 92px;
-    padding: 15px;
+    min-height: 88px;
+    padding: 16px;
     border: 1px solid #bdebdc;
-    border-radius: 24px;
+    border-radius: 18px;
     background:
-        linear-gradient(145deg, #ffffff 0%, #effaf6 100%);
+        linear-gradient(145deg, #ffffff 0%, #f1fbf7 100%);
     color: var(--text);
-    box-shadow: var(--soft-shadow);
+    box-shadow: none;
     text-align: left;
 }
 
@@ -858,12 +932,13 @@ button:disabled {
     width: 44px;
     height: 44px;
     flex: 0 0 44px;
-    border-radius: 18px;
-    background: var(--primary);
-    color: #ffffff;
+    border-radius: 999px;
+    background: #ffffff;
+    color: var(--primary);
     font-size: 26px;
     font-weight: 800;
     line-height: 1;
+    box-shadow: inset 0 0 0 1px rgba(47, 125, 104, 0.18);
 }
 
 .vault-add-copy {
@@ -902,20 +977,20 @@ button:disabled {
 
 .vault-secret-list {
     display: grid;
-    gap: 10px;
+    gap: 12px;
 }
 
 .vault-secret-card {
     display: grid;
-    grid-template-columns: 42px minmax(0, 1fr) auto auto auto;
-    gap: 10px;
+    grid-template-columns: 44px minmax(0, 1fr) auto auto;
+    gap: 12px;
     align-items: center;
-    min-height: 76px;
-    padding: 12px;
+    min-height: 78px;
+    padding: 14px;
     border: 1px solid rgba(220, 233, 228, 0.96);
-    border-radius: 22px;
+    border-radius: 16px;
     background: #ffffff;
-    box-shadow: var(--soft-shadow);
+    box-shadow: 0 10px 24px rgba(31, 58, 50, 0.08);
     cursor: pointer;
 }
 
@@ -929,9 +1004,9 @@ button:disabled {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 42px;
-    height: 42px;
-    border-radius: 16px;
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
     background: var(--surface-mint);
     color: var(--primary-dark);
     font-size: 15px;
@@ -976,6 +1051,8 @@ button:disabled {
 
 .secret-meta {
     white-space: nowrap;
+    align-self: start;
+    padding-top: 2px;
 }
 
 .secret-open-button,
@@ -999,8 +1076,9 @@ button:disabled {
 
 .secret-arrow {
     color: var(--muted);
-    font-size: 18px;
-    font-weight: 900;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1;
 }
 
 .bottom-sheet-backdrop {
