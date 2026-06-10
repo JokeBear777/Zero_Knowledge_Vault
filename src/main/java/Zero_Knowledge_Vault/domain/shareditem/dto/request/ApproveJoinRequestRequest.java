@@ -5,10 +5,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
+@Schema(description = "Owner approval payload. The owner client wraps sharedItemKey with the requester's public key before sending.")
 public record ApproveJoinRequestRequest(
-        @Schema(description = "Requester ACTIVE share key version used for encryptedItemKeyBase64")
+        @Schema(description = "Requester ACTIVE share key version used for encryptedItemKeyBase64", example = "1")
         @NotNull Integer recipientKeyVersion,
-        @Schema(description = "Shared item key encrypted for the requester, encoded as Base64")
+        @Schema(description = "sharedItemKey encrypted for the requester public key, encoded as Base64", example = "base64-requester-encrypted-item-key")
         @NotBlank String encryptedItemKeyBase64,
         @Schema(description = "Permission granted to the requester", example = "READ_ONLY")
         SharedItemPermission permission

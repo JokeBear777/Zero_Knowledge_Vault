@@ -38,8 +38,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        //String accessToken = request.getHeader("Authorization");
-        String accessToken = CookieUtil.getAccessToken(request);
+        String accessToken = request.getHeader("Authorization");
+        if (!StringUtils.hasText(accessToken)) {
+            accessToken = CookieUtil.getAccessToken(request);
+        }
 
         if (!StringUtils.hasText(accessToken)) {
             filterChain.doFilter(request, response);

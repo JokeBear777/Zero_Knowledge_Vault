@@ -93,7 +93,8 @@ public class SecurityConfig {
                                 "/", "/index.html", "/login.html",
                                 "/sign-up.html", "/home.html",
                                 "/css/**", "/js/**", "/images/**",
-                                "/favicon.ico", "/.well-known/**"
+                                "/favicon.ico", "/.well-known/**",
+                                "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**"
                         ).permitAll()
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .anyRequest().authenticated()
