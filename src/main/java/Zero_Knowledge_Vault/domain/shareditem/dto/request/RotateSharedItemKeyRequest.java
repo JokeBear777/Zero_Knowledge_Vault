@@ -14,6 +14,8 @@ public record RotateSharedItemKeyRequest(
         @NotNull Long expectedVersion,
         @Schema(description = "Expected current sharedItemKey version", example = "1")
         @NotNull Long expectedKeyVersion,
+        @Schema(description = "Expected current shared item membership/wrapper snapshot version", example = "2")
+        @NotNull Long expectedMembershipVersion,
         @Schema(description = "Title ciphertext re-encrypted by the client with the new sharedItemKey, encoded as Base64")
         @NotBlank String titleCipherBase64,
         @Schema(description = "Item ciphertext re-encrypted by the client with the new sharedItemKey, encoded as Base64")

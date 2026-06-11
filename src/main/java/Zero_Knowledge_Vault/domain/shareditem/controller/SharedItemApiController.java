@@ -109,7 +109,7 @@ public class SharedItemApiController {
     @Operation(
             summary = "Get shared item key rotation context. OWNER only.",
             description = """
-                    OWNER only. Returns current version/keyVersion and ACTIVE member public keys so the owner client can build new sharedItemKey wrappers.
+                    OWNER only. Returns current version/keyVersion/membershipVersion and ACTIVE member public keys so the owner client can build new sharedItemKey wrappers.
                     The server never receives sharedItemKey plaintext, private keys, VaultKey, Master Password, or shared item plaintext.
                     """
     )
@@ -129,7 +129,7 @@ public class SharedItemApiController {
             summary = "Rotate shared item key and revoke selected members. OWNER only.",
             description = """
                     OWNER only. The client re-encrypts titleCipherBase64/itemCipherBase64 with a new sharedItemKey and sends wrappers for every remaining ACTIVE member.
-                    revokedMemberIds must not receive wrappers. expectedVersion or expectedKeyVersion mismatch returns 409 Conflict.
+                    revokedMemberIds must not receive wrappers. expectedVersion, expectedKeyVersion, or expectedMembershipVersion mismatch returns 409 Conflict.
                     The server validates ciphertext shape, ownership, concurrency, wrapper completeness, and recipient public key versions, but never decrypts ciphertext or key wrappers.
                     """
     )

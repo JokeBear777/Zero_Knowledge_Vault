@@ -12,6 +12,8 @@ public record SharedItemRotationContextResponse(
         Long version,
         @Schema(description = "Current sharedItemKey version", example = "1")
         Long keyVersion,
+        @Schema(description = "Current shared item membership/wrapper snapshot version", example = "2")
+        Long membershipVersion,
         @Schema(description = "ACTIVE members that need a new encryptedItemKey wrapper")
         List<RotationMemberResponse> members
 ) {

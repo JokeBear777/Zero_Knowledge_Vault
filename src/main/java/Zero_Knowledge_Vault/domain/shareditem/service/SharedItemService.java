@@ -287,6 +287,8 @@ public class SharedItemService {
             if (decided == 0) {
                 throw conflict("JOIN_REQUEST_ALREADY_DECIDED", "Join request has already been decided");
             }
+
+            incrementMembershipVersion(sharedItemId, now);
         } catch (DataIntegrityViolationException e) {
             throw conflict("SHARED_ITEM_MEMBER_ALREADY_EXISTS", "Requester is already a shared item member");
         }
@@ -367,8 +369,10 @@ public class SharedItemService {
             throw badRequest("INVALID_PERMISSION", "Permission must be READ_ONLY or READ_WRITE");
         }
 
+        LocalDateTime now = LocalDateTime.now();
         target.updatePermission(request.permission());
-        return UpdateSharedItemMemberPermissionResponse.from(target, LocalDateTime.now());
+        incrementMembershipVersion(sharedItemId, now);
+        return UpdateSharedItemMemberPermissionResponse.from(target, now);
     }
 
     @Transactional
@@ -383,9 +387,22 @@ public class SharedItemService {
 
         SharedItemMember target = requireActiveMember(sharedItemId, targetMemberId);
         requireParticipant(target);
-        target.revoke(LocalDateTime.now());
+        LocalDateTime now = LocalDateTime.now();
+        target.revoke(now);
+        incrementMembershipVersion(sharedItemId, now);
 
         return new RevokeSharedItemMemberResponse(sharedItemId, targetMemberId, true);
+    }
+
+    private void incrementMembershipVersion(Long sharedItemId, LocalDateTime now) {
+        int updated = sharedItemRepository.incrementMembershipVersion(
+                sharedItemId,
+                now,
+                SharedItemStatus.ACTIVE
+        );
+        if (updated == 0) {
+            throw conflict("SHARED_ITEM_MEMBERSHIP_VERSION_CONFLICT", "Shared item membershipVersion update conflicted");
+        }
     }
 
     private SharedItem findSharedItem(Long sharedItemId) {

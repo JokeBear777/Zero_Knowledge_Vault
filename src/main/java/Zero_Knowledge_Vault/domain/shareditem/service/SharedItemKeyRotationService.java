@@ -59,6 +59,7 @@ public class SharedItemKeyRotationService {
                 sharedItem.getSharedItemId(),
                 sharedItem.getVersion(),
                 sharedItem.getKeyVersion(),
+                sharedItem.getMembershipVersion(),
                 rotationMembers
         );
     }
@@ -75,7 +76,12 @@ public class SharedItemKeyRotationService {
         SharedItemMember requester = requireActiveMembership(members, requesterId);
         requireOwner(requester);
 
-        validateExpectedVersion(sharedItem, request.expectedVersion(), request.expectedKeyVersion());
+        validateExpectedVersions(
+                sharedItem,
+                request.expectedVersion(),
+                request.expectedKeyVersion(),
+                request.expectedMembershipVersion()
+        );
 
         Set<Long> revokedMemberIds = normalizeRevokedMemberIds(request.revokedMemberIds());
         validateRevokedMembers(members, revokedMemberIds);
@@ -94,10 +100,11 @@ public class SharedItemKeyRotationService {
         validateRecipientKeyVersions(remainingActiveMembers, wrappersByMemberId);
 
         LocalDateTime now = LocalDateTime.now();
-        int rotated = sharedItemRepository.rotateCipherIfVersionAndKeyVersionMatch(
+        int rotated = sharedItemRepository.rotateCipherIfVersionsMatch(
                 sharedItemId,
                 request.expectedVersion(),
                 request.expectedKeyVersion(),
+                request.expectedMembershipVersion(),
                 request.titleCipherBase64(),
                 request.itemCipherBase64(),
                 now,
@@ -105,7 +112,7 @@ public class SharedItemKeyRotationService {
         );
 
         if (rotated == 0) {
-            throw conflict("SHARED_ITEM_VERSION_CONFLICT", "Shared item version or keyVersion conflict");
+            throwCurrentVersionConflict(sharedItemId, request);
         }
 
         for (MemberKeyWrapperRequest wrapper : wrappersByMemberId.values()) {
@@ -179,13 +186,35 @@ public class SharedItemKeyRotationService {
         }
     }
 
-    private void validateExpectedVersion(SharedItem sharedItem, Long expectedVersion, Long expectedKeyVersion) {
+    private void validateExpectedVersions(
+            SharedItem sharedItem,
+            Long expectedVersion,
+            Long expectedKeyVersion,
+            Long expectedMembershipVersion
+    ) {
         if (!sharedItem.getVersion().equals(expectedVersion)) {
             throw conflict("SHARED_ITEM_VERSION_CONFLICT", "Shared item version conflict");
         }
         if (!sharedItem.getKeyVersion().equals(expectedKeyVersion)) {
             throw conflict("SHARED_ITEM_KEY_VERSION_CONFLICT", "Shared item keyVersion conflict");
         }
+        if (!sharedItem.getMembershipVersion().equals(expectedMembershipVersion)) {
+            throw conflict("SHARED_ITEM_MEMBERSHIP_VERSION_CONFLICT", "Shared item membershipVersion conflict");
+        }
+    }
+
+    private void throwCurrentVersionConflict(Long sharedItemId, RotateSharedItemKeyRequest request) {
+        SharedItem current = findSharedItem(sharedItemId);
+        if (current.getStatus() != SharedItemStatus.ACTIVE) {
+            throw badRequest("SHARED_ITEM_NOT_ACTIVE", "Shared item is not active");
+        }
+        validateExpectedVersions(
+                current,
+                request.expectedVersion(),
+                request.expectedKeyVersion(),
+                request.expectedMembershipVersion()
+        );
+        throw conflict("SHARED_ITEM_MEMBERSHIP_VERSION_CONFLICT", "Shared item version, keyVersion, or membershipVersion conflict");
     }
 
     private Set<Long> normalizeRevokedMemberIds(List<Long> revokedMemberIds) {
@@ -287,8 +316,10 @@ public class SharedItemKeyRotationService {
         if (request == null) {
             throw badRequest("INVALID_CIPHER_PAYLOAD", "Request body is required");
         }
-        if (request.expectedVersion() == null || request.expectedKeyVersion() == null) {
-            throw badRequest("INVALID_CIPHER_PAYLOAD", "expectedVersion and expectedKeyVersion are required");
+        if (request.expectedVersion() == null
+                || request.expectedKeyVersion() == null
+                || request.expectedMembershipVersion() == null) {
+            throw badRequest("INVALID_CIPHER_PAYLOAD", "expectedVersion, expectedKeyVersion, and expectedMembershipVersion are required");
         }
         validateCipherText(request.titleCipherBase64());
         validateCipherText(request.itemCipherBase64());

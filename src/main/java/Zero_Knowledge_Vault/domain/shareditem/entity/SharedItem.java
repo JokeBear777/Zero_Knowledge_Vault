@@ -49,6 +49,9 @@ public class SharedItem {
     @Column(name = "key_version", nullable = false)
     private Long keyVersion;
 
+    @Column(name = "membership_version", nullable = false)
+    private Long membershipVersion;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -71,6 +74,7 @@ public class SharedItem {
         this.status = SharedItemStatus.ACTIVE;
         this.version = 1L;
         this.keyVersion = 1L;
+        this.membershipVersion = 1L;
     }
 
     public static SharedItem create(
@@ -99,11 +103,23 @@ public class SharedItem {
         if (this.keyVersion == null) {
             this.keyVersion = 1L;
         }
+
+        if (this.membershipVersion == null) {
+            this.membershipVersion = 1L;
+        }
     }
 
     public void markDeleted(LocalDateTime now) {
         this.status = SharedItemStatus.DELETED;
         this.deletedAt = now;
+        this.updatedAt = now;
+    }
+
+    public void increaseMembershipVersion(LocalDateTime now) {
+        if (this.membershipVersion == null) {
+            this.membershipVersion = 1L;
+        }
+        this.membershipVersion += 1;
         this.updatedAt = now;
     }
 }
