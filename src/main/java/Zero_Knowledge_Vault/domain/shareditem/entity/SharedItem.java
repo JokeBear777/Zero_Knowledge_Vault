@@ -46,6 +46,9 @@ public class SharedItem {
     @Column(name = "version", nullable = false)
     private Long version;
 
+    @Column(name = "key_version", nullable = false)
+    private Long keyVersion;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -67,6 +70,7 @@ public class SharedItem {
         this.itemCipherAlgorithm = itemCipherAlgorithm;
         this.status = SharedItemStatus.ACTIVE;
         this.version = 1L;
+        this.keyVersion = 1L;
     }
 
     public static SharedItem create(
@@ -90,6 +94,10 @@ public class SharedItem {
 
         if (this.version == null) {
             this.version = 1L;
+        }
+
+        if (this.keyVersion == null) {
+            this.keyVersion = 1L;
         }
     }
 
