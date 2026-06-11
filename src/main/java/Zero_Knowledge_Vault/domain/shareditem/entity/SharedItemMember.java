@@ -60,11 +60,14 @@ public class SharedItemMember {
     private Integer recipientKeyVersion;
 
     @Lob
-    @Column(name = "encrypted_item_key_base64", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "encrypted_item_key_base64", columnDefinition = "TEXT")
     private String encryptedItemKeyBase64;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     @Column(name = "accepted_at")
     private LocalDateTime acceptedAt;
@@ -130,13 +133,23 @@ public class SharedItemMember {
 
     @PrePersist
     protected void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
         if (this.createdAt == null) {
-            this.createdAt = LocalDateTime.now();
+            this.createdAt = now;
+        }
+
+        if (this.updatedAt == null) {
+            this.updatedAt = now;
         }
 
         if (this.status == null) {
             this.status = SharedItemMemberStatus.ACTIVE;
         }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 
     public void updatePermission(SharedItemPermission permission) {
@@ -145,6 +158,8 @@ public class SharedItemMember {
 
     public void revoke(LocalDateTime now) {
         this.status = SharedItemMemberStatus.REVOKED;
+        this.encryptedItemKeyBase64 = null;
         this.revokedAt = now;
+        this.updatedAt = now;
     }
 }

@@ -2,9 +2,11 @@ package Zero_Knowledge_Vault.domain.shareditem.controller;
 
 import Zero_Knowledge_Vault.domain.shareditem.dto.request.ApproveJoinRequestRequest;
 import Zero_Knowledge_Vault.domain.shareditem.dto.request.CreateSharedItemRequest;
+import Zero_Knowledge_Vault.domain.shareditem.dto.request.RotateSharedItemKeyRequest;
 import Zero_Knowledge_Vault.domain.shareditem.dto.request.UpdateSharedItemMemberPermissionRequest;
 import Zero_Knowledge_Vault.domain.shareditem.dto.request.UpdateSharedItemRequest;
 import Zero_Knowledge_Vault.domain.shareditem.dto.response.*;
+import Zero_Knowledge_Vault.domain.shareditem.service.SharedItemKeyRotationService;
 import Zero_Knowledge_Vault.domain.shareditem.service.SharedItemService;
 import Zero_Knowledge_Vault.infra.swagger.OpenApiConfig;
 import Zero_Knowledge_Vault.infra.security.jwt.CustomUserPrincipal;
@@ -31,6 +33,7 @@ import java.util.List;
 public class SharedItemApiController {
 
     private final SharedItemService sharedItemService;
+    private final SharedItemKeyRotationService sharedItemKeyRotationService;
 
     @PostMapping
     @Operation(
@@ -100,6 +103,44 @@ public class SharedItemApiController {
             @PathVariable Long sharedItemId
     ) {
         return ResponseEntity.ok(sharedItemService.deleteSharedItem(principal.getUserId(), sharedItemId));
+    }
+
+    @GetMapping("/{sharedItemId}/rotation-context")
+    @Operation(
+            summary = "Get shared item key rotation context. OWNER only.",
+            description = """
+                    OWNER only. Returns current version/keyVersion/membershipVersion and ACTIVE member public keys so the owner client can build new sharedItemKey wrappers.
+                    The server never receives sharedItemKey plaintext, private keys, VaultKey, Master Password, or shared item plaintext.
+                    """
+    )
+    public ResponseEntity<SharedItemRotationContextResponse> getRotationContext(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @Parameter(description = "Shared item id", example = "1")
+            @PathVariable Long sharedItemId
+    ) {
+        return ResponseEntity.ok(sharedItemKeyRotationService.getRotationContext(
+                principal.getUserId(),
+                sharedItemId
+        ));
+    }
+
+    @PostMapping("/{sharedItemId}/rotate-key")
+    @Operation(
+            summary = "Rotate shared item key and revoke selected members. OWNER only.",
+            description = """
+                    OWNER only. The client re-encrypts titleCipherBase64/itemCipherBase64 with a new sharedItemKey and sends wrappers for every remaining ACTIVE member.
+                    revokedMemberIds must not receive wrappers. expectedVersion, expectedKeyVersion, or expectedMembershipVersion mismatch returns 409 Conflict.
+                    The server validates ciphertext shape, ownership, concurrency, wrapper completeness, and recipient public key versions, but never decrypts ciphertext or key wrappers.
+                    """
+    )
+    public ResponseEntity<Void> rotateKey(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @Parameter(description = "Shared item id", example = "1")
+            @PathVariable Long sharedItemId,
+            @Valid @RequestBody RotateSharedItemKeyRequest request
+    ) {
+        sharedItemKeyRotationService.rotateKey(principal.getUserId(), sharedItemId, request);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{sharedItemId}/invite-links")
