@@ -11,68 +11,109 @@
 <div class="app-layout">
     <main class="mobile-shell">
         <div class="mobile-frame app-content">
-            <header>
-                <div class="screen-topline">
-                    <a class="back-link" href="/share.html" aria-label="뒤로가기">←</a>
-                    <a class="more-button" href="#shared-create-section" aria-label="새 공유 비밀 만들기">+</a>
-                </div>
-                <div class="screen-heading">
-                    <span class="step-badge">공유 금고</span>
-                    <h1 class="app-title">공유 금고</h1>
-                    <p class="app-subtitle">공유 비밀은 금고 열쇠를 복원한 뒤 브라우저에서만 열려요.</p>
-                </div>
-            </header>
-
-            <div id="shared-item-message" class="message message-info">공유 금고를 준비하고 있어요.</div>
-
-            <section class="status-card" id="shared-vault-locked-section">
-                <div class="card-header-row">
-                    <div>
-                        <p class="status-label">금고를 열어볼까요?</p>
-                        <p class="muted">공유 비밀을 보려면 먼저 금고 열쇠를 복원해야 해요.</p>
+            <section class="app-card hero-card shared-hero-card">
+                <div class="vault-topbar shared-topbar">
+                    <div class="vault-status-row">
+                        <span class="vault-session-timer shared-space-label">공유 공간</span>
+                        <span id="shared-open-status" class="vault-lock-status vault-open-status status-warning">
+                            <span aria-hidden="true">🔒</span>
+                            상태 확인 중
+                        </span>
                     </div>
-                    <span class="hero-emoji">잠금</span>
+                    <div class="vault-hero-intro shared-hero-intro">
+                        <div class="vault-hero-copy">
+                            <span class="step-badge">공유 공간</span>
+                            <h1 class="brand">공유 금고</h1>
+                            <p class="subtitle">공유 비밀은 브라우저에서<br>암호화되어 저장돼요.</p>
+                        </div>
+                        <div class="vault-hero-visual shared-hero-visual" aria-hidden="true">
+                            <div class="shared-safe-art">
+                                <span class="shared-safe-body">👥</span>
+                                <span class="shared-safe-lock">🔐</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <button type="button" class="button button-primary storage-button" id="show-shared-vault-restore-btn">금고 열기</button>
-            </section>
 
-            <section class="app-card hidden" id="shared-vault-open-section">
-                <h2 class="home-card-title">금고 열쇠 복원</h2>
-                <p class="muted">마스터 비밀번호로 공유 금고에 필요한 열쇠를 복원해요.</p>
-                <div class="form-group">
-                    <label for="shared-vault-master-password">마스터 비밀번호</label>
-                    <input id="shared-vault-master-password" class="input" type="password" autocomplete="current-password" placeholder="마스터 비밀번호">
+                <div class="screen-topline shared-top-actions">
+                    <a class="back-link" href="/share.html" aria-label="뒤로가기">←</a>
+                    <button type="button" class="more-button" id="open-shared-create-top-btn" aria-label="새 공유 비밀 만들기">+</button>
                 </div>
-                <button type="button" class="button button-primary storage-button" id="restore-shared-vault-key-btn">금고 열기</button>
-            </section>
 
-            <section class="app-card hidden" id="shared-create-section">
-                <h2 class="home-card-title">+ 새 공유 비밀 만들기</h2>
-                <div class="form-group">
-                    <label for="create-title">제목</label>
-                    <input id="create-title" class="input" type="text" autocomplete="off" placeholder="예: 가족 와이파이">
-                </div>
-                <div class="form-group">
-                    <label for="create-content">내용</label>
-                    <textarea id="create-content" placeholder="공유할 비밀 내용을 입력하세요."></textarea>
-                </div>
-                <button type="button" class="button button-primary storage-button" id="create-shared-item-btn">새 공유 비밀 만들기</button>
-                <p class="muted security-note">입력한 내용은 브라우저에서 암호화된 뒤 저장돼요.</p>
-            </section>
+                <div id="shared-item-message" class="message shared-inline-message"></div>
 
-            <section class="app-card hidden" id="shared-owner-list-section">
-                <h2 class="home-card-title">내가 만든 공유</h2>
-                <div id="owner-shared-items" class="shared-item-list"></div>
-            </section>
+                <section class="vault-unlock-card shared-unlock-card" id="shared-vault-locked-section">
+                    <div class="vault-unlock-header">
+                        <span class="vault-unlock-icon" aria-hidden="true">🛡️</span>
+                        <div>
+                            <h2 class="section-title">공유 금고를 열어볼까요?</h2>
+                            <p class="muted">마스터 비밀번호를 입력하면<br>공유 금고 열쇠를 복원해요.</p>
+                        </div>
+                    </div>
+                    <button type="button" class="button button-primary storage-button" id="show-shared-vault-restore-btn">금고 열기</button>
+                </section>
 
-            <section class="app-card hidden" id="shared-participant-list-section">
-                <h2 class="home-card-title">참여 중인 공유</h2>
-                <div id="participant-shared-items" class="shared-item-list"></div>
-            </section>
+                <section class="vault-unlock-card shared-unlock-card hidden" id="shared-vault-open-section">
+                    <div class="vault-unlock-header">
+                        <span class="vault-unlock-icon" aria-hidden="true">🔑</span>
+                        <div>
+                            <h2 class="section-title">금고 열쇠 복원</h2>
+                            <p class="muted">마스터 비밀번호로 공유 금고에 필요한 열쇠를 복원해요.</p>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="shared-vault-master-password">마스터 비밀번호</label>
+                        <div class="vault-password-field">
+                            <input id="shared-vault-master-password" class="input" type="password" autocomplete="current-password" placeholder="마스터 비밀번호를 입력하세요">
+                            <button type="button" class="vault-password-visibility" aria-label="비밀번호 보기">◉</button>
+                        </div>
+                    </div>
+                    <button type="button" class="button button-primary storage-button" id="restore-shared-vault-key-btn">공유 금고 열기</button>
+                </section>
 
-            <section class="app-card hidden" id="shared-invite-list-section">
-                <h2 class="home-card-title">초대 요청</h2>
-                <div class="empty-state">참여 요청은 각 공유 비밀 상세에서 확인하고 승인할 수 있어요.</div>
+                <section id="shared-content-section" class="shared-main hidden">
+                    <section class="vault-search-panel shared-search-panel">
+                        <label class="sr-only" for="shared-search-input">공유 비밀 검색</label>
+                        <input class="input vault-search-input" type="search" id="shared-search-input" placeholder="공유 비밀 검색" autocomplete="off">
+                        <label class="sr-only" for="shared-sort-select">정렬</label>
+                        <select id="shared-sort-select" class="vault-sort-select" aria-label="공유 비밀 정렬">
+                            <option value="latest">최신순</option>
+                            <option value="title">제목순</option>
+                        </select>
+                    </section>
+
+                    <button type="button" class="vault-add-card shared-add-card" id="open-shared-create-btn">
+                        <span class="vault-add-icon" aria-hidden="true">+</span>
+                        <span class="vault-add-copy">
+                            <strong>새 공유 비밀 만들기</strong>
+                            <span>함께 사용할 비밀을 안전하게 저장하세요.</span>
+                        </span>
+                    </button>
+
+                    <section class="vault-list-section shared-list-section" aria-labelledby="sharedListTitle">
+                        <div class="vault-list-header">
+                            <h2 class="section-title" id="sharedListTitle">공유 비밀 <span id="shared-secret-count">(0)</span></h2>
+                        </div>
+                        <div id="shared-empty-state" class="empty-state hidden">
+                            아직 공유 비밀이 없어요. 첫 번째 공유 비밀을 만들어보세요.
+                        </div>
+                        <div id="shared-vault-items" class="shared-vault-list"></div>
+                    </section>
+
+                    <section class="hidden" id="shared-owner-list-section" aria-hidden="true">
+                        <h2 class="home-card-title">내가 만든 공유</h2>
+                        <div id="owner-shared-items" class="shared-item-list"></div>
+                    </section>
+
+                    <section class="hidden" id="shared-participant-list-section" aria-hidden="true">
+                        <h2 class="home-card-title">참여 중인 공유</h2>
+                        <div id="participant-shared-items" class="shared-item-list"></div>
+                    </section>
+
+                    <section class="shared-invite-note hidden" id="shared-invite-list-section">
+                        초대 요청은 각 공유 비밀 상세에서 확인하고 승인할 수 있어요.
+                    </section>
+                </section>
             </section>
 
         </div>
@@ -83,6 +124,35 @@
             <button type="button" class="nav-item" disabled><span class="nav-icon nav-icon-settings" aria-hidden="true">⚙️</span><span class="nav-label">설정</span></button>
         </nav>
     </main>
+</div>
+
+<div class="modal-backdrop bottom-sheet-backdrop hidden" id="shared-create-sheet" role="dialog" aria-modal="true" aria-labelledby="sharedCreateSheetTitle">
+    <section class="modal-card bottom-sheet" id="shared-create-section">
+        <div class="sheet-handle" aria-hidden="true"></div>
+        <div class="sheet-header">
+            <div>
+                <h2 class="section-title" id="sharedCreateSheetTitle">새 공유 비밀 만들기</h2>
+                <p class="muted">함께 사용할 비밀을 안전하게 저장하세요.</p>
+            </div>
+            <button type="button" class="sheet-close-button" id="close-shared-create-btn" aria-label="새 공유 비밀 만들기 닫기">×</button>
+        </div>
+
+        <form id="shared-create-form">
+            <div class="form-group">
+                <label for="create-title">제목</label>
+                <input id="create-title" class="input" type="text" autocomplete="off" placeholder="예: 가족 와이파이">
+            </div>
+            <div class="form-group">
+                <label for="create-content">내용</label>
+                <textarea id="create-content" placeholder="공유할 비밀 내용을 입력하세요."></textarea>
+            </div>
+            <div class="button-row two">
+                <button type="button" class="button button-ghost" id="cancel-shared-create-btn">취소</button>
+                <button type="submit" class="button button-primary" id="create-shared-item-btn">새 공유 비밀 만들기</button>
+            </div>
+            <p class="muted security-note">입력한 내용은 브라우저에서 암호화된 뒤 저장돼요.</p>
+        </form>
+    </section>
 </div>
 
 <script src="/js/storageCleaner.js"></script>

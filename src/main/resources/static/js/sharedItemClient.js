@@ -8,6 +8,7 @@
         decryptedTitle: "",
         decryptedContent: "",
         sharedItemKey: null,
+        sharedItems: [],
         busy: false
     };
 
@@ -32,6 +33,23 @@
         return Number.isNaN(date.getTime()) ? "-" : date.toLocaleString();
     }
 
+    function formatShortDate(value) {
+        if (!value) return "저장됨";
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return "저장됨";
+
+        const diffMs = Date.now() - date.getTime();
+        const minute = 60 * 1000;
+        const hour = 60 * minute;
+        const day = 24 * hour;
+
+        if (diffMs >= 0 && diffMs < minute) return "방금";
+        if (diffMs >= 0 && diffMs < hour) return Math.floor(diffMs / minute) + "분 전";
+        if (diffMs >= 0 && diffMs < day) return Math.floor(diffMs / hour) + "시간 전";
+
+        return date.toLocaleDateString();
+    }
+
     function clearNode(node) {
         if (node) node.textContent = "";
     }
@@ -50,6 +68,12 @@
         if (value === "READ_WRITE") badgeClass += " badge-write";
         if (value === "READ_ONLY") badgeClass += " badge-read";
         return createText("span", badgeClass, value);
+    }
+
+    function createRoleBadge(role) {
+        const value = role === "OWNER" ? "OWNER" : "PARTICIPANT";
+        const className = value === "OWNER" ? "role-badge owner" : "role-badge participant";
+        return createText("span", className, value);
     }
 
     function isOwner(item) {
@@ -73,10 +97,20 @@
     }
 
     function setSharedContentVisible(visible) {
-        setElementVisible("shared-create-section", visible);
-        setElementVisible("shared-owner-list-section", visible);
-        setElementVisible("shared-participant-list-section", visible);
-        setElementVisible("shared-invite-list-section", visible);
+        const hasCombinedList = Boolean(byId("shared-vault-items"));
+
+        setElementVisible("shared-content-section", visible);
+        if (hasCombinedList) {
+            setElementVisible("shared-owner-list-section", false);
+            setElementVisible("shared-participant-list-section", false);
+            setElementVisible("shared-invite-list-section", visible);
+            if (!visible) byId("shared-create-sheet")?.classList.add("hidden");
+        } else {
+            setElementVisible("shared-create-section", visible);
+            setElementVisible("shared-owner-list-section", visible);
+            setElementVisible("shared-participant-list-section", visible);
+            setElementVisible("shared-invite-list-section", visible);
+        }
         setElementVisible("shared-detail-section", visible);
 
         if (!visible) {
@@ -90,10 +124,24 @@
         return Boolean(window.__zkvVaultKey && window.__zkvSharePrivateKey);
     }
 
+    function setSharedOpenStatus(opened) {
+        const status = byId("shared-open-status");
+        if (!status) return;
+
+        status.className = opened
+            ? "vault-lock-status vault-open-status status-success"
+            : "vault-lock-status vault-open-status status-warning";
+        const icon = document.createElement("span");
+        icon.setAttribute("aria-hidden", "true");
+        icon.textContent = opened ? "🔓" : "🔒";
+        status.replaceChildren(icon, document.createTextNode(opened ? " 열려 있어요" : " 잠겨 있어요"));
+    }
+
     function showLockedSection(message) {
         setElementVisible("shared-vault-locked-section", true);
         setElementVisible("shared-vault-open-section", false);
         setSharedContentVisible(false);
+        setSharedOpenStatus(false);
         if (message) {
             showSharedItemMessage("warning", message);
         }
@@ -103,12 +151,14 @@
         setElementVisible("shared-vault-locked-section", false);
         setElementVisible("shared-vault-open-section", true);
         setSharedContentVisible(false);
+        setSharedOpenStatus(false);
     }
 
     function showSharedContent() {
         setElementVisible("shared-vault-locked-section", false);
         setElementVisible("shared-vault-open-section", false);
         setSharedContentVisible(true);
+        setSharedOpenStatus(true);
     }
 
     async function requireVaultAuthOrRedirect() {
@@ -219,6 +269,97 @@
         }
     }
 
+    function getSharedItemIconLabel(title) {
+        const normalizedTitle = String(title || "").trim().toLowerCase();
+        if (normalizedTitle.includes("github")) return "GH";
+        if (normalizedTitle.includes("google")) return "G";
+        if (normalizedTitle.includes("학교")) return "학";
+        if (normalizedTitle.includes("은행")) return "₩";
+        if (normalizedTitle.includes("email") || normalizedTitle.includes("이메일")) return "@";
+        return "🔐";
+    }
+
+    function getVisibleSharedItems() {
+        const searchInput = byId("shared-search-input");
+        const sortSelect = byId("shared-sort-select");
+        const keyword = (searchInput?.value || "").trim().toLowerCase();
+        const filtered = keyword
+            ? state.sharedItems.filter(item => item.title.toLowerCase().includes(keyword))
+            : [...state.sharedItems];
+
+        if (sortSelect?.value === "title") {
+            filtered.sort((a, b) => a.title.localeCompare(b.title, "ko"));
+            return filtered;
+        }
+
+        filtered.sort((a, b) => {
+            const left = new Date(a.updatedAt || a.createdAt || 0).getTime();
+            const right = new Date(b.updatedAt || b.createdAt || 0).getTime();
+            return right - left;
+        });
+        return filtered;
+    }
+
+    function renderCombinedSharedItems() {
+        const list = byId("shared-vault-items");
+        const emptyState = byId("shared-empty-state");
+        const count = byId("shared-secret-count");
+        if (!list) return false;
+
+        list.textContent = "";
+        const visibleItems = getVisibleSharedItems();
+        const hasItems = state.sharedItems.length > 0;
+        const hasVisibleItems = visibleItems.length > 0;
+
+        if (count) count.textContent = "(" + state.sharedItems.length + ")";
+        if (emptyState) {
+            emptyState.classList.toggle("hidden", hasVisibleItems);
+            emptyState.textContent = hasItems
+                ? "검색 결과가 없어요."
+                : "아직 공유 비밀이 없어요. 첫 번째 공유 비밀을 만들어보세요.";
+        }
+
+        for (const item of visibleItems) {
+            const card = document.createElement("article");
+            card.className = "shared-vault-card";
+            card.tabIndex = 0;
+
+            const icon = createText("div", "shared-vault-icon", getSharedItemIconLabel(item.title));
+            const main = document.createElement("div");
+            main.className = "shared-vault-main";
+            main.append(
+                createText("div", "shared-vault-title", item.title || "열 수 없는 비밀"),
+                createText("div", "shared-vault-preview", "공유 비밀 내용은 안전하게 암호화돼요.")
+            );
+
+            const meta = document.createElement("div");
+            meta.className = "shared-vault-meta";
+            meta.append(
+                createRoleBadge(item.role),
+                createText("span", "updated-at", formatShortDate(item.updatedAt || item.createdAt))
+            );
+
+            const arrow = createText("span", "chevron", ">");
+            arrow.setAttribute("aria-hidden", "true");
+
+            const openDetail = function () {
+                window.location.href = "/shared-item-detail.html?id=" + encodeURIComponent(item.sharedItemId);
+            };
+            card.addEventListener("click", openDetail);
+            card.addEventListener("keydown", function (event) {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    openDetail();
+                }
+            });
+
+            card.append(icon, main, meta, arrow);
+            list.appendChild(card);
+        }
+
+        return true;
+    }
+
     function renderItemCard(container, item, title) {
         const card = document.createElement("article");
         card.className = "shared-item-card";
@@ -254,6 +395,8 @@
         clearNode(ownerList);
         clearNode(participantList);
 
+        const normalizedItems = [];
+
         let ownerCount = 0;
         let participantCount = 0;
 
@@ -265,6 +408,8 @@
                 title = "열 수 없는 비밀";
             }
 
+            normalizedItems.push({ ...item, title });
+
             if (isOwner(item)) {
                 ownerCount += 1;
                 renderItemCard(ownerList, item, title);
@@ -274,6 +419,9 @@
             }
         }
 
+        state.sharedItems = normalizedItems;
+        if (renderCombinedSharedItems()) return;
+
         if (ownerCount === 0) renderEmpty(ownerList, "내가 만든 공유 비밀이 없어요.");
         if (participantCount === 0) renderEmpty(participantList, "참여 중인 공유 비밀이 없어요.");
     }
@@ -282,7 +430,7 @@
         try {
             if (!await requireVaultAuthOrRedirect()) return;
             if (!isSharedCryptoReady()) {
-                showLockedSection("공유 비밀을 보려면 금고 열쇠 복원이 필요해요.");
+                showLockedSection();
                 return;
             }
 
@@ -318,15 +466,40 @@
 
             showSharedItemMessage("info", "공유 비밀을 암호화해 만들고 있어요.");
             const payload = await SharedItemCrypto.createOwnerSharedItemPayload(title, content);
-            const response = await APIClient.post("/api/shared-items", payload);
+            await APIClient.post("/api/shared-items", payload);
+            closeSharedCreateSheet();
+            await loadSharedItems();
             showSharedItemMessage("success", "공유 비밀을 만들었어요.");
-            window.location.href = "/shared-item-detail.html?id=" + encodeURIComponent(response.sharedItemId);
         } catch (error) {
             handleError(error, "공유 비밀을 만들지 못했어요.");
         } finally {
             state.busy = false;
             setBusy(byId("create-shared-item-btn"), false);
         }
+    }
+
+    function resetSharedCreateForm() {
+        const title = byId("create-title");
+        const content = byId("create-content");
+        if (title) title.value = "";
+        if (content) content.value = "";
+    }
+
+    function openSharedCreateSheet() {
+        if (!isSharedCryptoReady()) {
+            showLockedSection("공유 비밀을 만들려면 금고 열쇠 복원이 필요해요.");
+            return;
+        }
+
+        resetSharedCreateForm();
+        byId("shared-create-sheet")?.classList.remove("hidden");
+        byId("shared-create-section")?.classList.remove("hidden");
+        byId("create-title")?.focus();
+    }
+
+    function closeSharedCreateSheet() {
+        resetSharedCreateForm();
+        byId("shared-create-sheet")?.classList.add("hidden");
     }
 
     function renderSharedItemDetail(item) {
@@ -694,10 +867,32 @@
     }
 
     function bindListPage() {
-        showLockedSection("공유 비밀을 보려면 금고 열쇠 복원이 필요해요.");
+        showLockedSection();
         byId("show-shared-vault-restore-btn")?.addEventListener("click", showVaultRestoreSection);
         byId("restore-shared-vault-key-btn")?.addEventListener("click", restoreVaultKeyFromPassword);
-        byId("create-shared-item-btn")?.addEventListener("click", createSharedItem);
+        byId("shared-vault-master-password")?.addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                restoreVaultKeyFromPassword();
+            }
+        });
+        byId("open-shared-create-btn")?.addEventListener("click", openSharedCreateSheet);
+        byId("open-shared-create-top-btn")?.addEventListener("click", openSharedCreateSheet);
+        byId("close-shared-create-btn")?.addEventListener("click", closeSharedCreateSheet);
+        byId("cancel-shared-create-btn")?.addEventListener("click", closeSharedCreateSheet);
+        byId("shared-create-sheet")?.addEventListener("click", function (event) {
+            if (event.target === byId("shared-create-sheet")) {
+                closeSharedCreateSheet();
+            }
+        });
+        byId("shared-create-form")?.addEventListener("submit", function (event) {
+            event.preventDefault();
+            createSharedItem();
+        });
+        byId("shared-search-input")?.addEventListener("input", renderCombinedSharedItems);
+        byId("shared-sort-select")?.addEventListener("change", renderCombinedSharedItems);
+        if (!byId("shared-create-form")) {
+            byId("create-shared-item-btn")?.addEventListener("click", createSharedItem);
+        }
         loadSharedItems();
     }
 

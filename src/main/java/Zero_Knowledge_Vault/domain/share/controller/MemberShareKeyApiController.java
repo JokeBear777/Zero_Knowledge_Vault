@@ -6,8 +6,10 @@ import Zero_Knowledge_Vault.domain.share.dto.response.DeleteShareKeyResponse;
 import Zero_Knowledge_Vault.domain.share.dto.response.MyShareKeyResponse;
 import Zero_Knowledge_Vault.domain.share.dto.response.PublicShareKeyResponse;
 import Zero_Knowledge_Vault.domain.share.service.MemberShareKeyService;
+import Zero_Knowledge_Vault.infra.swagger.OpenApiConfig;
 import Zero_Knowledge_Vault.infra.security.jwt.CustomUserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/share/keys")
 @RequiredArgsConstructor
 @Tag(name = "Share Key", description = "Client-encrypted share key registration and lookup APIs")
+@SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
 public class MemberShareKeyApiController {
 
     private final MemberShareKeyService memberShareKeyService;
