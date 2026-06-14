@@ -2,10 +2,14 @@ package Zero_Knowledge_Vault.domain.share.controller;
 
 import Zero_Knowledge_Vault.domain.share.dto.request.CreateShareKeyRequest;
 import Zero_Knowledge_Vault.domain.share.dto.request.RegenerateShareKeyRequest;
+import Zero_Knowledge_Vault.domain.share.dto.request.RewrapShareKeyRequest;
 import Zero_Knowledge_Vault.domain.share.dto.response.DeleteShareKeyResponse;
+import Zero_Knowledge_Vault.domain.share.dto.response.RewrapCandidateResponse;
 import Zero_Knowledge_Vault.domain.share.dto.response.MyShareKeyResponse;
 import Zero_Knowledge_Vault.domain.share.dto.response.PublicShareKeyResponse;
+import Zero_Knowledge_Vault.domain.share.dto.response.RewrapShareKeyResponse;
 import Zero_Knowledge_Vault.domain.share.service.MemberShareKeyService;
+import Zero_Knowledge_Vault.domain.share.service.MemberShareKeyRewrapService;
 import Zero_Knowledge_Vault.infra.swagger.OpenApiConfig;
 import Zero_Knowledge_Vault.infra.security.jwt.CustomUserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,11 +24,12 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/share/keys")
 @RequiredArgsConstructor
-@Tag(name = "Share Key", description = "Client-encrypted share key registration and lookup APIs")
+@Tag(name = "Share Key", description = "Client-encrypted share key registration, lookup, regenerate, and rewrap APIs")
 @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
 public class MemberShareKeyApiController {
 
     private final MemberShareKeyService memberShareKeyService;
+    private final MemberShareKeyRewrapService memberShareKeyRewrapService;
 
     /**
      * Returns the caller's active share key state.
@@ -94,12 +99,41 @@ public class MemberShareKeyApiController {
     @PostMapping("/regenerate")
     @Operation(
             summary = "Regenerate my share key",
-            description = "Marks the existing ACTIVE key as ROTATED and creates a new ACTIVE keyVersion. Existing shared item re-encryption is out of scope."
+            description = "Creates a new member-level share key pair for future sharing. Existing shared item key wrappers are not automatically re-wrapped."
     )
     public ResponseEntity<MyShareKeyResponse> regenerateShareKey(
             @AuthenticationPrincipal CustomUserPrincipal principal,
             @Valid @RequestBody RegenerateShareKeyRequest request
     ) {
         return ResponseEntity.ok(memberShareKeyService.regenerateShareKey(principal.getUserId(), request));
+    }
+
+    /**
+     * Returns shared item wrappers that can be re-wrapped with the caller's current ACTIVE share key.
+     */
+    @GetMapping("/rewrap-candidates")
+    @Operation(
+            summary = "Get shared item rewrap candidates",
+            description = "Returns the caller's ACTIVE shared items whose recipientKeyVersion is lower than the caller's current ACTIVE share key version. The response includes the current encryptedItemKeyBase64 wrapper so the client can decrypt and re-wrap it locally."
+    )
+    public ResponseEntity<java.util.List<RewrapCandidateResponse>> getRewrapCandidates(
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        return ResponseEntity.ok(memberShareKeyRewrapService.getRewrapCandidates(principal.getUserId()));
+    }
+
+    /**
+     * Persists client-rewrapped shared item wrappers for the caller only.
+     */
+    @PostMapping("/rewrap")
+    @Operation(
+            summary = "Re-wrap shared item wrappers",
+            description = "Updates only the caller's own shared_item_member rows with client-rewrapped encryptedItemKeyBase64 values. The server never receives sharedItemKey plaintext or privateKey plaintext."
+    )
+    public ResponseEntity<RewrapShareKeyResponse> rewrapShareKey(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @Valid @RequestBody RewrapShareKeyRequest request
+    ) {
+        return ResponseEntity.ok(memberShareKeyRewrapService.rewrapShareKey(principal.getUserId(), request));
     }
 }
