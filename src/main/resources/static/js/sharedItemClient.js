@@ -762,6 +762,111 @@
         return "공유 금고 상태가 변경되었어요. 최신 상태를 다시 불러온 뒤 다시 시도해주세요.";
     }
 
+    function getJoinRequestErrorMessage(error) {
+        const code = getApiErrorCode(error);
+        if (code === "INVITE_LINK_NOT_FOUND" || code === "INVITE_TOKEN_REQUIRED") {
+            return "초대 링크가 만료되었거나 올바르지 않아요.";
+        }
+        if (code === "SHARED_ITEM_MEMBER_ALREADY_EXISTS") {
+            return "이미 참여 중인 공유 비밀이에요.";
+        }
+        if (code === "JOIN_REQUEST_ALREADY_EXISTS") {
+            return "이미 참여 요청을 보낸 공유 비밀이에요.";
+        }
+        return "참여 요청을 보내지 못했어요. 잠시 후 다시 시도해주세요.";
+    }
+
+    function extractInviteTokenFromInput(value) {
+        const raw = String(value || "").trim();
+        if (!raw) return "";
+
+        const looksLikeUrl = raw.includes("://") || raw.startsWith("/") || raw.startsWith("?") || raw.includes("token=");
+        if (!looksLikeUrl) {
+            return raw;
+        }
+
+        try {
+            const url = new URL(raw, window.location.origin);
+            return (url.searchParams.get("token") || "").trim();
+        } catch (error) {
+            return "";
+        }
+    }
+
+    function setJoinRequestSheetVisible(visible) {
+        byId("shared-join-sheet")?.classList.toggle("hidden", !visible);
+        if (visible) {
+            window.setTimeout(function () {
+                byId("shared-join-input")?.focus();
+            }, 0);
+        }
+    }
+
+    function openJoinRequestSheet() {
+        const input = byId("shared-join-input");
+        if (input) input.value = "";
+        setJoinRequestSheetVisible(true);
+    }
+
+    function closeJoinRequestSheet() {
+        const input = byId("shared-join-input");
+        if (input) input.value = "";
+        setJoinRequestSheetVisible(false);
+    }
+
+    async function createJoinRequestFromInviteToken(inviteToken) {
+        const token = String(inviteToken || "").trim();
+        if (!token) {
+            throw new Error("Invite token is required.");
+        }
+
+        return await APIClient.post(
+            "/api/shared-items/invite-links/" + encodeURIComponent(token) + "/join-requests",
+            {}
+        );
+    }
+
+    async function submitJoinRequestFromInviteInput(rawValue) {
+        const token = extractInviteTokenFromInput(rawValue);
+        if (!token) {
+            showSharedItemMessage("error", "초대 링크 또는 초대 코드를 확인할 수 없어요.");
+            return false;
+        }
+
+        await createJoinRequestFromInviteToken(token);
+        return true;
+    }
+
+    async function submitJoinRequestFromSheet() {
+        const input = byId("shared-join-input");
+        const button = byId("submit-shared-join-btn");
+        const rawValue = input?.value || "";
+        const token = extractInviteTokenFromInput(rawValue);
+
+        if (!token) {
+            showSharedItemMessage("error", "초대 링크 또는 초대 코드를 입력해주세요.");
+            input?.focus();
+            return;
+        }
+
+        setBusy(button, true);
+        try {
+            await createJoinRequestFromInviteTokenWithMessage(token, {
+                successMessage: "참여 요청을 보냈어요. 공유 비밀의 소유자가 승인하면 접근할 수 있어요.",
+                errorMessage: "참여 요청을 보내지 못했어요. 잠시 후 다시 시도해주세요."
+            });
+            closeJoinRequestSheet();
+            await loadSharedItems();
+        } catch (error) {
+            if (error?.status === 401) {
+                return;
+            }
+            input?.focus();
+        } finally {
+            setBusy(button, false);
+        }
+    }
+
     function setRevokeButtonsBusy(busy) {
         document.querySelectorAll("[data-revoke-member-id]").forEach(function (button) {
             button.disabled = busy;
@@ -953,15 +1058,40 @@
         }
     }
 
-    async function createJoinRequest(inviteToken) {
+    async function createJoinRequestFromInviteTokenWithMessage(inviteToken, options = {}) {
+        const successMessage = options.successMessage || "참여 요청을 보냈어요. 공유 비밀의 소유자가 승인하면 접근할 수 있어요.";
+        const errorMessage = options.errorMessage || "참여 요청을 보내지 못했어요. 잠시 후 다시 시도해주세요.";
         setBusy(byId("create-join-request-btn"), true);
         try {
-            await APIClient.post("/api/shared-items/invite-links/" + encodeURIComponent(inviteToken) + "/join-requests", {});
-            showSharedItemMessage("success", "참여 요청을 보냈어요. owner가 승인하면 공유 금고에서 확인할 수 있어요.");
+            await createJoinRequestFromInviteToken(inviteToken);
+            showSharedItemMessage("success", successMessage);
         } catch (error) {
-            handleError(error, "초대 링크가 만료되었거나 이미 처리된 요청이에요.");
+            const code = getApiErrorCode(error);
+            if (code === "INVITE_LINK_NOT_FOUND" || code === "INVITE_TOKEN_REQUIRED") {
+                showSharedItemMessage("error", "초대 링크가 만료되었거나 올바르지 않아요.");
+                throw error;
+            }
+            if (code === "SHARED_ITEM_MEMBER_ALREADY_EXISTS") {
+                showSharedItemMessage("warning", "이미 참여 중인 공유 비밀이에요.");
+                throw error;
+            }
+            if (code === "JOIN_REQUEST_ALREADY_EXISTS") {
+                showSharedItemMessage("warning", "이미 참여 요청을 보낸 공유 비밀이에요.");
+                throw error;
+            }
+            showSharedItemMessage("error", errorMessage);
+            throw error;
         } finally {
             setBusy(byId("create-join-request-btn"), false);
+        }
+    }
+
+    async function createJoinRequest(inviteToken) {
+        try {
+            await createJoinRequestFromInviteTokenWithMessage(inviteToken);
+            return true;
+        } catch (error) {
+            return false;
         }
     }
 
@@ -1026,6 +1156,24 @@
             event.preventDefault();
             createSharedItem();
         });
+        byId("open-join-request-sheet-btn")?.addEventListener("click", openJoinRequestSheet);
+        byId("close-shared-join-btn")?.addEventListener("click", closeJoinRequestSheet);
+        byId("cancel-shared-join-btn")?.addEventListener("click", closeJoinRequestSheet);
+        byId("shared-join-sheet")?.addEventListener("click", function (event) {
+            if (event.target === byId("shared-join-sheet")) {
+                closeJoinRequestSheet();
+            }
+        });
+        byId("shared-join-form")?.addEventListener("submit", function (event) {
+            event.preventDefault();
+            submitJoinRequestFromSheet();
+        });
+        byId("shared-join-input")?.addEventListener("keydown", function (event) {
+            if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                submitJoinRequestFromSheet();
+            }
+        });
         byId("shared-search-input")?.addEventListener("input", renderCombinedSharedItems);
         byId("shared-sort-select")?.addEventListener("change", renderCombinedSharedItems);
         if (!byId("shared-create-form")) {
@@ -1068,6 +1216,7 @@
         getRotationContext,
         rotateKey,
         createInviteLink,
+        createJoinRequestFromInviteToken,
         createJoinRequest,
         loadJoinRequests,
         approveJoinRequest,
