@@ -693,6 +693,39 @@ button:disabled {
     font: inherit;
 }
 
+.shared-detail-card {
+    display: grid;
+    gap: 12px;
+    border-color: #bdebdc;
+    background:
+        radial-gradient(circle at 92% 10%, rgba(221, 247, 238, 0.86), transparent 28%),
+        linear-gradient(145deg, #ffffff 0%, #f7fcfa 100%);
+}
+
+.shared-detail-card .detail-title-row {
+    margin-bottom: 0;
+}
+
+.shared-detail-card .shared-item-content {
+    max-height: 300px;
+    margin: 0;
+    overflow: auto;
+    background: #ffffff;
+}
+
+.shared-detail-actions {
+    margin-top: 0;
+}
+
+.shared-management-sheet {
+    display: grid;
+    gap: 14px;
+}
+
+.shared-management-sheet .shared-management-block {
+    margin-top: 0;
+}
+
 .shared-management-block {
     display: grid;
     gap: 10px;

@@ -46,7 +46,7 @@
                 <button type="button" class="button button-primary storage-button" id="restore-shared-vault-key-btn">금고 열기</button>
             </section>
 
-            <section class="app-card hidden" id="shared-detail-section">
+            <section class="app-card shared-detail-card hidden" id="shared-detail-section">
                 <div class="detail-title-row">
                     <div>
                         <h2 id="detail-title" class="home-card-title">-</h2>
@@ -55,47 +55,13 @@
                     <span class="pill-badge">보안 메모</span>
                 </div>
                 <pre id="detail-content" class="shared-item-content secret-preview"></pre>
-                <button type="button" class="button button-secondary copy-button" id="copy-detail-content-btn">내용 복사</button>
-                <p id="read-only-note" class="readonly-note hidden">읽기 전용 공유라 수정할 수 없어요.</p>
-                <button type="button" class="button button-danger hidden storage-button" id="delete-shared-item-btn">공유 비밀 삭제</button>
-            </section>
-
-            <section class="app-card hidden" id="edit-section">
-                <h2 class="home-card-title">수정하기</h2>
-                <div class="form-group">
-                    <label for="edit-title">제목</label>
-                    <input id="edit-title" class="input" type="text" autocomplete="off">
+                <div class="button-row shared-detail-actions">
+                    <button type="button" class="button button-secondary copy-button" id="copy-detail-content-btn">내용 복사</button>
+                    <button type="button" class="button button-primary hidden" id="edit-shared-item-btn">수정하기</button>
+                    <button type="button" class="button button-secondary hidden" id="open-owner-management-btn">공유 관리</button>
+                    <button type="button" class="button button-danger hidden storage-button" id="delete-shared-item-btn">공유 비밀 삭제</button>
                 </div>
-                <div class="form-group">
-                    <label for="edit-content">내용</label>
-                    <textarea id="edit-content"></textarea>
-                </div>
-                <button type="button" class="button button-primary storage-button" id="update-shared-item-btn">수정 저장</button>
-            </section>
-
-            <section class="app-card hidden" id="owner-management-section">
-                <h2 class="home-card-title">공유 관리</h2>
-
-                <div class="shared-management-block">
-                    <h3>초대 링크 만들기</h3>
-                    <button type="button" class="button button-secondary storage-button" id="create-invite-btn">초대 링크 만들기</button>
-                    <div id="invite-link-result" class="hidden shared-invite-result">
-                        <label for="invite-link-url">초대 링크</label>
-                        <textarea id="invite-link-url" readonly></textarea>
-                        <p id="invite-link-expires" class="muted"></p>
-                        <button type="button" class="button button-secondary storage-button" id="copy-invite-btn">초대 링크 복사</button>
-                    </div>
-                </div>
-
-                <div class="shared-management-block">
-                    <h3>참여 요청 관리</h3>
-                    <div id="join-request-list" class="shared-item-list"></div>
-                </div>
-
-                <div class="shared-management-block">
-                    <h3>멤버 관리</h3>
-                    <div id="member-list" class="shared-item-list"></div>
-                </div>
+                <p id="read-only-note" class="readonly-note hidden">읽기 전용 공유는 수정할 수 없어요.</p>
             </section>
 
         </div>
@@ -106,6 +72,65 @@
             <button type="button" class="nav-item" disabled><span class="nav-icon nav-icon-settings" aria-hidden="true">⚙️</span><span class="nav-label">설정</span></button>
         </nav>
     </main>
+</div>
+
+<div class="modal-backdrop bottom-sheet-backdrop hidden" id="edit-section" role="dialog" aria-modal="true" aria-labelledby="editSharedItemTitle">
+    <section class="modal-card bottom-sheet">
+        <div class="sheet-handle" aria-hidden="true"></div>
+        <div class="sheet-header">
+            <div>
+                <h2 class="section-title" id="editSharedItemTitle">수정하기</h2>
+                <p class="muted">공유 비밀 제목과 내용을 수정해요.</p>
+            </div>
+            <button type="button" class="sheet-close-button" id="close-edit-section-btn" aria-label="수정 닫기">×</button>
+        </div>
+        <div class="form-group">
+            <label for="edit-title">제목</label>
+            <input id="edit-title" class="input" type="text" autocomplete="off">
+        </div>
+        <div class="form-group">
+            <label for="edit-content">내용</label>
+            <textarea id="edit-content"></textarea>
+        </div>
+        <div class="button-row two">
+            <button type="button" class="button button-ghost" id="cancel-edit-section-btn">취소</button>
+            <button type="button" class="button button-primary" id="update-shared-item-btn">수정 저장</button>
+        </div>
+    </section>
+</div>
+
+<div class="modal-backdrop bottom-sheet-backdrop hidden" id="owner-management-section" role="dialog" aria-modal="true" aria-labelledby="ownerManagementTitle">
+    <section class="modal-card bottom-sheet shared-management-sheet">
+        <div class="sheet-handle" aria-hidden="true"></div>
+        <div class="sheet-header">
+            <div>
+                <h2 class="section-title" id="ownerManagementTitle">공유 관리</h2>
+                <p class="muted">초대 링크와 참여 요청, 멤버 권한을 관리해요.</p>
+            </div>
+            <button type="button" class="sheet-close-button" id="close-owner-management-btn" aria-label="공유 관리 닫기">×</button>
+        </div>
+
+        <div class="shared-management-block">
+            <h3>초대 링크 만들기</h3>
+            <button type="button" class="button button-secondary storage-button" id="create-invite-btn">초대 링크 만들기</button>
+            <div id="invite-link-result" class="hidden shared-invite-result">
+                <label for="invite-link-url">초대 링크</label>
+                <textarea id="invite-link-url" readonly></textarea>
+                <p id="invite-link-expires" class="muted"></p>
+                <button type="button" class="button button-secondary storage-button" id="copy-invite-btn">초대 링크 복사</button>
+            </div>
+        </div>
+
+        <div class="shared-management-block">
+            <h3>참여 요청 관리</h3>
+            <div id="join-request-list" class="shared-item-list"></div>
+        </div>
+
+        <div class="shared-management-block">
+            <h3>멤버 관리</h3>
+            <div id="member-list" class="shared-item-list"></div>
+        </div>
+    </section>
 </div>
 
 <div id="revoke-rotation-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="revoke-rotation-title">

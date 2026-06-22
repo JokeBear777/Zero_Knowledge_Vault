@@ -98,6 +98,46 @@
         byId(id)?.classList.toggle("hidden", !visible);
     }
 
+    function setSheetVisible(id, visible, focusId) {
+        byId(id)?.classList.toggle("hidden", !visible);
+        if (visible && focusId) {
+            window.setTimeout(function () {
+                byId(focusId)?.focus();
+            }, 0);
+        }
+    }
+
+    function resetEditFormFromDetail() {
+        if (byId("edit-title")) byId("edit-title").value = state.decryptedTitle || "";
+        if (byId("edit-content")) byId("edit-content").value = state.decryptedContent || "";
+    }
+
+    function openEditSection() {
+        if (!state.detailItem || !canEdit(state.detailItem)) {
+            showSharedItemMessage("warning", "?쎄린 ?꾩슜 沅뚰븳?대씪 ?섏젙?????놁뒿?덈떎.");
+            return;
+        }
+        resetEditFormFromDetail();
+        setSheetVisible("edit-section", true, "edit-title");
+    }
+
+    function closeEditSection() {
+        resetEditFormFromDetail();
+        setSheetVisible("edit-section", false);
+    }
+
+    function openOwnerManagementSection() {
+        if (!state.detailItem || !isOwner(state.detailItem)) {
+            showSharedItemMessage("warning", "???묒뾽???????덈뒗 沅뚰븳???놁뼱??");
+            return;
+        }
+        setSheetVisible("owner-management-section", true);
+    }
+
+    function closeOwnerManagementSection() {
+        setSheetVisible("owner-management-section", false);
+    }
+
     function setSharedContentVisible(visible) {
         const hasCombinedList = Boolean(byId("shared-vault-items"));
 
@@ -119,6 +159,8 @@
             setElementVisible("edit-section", false);
             setElementVisible("owner-management-section", false);
             setElementVisible("delete-shared-item-btn", false);
+            setElementVisible("edit-shared-item-btn", false);
+            setElementVisible("open-owner-management-btn", false);
         }
     }
 
@@ -513,23 +555,19 @@
             "수정 " + formatDate(item.updatedAt || item.createdAt)
         ].filter(Boolean).join(" / ");
 
-        if (canEdit(item)) {
-            byId("edit-section")?.classList.remove("hidden");
-            byId("edit-title").value = state.decryptedTitle || "";
-            byId("edit-content").value = state.decryptedContent || "";
-        } else {
-            byId("edit-section")?.classList.add("hidden");
-        }
+        setElementVisible("edit-shared-item-btn", canEdit(item));
+        resetEditFormFromDetail();
 
         byId("read-only-note")?.classList.toggle("hidden", canEdit(item));
 
         if (isOwner(item)) {
-            byId("owner-management-section")?.classList.remove("hidden");
+            setElementVisible("open-owner-management-btn", true);
             byId("delete-shared-item-btn")?.classList.remove("hidden");
             loadJoinRequests(item.sharedItemId);
             loadSharedItemMembers(item.sharedItemId);
         } else {
-            byId("owner-management-section")?.classList.add("hidden");
+            setElementVisible("open-owner-management-btn", false);
+            closeOwnerManagementSection();
             byId("delete-shared-item-btn")?.classList.add("hidden");
         }
     }
@@ -552,6 +590,7 @@
             state.decryptedContent = decrypted.content;
             state.sharedItemKey = decrypted.sharedItemKey;
             renderSharedItemDetail(item);
+            closeEditSection();
             showSharedItemMessage("success", "공유 비밀을 열었어요.");
         } catch (error) {
             handleError(error, "공유 비밀 상세를 불러오지 못했어요.");
@@ -1192,6 +1231,21 @@
         showLockedSection("공유 비밀 상세를 보려면 금고 열쇠 복원이 필요해요.");
         byId("show-shared-vault-restore-btn")?.addEventListener("click", showVaultRestoreSection);
         byId("restore-shared-vault-key-btn")?.addEventListener("click", restoreVaultKeyFromPassword);
+        byId("edit-shared-item-btn")?.addEventListener("click", openEditSection);
+        byId("close-edit-section-btn")?.addEventListener("click", closeEditSection);
+        byId("cancel-edit-section-btn")?.addEventListener("click", closeEditSection);
+        byId("edit-section")?.addEventListener("click", function (event) {
+            if (event.target === byId("edit-section")) {
+                closeEditSection();
+            }
+        });
+        byId("open-owner-management-btn")?.addEventListener("click", openOwnerManagementSection);
+        byId("close-owner-management-btn")?.addEventListener("click", closeOwnerManagementSection);
+        byId("owner-management-section")?.addEventListener("click", function (event) {
+            if (event.target === byId("owner-management-section")) {
+                closeOwnerManagementSection();
+            }
+        });
         byId("update-shared-item-btn")?.addEventListener("click", function () {
             updateSharedItem(sharedItemId);
         });
