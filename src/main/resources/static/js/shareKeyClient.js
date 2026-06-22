@@ -26,6 +26,44 @@
         setButtonBusy(byId("regenerateShareKeyBtn"), busy);
     }
 
+    function setRegenerateModalVisible(visible) {
+        regenerateModalOpen = visible;
+        byId("share-key-regenerate-modal")?.classList.toggle("hidden", !visible);
+        if (visible) {
+            window.setTimeout(function () {
+                byId("confirm-share-key-regenerate-btn")?.focus();
+            }, 0);
+        }
+    }
+
+    function openRegenerateConfirmModal() {
+        setRegenerateModalVisible(true);
+    }
+
+    function closeRegenerateConfirmModal() {
+        setRegenerateModalVisible(false);
+    }
+
+    async function getShareKeyRewrapCandidates() {
+        return await APIClient.get("/api/share/keys/rewrap-candidates");
+    }
+
+    async function rewrapShareKeys(payload) {
+        return await APIClient.post("/api/share/keys/rewrap", payload);
+    }
+
+    async function refreshSharePrivateKeyCache() {
+        window.__zkvSharePrivateKey = null;
+        return await SharedItemCrypto.loadMySharePrivateKey();
+    }
+
+    function isShareKeyVersionMismatchError(error) {
+        const code = error?.body?.code;
+        return code === "SHARE_KEY_REWRAP_TARGET_VERSION_CONFLICT"
+            || code === "SHARED_ITEM_REWRAP_NOT_REQUIRED"
+            || code === "SHARED_ITEM_MEMBERSHIP_VERSION_CONFLICT";
+    }
+
     function readShareIntent() {
         const params = new URLSearchParams(window.location.search);
         const intent = ShareKeyIntent.normalizeIntent(params.get("intent"));
@@ -181,7 +219,12 @@
             return;
         }
 
-        showShareMessage(error?.isConflict ? "warning" : "error", error?.userMessage || fallback);
+        if (error?.isConflict) {
+            showShareMessage("warning", "공유 금고 상태가 바뀌었어요. 최신 상태를 다시 불러온 뒤 다시 시도해주세요.");
+            return;
+        }
+
+        showShareMessage("error", error?.userMessage || fallback);
     }
 
     async function loadMyShareKey() {
@@ -267,6 +310,108 @@
         }
     }
 
+    async function executeShareKeyRegeneration(options = {}) {
+        let previousPrivateKey = null;
+        let regenerated = false;
+
+        try {
+            setActionButtonsBusy(true);
+            showShareMessage("info", "기존 공유 비밀을 확인하는 중이에요...");
+            previousPrivateKey = await SharedItemCrypto.loadMySharePrivateKey();
+
+            showShareMessage("info", "새 공유키를 만드는 중이에요...");
+            const payload = options.payload || await ShareKeyCrypto.createEncryptedShareKeyPayload();
+
+            showShareMessage("info", "서버에 업데이트하는 중이에요...");
+            const response = await APIClient.post("/api/share/keys/regenerate", payload);
+            regenerated = true;
+            renderShareKeyState(response);
+
+            showShareMessage("info", "기존 공유 비밀을 확인하는 중이에요...");
+            const candidates = await getShareKeyRewrapCandidates();
+            const candidateList = Array.isArray(candidates) ? candidates : [];
+            const targetKeyVersion = Number(response.keyVersion);
+
+            if (candidateList.length === 0) {
+                showShareMessage("success", "새 공유키를 만들었어요. 업데이트할 기존 공유 비밀은 없어요.");
+                return;
+            }
+
+            if (candidateList.some(function (candidate) {
+                return Number(candidate.currentActiveKeyVersion) !== targetKeyVersion;
+            })) {
+                showShareMessage("warning", "공유키 정보가 바뀌었어요. 새로고침 후 다시 시도해주세요.");
+                return;
+            }
+
+            showShareMessage("info", "공유 비밀 열쇠를 새 키로 다시 감싸는 중이에요...");
+            const items = [];
+            for (const candidate of candidateList) {
+                try {
+                    const sharedItemKey = await SharedItemCrypto.decryptSharedItemKeyWithPrivateKey(
+                        candidate.encryptedItemKeyBase64,
+                        previousPrivateKey
+                    );
+                    const encryptedItemKeyBase64 = await SharedItemCrypto.encryptSharedItemKeyForPublicKey(
+                        sharedItemKey,
+                        payload.publicKeyBase64
+                    );
+                    items.push({
+                        sharedItemId: candidate.sharedItemId,
+                        expectedMembershipVersion: candidate.membershipVersion,
+                        encryptedItemKeyBase64
+                    });
+                } catch (error) {
+                    showShareMessage("warning", "기존 공유 비밀 열쇠를 복원하지 못했어요. 기존 공유키 정보가 필요할 수 있어요.");
+                    return;
+                }
+            }
+
+            if (items.length === 0) {
+                showShareMessage("success", "새 공유키를 만들었어요. 업데이트할 기존 공유 비밀은 없어요.");
+                return;
+            }
+
+            showShareMessage("info", "서버에 업데이트하는 중이에요...");
+            await rewrapShareKeys({
+                targetKeyVersion,
+                items
+            });
+            showShareMessage("success", "공유키를 재생성하고 기존 공유 비밀을 업데이트했어요.");
+        } catch (error) {
+            if (isShareKeyVersionMismatchError(error)) {
+                showShareMessage("warning", "공유키 정보가 바뀌었어요. 새로고침 후 다시 시도해주세요.");
+                return;
+            }
+
+            if (ShareKeyCrypto.isVaultLockedError(error)) {
+                handleVaultKeyRequired("regenerate-share-key");
+                return;
+            }
+
+            if (error?.status === 409) {
+                showShareMessage("warning", "공유 금고 상태가 바뀌었어요. 최신 상태를 다시 불러온 뒤 다시 시도해주세요.");
+                return;
+            }
+
+            handleError(error, "공유키 재생성에 실패했어요. 잠시 후 다시 시도해주세요.", {
+                intent: "regenerate-share-key",
+                redirectOnVaultRequired: !options.automatic
+            });
+        } finally {
+            if (regenerated) {
+                try {
+                    await refreshSharePrivateKeyCache();
+                } catch (error) {
+                    window.__zkvSharePrivateKey = null;
+                }
+            }
+            previousPrivateKey = null;
+            actionInProgress = false;
+            setActionButtonsBusy(false);
+        }
+    }
+
     async function regenerateShareKey(options = {}) {
         if (actionInProgress) return;
 
@@ -274,6 +419,13 @@
             await createShareKey(options);
             return;
         }
+
+        if (!options.automatic) {
+            openRegenerateConfirmModal();
+            return;
+        }
+
+        return await executeShareKeyRegeneration(options);
 
         actionInProgress = true;
         try {
@@ -339,6 +491,17 @@
         byId("regenerateShareKeyBtn")?.addEventListener("click", function () {
             regenerateShareKey();
         });
+        byId("close-share-key-regenerate-btn")?.addEventListener("click", closeRegenerateConfirmModal);
+        byId("cancel-share-key-regenerate-btn")?.addEventListener("click", closeRegenerateConfirmModal);
+        byId("share-key-regenerate-modal")?.addEventListener("click", function (event) {
+            if (event.target === byId("share-key-regenerate-modal")) {
+                closeRegenerateConfirmModal();
+            }
+        });
+        byId("confirm-share-key-regenerate-btn")?.addEventListener("click", function () {
+            closeRegenerateConfirmModal();
+            regenerateShareKey({ automatic: true });
+        });
         byId("deleteShareKeyBtn")?.addEventListener("click", deleteShareKey);
         byId("sharedItemsBtn")?.addEventListener("click", showSharedItemsReady);
     }
@@ -348,6 +511,8 @@
         createShareKey,
         regenerateShareKey,
         deleteShareKey,
+        getShareKeyRewrapCandidates,
+        rewrapShareKeys,
         renderShareKeyState,
         showShareMessage
     };

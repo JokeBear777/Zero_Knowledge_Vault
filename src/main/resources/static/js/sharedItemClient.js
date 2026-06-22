@@ -9,7 +9,9 @@
         decryptedContent: "",
         sharedItemKey: null,
         sharedItems: [],
-        busy: false
+        busy: false,
+        pendingRevokeMember: null,
+        revokeConfirmResolve: null
     };
 
     function byId(id) {
@@ -96,6 +98,46 @@
         byId(id)?.classList.toggle("hidden", !visible);
     }
 
+    function setSheetVisible(id, visible, focusId) {
+        byId(id)?.classList.toggle("hidden", !visible);
+        if (visible && focusId) {
+            window.setTimeout(function () {
+                byId(focusId)?.focus();
+            }, 0);
+        }
+    }
+
+    function resetEditFormFromDetail() {
+        if (byId("edit-title")) byId("edit-title").value = state.decryptedTitle || "";
+        if (byId("edit-content")) byId("edit-content").value = state.decryptedContent || "";
+    }
+
+    function openEditSection() {
+        if (!state.detailItem || !canEdit(state.detailItem)) {
+            showSharedItemMessage("warning", "?쎄린 ?꾩슜 沅뚰븳?대씪 ?섏젙?????놁뒿?덈떎.");
+            return;
+        }
+        resetEditFormFromDetail();
+        setSheetVisible("edit-section", true, "edit-title");
+    }
+
+    function closeEditSection() {
+        resetEditFormFromDetail();
+        setSheetVisible("edit-section", false);
+    }
+
+    function openOwnerManagementSection() {
+        if (!state.detailItem || !isOwner(state.detailItem)) {
+            showSharedItemMessage("warning", "???묒뾽???????덈뒗 沅뚰븳???놁뼱??");
+            return;
+        }
+        setSheetVisible("owner-management-section", true);
+    }
+
+    function closeOwnerManagementSection() {
+        setSheetVisible("owner-management-section", false);
+    }
+
     function setSharedContentVisible(visible) {
         const hasCombinedList = Boolean(byId("shared-vault-items"));
 
@@ -117,6 +159,8 @@
             setElementVisible("edit-section", false);
             setElementVisible("owner-management-section", false);
             setElementVisible("delete-shared-item-btn", false);
+            setElementVisible("edit-shared-item-btn", false);
+            setElementVisible("open-owner-management-btn", false);
         }
     }
 
@@ -505,29 +549,25 @@
     function renderSharedItemDetail(item) {
         byId("detail-title").textContent = state.decryptedTitle || "열 수 없는 비밀";
         byId("detail-content").textContent = state.decryptedContent || "";
-        byId("detail-meta").textContent = [
+        byId("detail-permission").textContent = [
             item.role,
-            item.permission,
-            "수정 " + formatDate(item.updatedAt || item.createdAt)
-        ].filter(Boolean).join(" / ");
+            item.permission
+        ].filter(Boolean).join(" · ");
+        byId("detail-meta").textContent = "수정 " + formatDate(item.updatedAt || item.createdAt);
 
-        if (canEdit(item)) {
-            byId("edit-section")?.classList.remove("hidden");
-            byId("edit-title").value = state.decryptedTitle || "";
-            byId("edit-content").value = state.decryptedContent || "";
-        } else {
-            byId("edit-section")?.classList.add("hidden");
-        }
+        setElementVisible("edit-shared-item-btn", canEdit(item));
+        resetEditFormFromDetail();
 
         byId("read-only-note")?.classList.toggle("hidden", canEdit(item));
 
         if (isOwner(item)) {
-            byId("owner-management-section")?.classList.remove("hidden");
+            setElementVisible("open-owner-management-btn", true);
             byId("delete-shared-item-btn")?.classList.remove("hidden");
             loadJoinRequests(item.sharedItemId);
             loadSharedItemMembers(item.sharedItemId);
         } else {
-            byId("owner-management-section")?.classList.add("hidden");
+            setElementVisible("open-owner-management-btn", false);
+            closeOwnerManagementSection();
             byId("delete-shared-item-btn")?.classList.add("hidden");
         }
     }
@@ -542,7 +582,7 @@
 
             showSharedContent();
             showSharedItemMessage("info", "공유 비밀을 불러오고 있어요.");
-            const item = await APIClient.get("/api/shared-items/" + encodeURIComponent(sharedItemId));
+            const item = await getSharedItemDetail(sharedItemId);
             const decrypted = await SharedItemCrypto.decryptSharedItem(item, { includeContent: true });
 
             state.detailItem = item;
@@ -550,6 +590,7 @@
             state.decryptedContent = decrypted.content;
             state.sharedItemKey = decrypted.sharedItemKey;
             renderSharedItemDetail(item);
+            closeEditSection();
             showSharedItemMessage("success", "공유 비밀을 열었어요.");
         } catch (error) {
             handleError(error, "공유 비밀 상세를 불러오지 못했어요.");
@@ -600,6 +641,21 @@
         } catch (error) {
             handleError(error, "공유 비밀을 삭제하지 못했어요.");
         }
+    }
+
+    async function getSharedItemDetail(sharedItemId) {
+        return await APIClient.get("/api/shared-items/" + encodeURIComponent(sharedItemId));
+    }
+
+    async function getRotationContext(sharedItemId) {
+        return await APIClient.get("/api/shared-items/" + encodeURIComponent(sharedItemId) + "/rotation-context");
+    }
+
+    async function rotateKey(sharedItemId, payload) {
+        return await APIClient.post(
+            "/api/shared-items/" + encodeURIComponent(sharedItemId) + "/rotate-key",
+            payload
+        );
     }
 
     async function createInviteLink(sharedItemId) {
@@ -733,6 +789,168 @@
         }
     }
 
+    function getApiErrorCode(error) {
+        return error?.body?.code || error?.body?.errorCode || "";
+    }
+
+    function getRotationConflictMessage(error) {
+        const code = getApiErrorCode(error);
+        if (code === "RECIPIENT_KEY_VERSION_CONFLICT") {
+            return "멤버의 공개키 정보가 변경되었어요. 최신 상태를 다시 불러온 뒤 다시 시도해주세요.";
+        }
+        return "공유 금고 상태가 변경되었어요. 최신 상태를 다시 불러온 뒤 다시 시도해주세요.";
+    }
+
+    function getJoinRequestErrorMessage(error) {
+        const code = getApiErrorCode(error);
+        if (code === "INVITE_LINK_NOT_FOUND" || code === "INVITE_TOKEN_REQUIRED") {
+            return "초대 링크가 만료되었거나 올바르지 않아요.";
+        }
+        if (code === "SHARED_ITEM_MEMBER_ALREADY_EXISTS") {
+            return "이미 참여 중인 공유 비밀이에요.";
+        }
+        if (code === "JOIN_REQUEST_ALREADY_EXISTS") {
+            return "이미 참여 요청을 보낸 공유 비밀이에요.";
+        }
+        return "참여 요청을 보내지 못했어요. 잠시 후 다시 시도해주세요.";
+    }
+
+    function extractInviteTokenFromInput(value) {
+        const raw = String(value || "").trim();
+        if (!raw) return "";
+
+        const looksLikeUrl = raw.includes("://") || raw.startsWith("/") || raw.startsWith("?") || raw.includes("token=");
+        if (!looksLikeUrl) {
+            return raw;
+        }
+
+        try {
+            const url = new URL(raw, window.location.origin);
+            return (url.searchParams.get("token") || "").trim();
+        } catch (error) {
+            return "";
+        }
+    }
+
+    function setJoinRequestSheetVisible(visible) {
+        byId("shared-join-sheet")?.classList.toggle("hidden", !visible);
+        if (visible) {
+            window.setTimeout(function () {
+                byId("shared-join-input")?.focus();
+            }, 0);
+        }
+    }
+
+    function openJoinRequestSheet() {
+        const input = byId("shared-join-input");
+        if (input) input.value = "";
+        setJoinRequestSheetVisible(true);
+    }
+
+    function closeJoinRequestSheet() {
+        const input = byId("shared-join-input");
+        if (input) input.value = "";
+        setJoinRequestSheetVisible(false);
+    }
+
+    async function createJoinRequestFromInviteToken(inviteToken) {
+        const token = String(inviteToken || "").trim();
+        if (!token) {
+            throw new Error("Invite token is required.");
+        }
+
+        return await APIClient.post(
+            "/api/shared-items/invite-links/" + encodeURIComponent(token) + "/join-requests",
+            {}
+        );
+    }
+
+    async function submitJoinRequestFromInviteInput(rawValue) {
+        const token = extractInviteTokenFromInput(rawValue);
+        if (!token) {
+            showSharedItemMessage("error", "초대 링크 또는 초대 코드를 확인할 수 없어요.");
+            return false;
+        }
+
+        await createJoinRequestFromInviteToken(token);
+        return true;
+    }
+
+    async function submitJoinRequestFromSheet() {
+        const input = byId("shared-join-input");
+        const button = byId("submit-shared-join-btn");
+        const rawValue = input?.value || "";
+        const token = extractInviteTokenFromInput(rawValue);
+
+        if (!token) {
+            showSharedItemMessage("error", "초대 링크 또는 초대 코드를 입력해주세요.");
+            input?.focus();
+            return;
+        }
+
+        setBusy(button, true);
+        try {
+            await createJoinRequestFromInviteTokenWithMessage(token, {
+                successMessage: "참여 요청을 보냈어요. 공유 비밀의 소유자가 승인하면 접근할 수 있어요.",
+                errorMessage: "참여 요청을 보내지 못했어요. 잠시 후 다시 시도해주세요."
+            });
+            closeJoinRequestSheet();
+            await loadSharedItems();
+        } catch (error) {
+            if (error?.status === 401) {
+                return;
+            }
+            input?.focus();
+        } finally {
+            setBusy(button, false);
+        }
+    }
+
+    function setRevokeButtonsBusy(busy) {
+        document.querySelectorAll("[data-revoke-member-id]").forEach(function (button) {
+            button.disabled = busy;
+        });
+    }
+
+    function closeRevokeConfirmModal(confirmed) {
+        byId("revoke-rotation-modal")?.classList.add("hidden");
+        const resolve = state.revokeConfirmResolve;
+        state.pendingRevokeMember = null;
+        state.revokeConfirmResolve = null;
+        if (resolve) resolve(Boolean(confirmed));
+    }
+
+    function confirmRevokeWithRotation(member) {
+        const modal = byId("revoke-rotation-modal");
+        const target = byId("revoke-target-label");
+        if (!modal) {
+            showSharedItemMessage("error", "접근 해제 확인 창을 열 수 없어요.");
+            return Promise.resolve(false);
+        }
+
+        state.pendingRevokeMember = member;
+        if (target) target.textContent = member?.emailMasked || "선택한 멤버";
+        modal.classList.remove("hidden");
+
+        return new Promise(function (resolve) {
+            state.revokeConfirmResolve = resolve;
+        });
+    }
+
+    function bindRevokeConfirmModal() {
+        byId("cancel-revoke-rotation-btn")?.addEventListener("click", function () {
+            closeRevokeConfirmModal(false);
+        });
+        byId("confirm-revoke-rotation-btn")?.addEventListener("click", function () {
+            closeRevokeConfirmModal(true);
+        });
+        byId("revoke-rotation-modal")?.addEventListener("click", function (event) {
+            if (event.target === byId("revoke-rotation-modal")) {
+                closeRevokeConfirmModal(false);
+            }
+        });
+    }
+
     function renderMembers(members) {
         const container = byId("member-list");
         clearNode(container);
@@ -750,7 +968,7 @@
                 createText("p", "muted", [member.role, member.permission, member.status].filter(Boolean).join(" / "))
             );
 
-            if (member.role === "PARTICIPANT") {
+            if (member.role === "PARTICIPANT" && member.status === "ACTIVE") {
                 const nextPermission = member.permission === "READ_WRITE" ? "READ_ONLY" : "READ_WRITE";
                 const permissionButton = document.createElement("button");
                 permissionButton.type = "button";
@@ -763,9 +981,10 @@
                 const revokeButton = document.createElement("button");
                 revokeButton.type = "button";
                 revokeButton.className = "button button-danger";
+                revokeButton.dataset.revokeMemberId = String(member.memberId);
                 revokeButton.textContent = "권한 취소";
                 revokeButton.addEventListener("click", function () {
-                    revokeSharedItemMember(state.detailItem.sharedItemId, member.memberId);
+                    revokeSharedItemMember(state.detailItem.sharedItemId, member);
                 });
 
                 const actions = document.createElement("div");
@@ -800,30 +1019,118 @@
         }
     }
 
-    async function revokeSharedItemMember(sharedItemId, memberId) {
-        if (!confirm("이 멤버의 접근 권한을 취소할까요?")) return;
+    async function revokeSharedItemMember(sharedItemId, member) {
+        if (state.busy || !state.detailItem || !isOwner(state.detailItem)) {
+            showSharedItemMessage("warning", "이 작업을 수행할 권한이 없어요.");
+            return;
+        }
+
+        const revokedMemberId = typeof member === "object" ? member.memberId : member;
+        if (!revokedMemberId) {
+            showSharedItemMessage("warning", "접근 해제할 멤버를 확인할 수 없어요.");
+            return;
+        }
+
+        const confirmed = await confirmRevokeWithRotation(
+            typeof member === "object" ? member : { memberId: revokedMemberId }
+        );
+        if (!confirmed) return;
+
+        state.busy = true;
+        setRevokeButtonsBusy(true);
 
         try {
-            await APIClient.post(
-                "/api/shared-items/" + encodeURIComponent(sharedItemId) + "/members/" + encodeURIComponent(memberId) + "/revoke",
-                {}
+            if (!await requireVaultAuthOrRedirect()) return;
+            if (!isSharedCryptoReady()) {
+                showLockedSection("멤버 접근 해제에는 금고 열쇠 복원이 필요해요.");
+                return;
+            }
+
+            showSharedItemMessage("info", "공유 비밀을 확인하고 있어요.");
+            const detail = await getSharedItemDetail(sharedItemId);
+            const decrypted = await SharedItemCrypto.decryptSharedItem(detail, { includeContent: true });
+
+            showSharedItemMessage("info", "남아 있는 멤버 정보를 확인하고 있어요.");
+            const context = await getRotationContext(sharedItemId);
+            if (Number(detail.version) !== Number(context.version)) {
+                showSharedItemMessage("warning", getRotationConflictMessage({ status: 409 }));
+                await loadSharedItemDetail(sharedItemId);
+                return;
+            }
+
+            const revokedMemberIds = [Number(revokedMemberId)];
+            const remainingMembers = (context.members || []).filter(function (contextMember) {
+                return contextMember.status === "ACTIVE"
+                    && !revokedMemberIds.includes(Number(contextMember.memberId));
+            });
+
+            showSharedItemMessage("info", "새 공유 열쇠를 만들고 남아 있는 멤버에게만 전달하고 있어요.");
+            const rotatedPayload = await SharedItemCrypto.createRotatedSharedItemPayload(
+                decrypted.title,
+                decrypted.content,
+                remainingMembers
             );
-            showSharedItemMessage("success", "멤버 권한을 취소했어요.");
-            await loadSharedItemMembers(sharedItemId);
+
+            showSharedItemMessage("info", "공유 금고를 업데이트하고 있어요.");
+            await rotateKey(sharedItemId, {
+                expectedVersion: context.version,
+                expectedKeyVersion: context.keyVersion,
+                expectedMembershipVersion: context.membershipVersion,
+                titleCipherBase64: rotatedPayload.titleCipherBase64,
+                itemCipherBase64: rotatedPayload.itemCipherBase64,
+                memberKeyWrappers: rotatedPayload.memberKeyWrappers,
+                revokedMemberIds
+            });
+
+            showSharedItemMessage("success", "멤버 접근이 해제되었고 남아 있는 멤버만 새 공유 비밀을 열 수 있어요.");
+            await loadSharedItemDetail(sharedItemId);
         } catch (error) {
-            handleError(error, "멤버 권한을 취소할 수 없어요.");
+            if (error?.isConflict || error?.status === 409) {
+                showSharedItemMessage("warning", getRotationConflictMessage(error));
+                await loadSharedItemDetail(sharedItemId);
+                return;
+            }
+            handleError(error, "멤버 접근 해제와 키 재생성에 실패했어요.");
+        } finally {
+            state.busy = false;
+            setRevokeButtonsBusy(false);
+        }
+    }
+
+    async function createJoinRequestFromInviteTokenWithMessage(inviteToken, options = {}) {
+        const successMessage = options.successMessage || "참여 요청을 보냈어요. 공유 비밀의 소유자가 승인하면 접근할 수 있어요.";
+        const errorMessage = options.errorMessage || "참여 요청을 보내지 못했어요. 잠시 후 다시 시도해주세요.";
+        setBusy(byId("create-join-request-btn"), true);
+        try {
+            await createJoinRequestFromInviteToken(inviteToken);
+            showSharedItemMessage("success", successMessage);
+        } catch (error) {
+            const code = getApiErrorCode(error);
+            if (code === "INVITE_LINK_NOT_FOUND" || code === "INVITE_TOKEN_REQUIRED") {
+                showSharedItemMessage("error", "초대 링크가 만료되었거나 올바르지 않아요.");
+                throw error;
+            }
+            if (code === "SHARED_ITEM_MEMBER_ALREADY_EXISTS") {
+                showSharedItemMessage("warning", "이미 참여 중인 공유 비밀이에요.");
+                throw error;
+            }
+            if (code === "JOIN_REQUEST_ALREADY_EXISTS") {
+                showSharedItemMessage("warning", "이미 참여 요청을 보낸 공유 비밀이에요.");
+                throw error;
+            }
+            showSharedItemMessage("error", errorMessage);
+            throw error;
+        } finally {
+            setBusy(byId("create-join-request-btn"), false);
         }
     }
 
     async function createJoinRequest(inviteToken) {
-        setBusy(byId("create-join-request-btn"), true);
         try {
-            await APIClient.post("/api/shared-items/invite-links/" + encodeURIComponent(inviteToken) + "/join-requests", {});
-            showSharedItemMessage("success", "참여 요청을 보냈어요. owner가 승인하면 공유 금고에서 확인할 수 있어요.");
+            await createJoinRequestFromInviteTokenWithMessage(inviteToken);
+            return true;
         } catch (error) {
-            handleError(error, "초대 링크가 만료되었거나 이미 처리된 요청이에요.");
-        } finally {
-            setBusy(byId("create-join-request-btn"), false);
+            return false;
         }
     }
 
@@ -888,6 +1195,24 @@
             event.preventDefault();
             createSharedItem();
         });
+        byId("open-join-request-sheet-btn")?.addEventListener("click", openJoinRequestSheet);
+        byId("close-shared-join-btn")?.addEventListener("click", closeJoinRequestSheet);
+        byId("cancel-shared-join-btn")?.addEventListener("click", closeJoinRequestSheet);
+        byId("shared-join-sheet")?.addEventListener("click", function (event) {
+            if (event.target === byId("shared-join-sheet")) {
+                closeJoinRequestSheet();
+            }
+        });
+        byId("shared-join-form")?.addEventListener("submit", function (event) {
+            event.preventDefault();
+            submitJoinRequestFromSheet();
+        });
+        byId("shared-join-input")?.addEventListener("keydown", function (event) {
+            if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                submitJoinRequestFromSheet();
+            }
+        });
         byId("shared-search-input")?.addEventListener("input", renderCombinedSharedItems);
         byId("shared-sort-select")?.addEventListener("change", renderCombinedSharedItems);
         if (!byId("shared-create-form")) {
@@ -906,6 +1231,21 @@
         showLockedSection("공유 비밀 상세를 보려면 금고 열쇠 복원이 필요해요.");
         byId("show-shared-vault-restore-btn")?.addEventListener("click", showVaultRestoreSection);
         byId("restore-shared-vault-key-btn")?.addEventListener("click", restoreVaultKeyFromPassword);
+        byId("edit-shared-item-btn")?.addEventListener("click", openEditSection);
+        byId("close-edit-section-btn")?.addEventListener("click", closeEditSection);
+        byId("cancel-edit-section-btn")?.addEventListener("click", closeEditSection);
+        byId("edit-section")?.addEventListener("click", function (event) {
+            if (event.target === byId("edit-section")) {
+                closeEditSection();
+            }
+        });
+        byId("open-owner-management-btn")?.addEventListener("click", openOwnerManagementSection);
+        byId("close-owner-management-btn")?.addEventListener("click", closeOwnerManagementSection);
+        byId("owner-management-section")?.addEventListener("click", function (event) {
+            if (event.target === byId("owner-management-section")) {
+                closeOwnerManagementSection();
+            }
+        });
         byId("update-shared-item-btn")?.addEventListener("click", function () {
             updateSharedItem(sharedItemId);
         });
@@ -917,6 +1257,7 @@
         });
         byId("copy-invite-btn")?.addEventListener("click", copyInviteLink);
         byId("copy-detail-content-btn")?.addEventListener("click", copyDetailContent);
+        bindRevokeConfirmModal();
         loadSharedItemDetail(sharedItemId);
     }
 
@@ -926,7 +1267,10 @@
         createSharedItem,
         updateSharedItem,
         deleteSharedItem,
+        getRotationContext,
+        rotateKey,
         createInviteLink,
+        createJoinRequestFromInviteToken,
         createJoinRequest,
         loadJoinRequests,
         approveJoinRequest,

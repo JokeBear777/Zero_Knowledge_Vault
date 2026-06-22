@@ -130,6 +130,38 @@
         };
     }
 
+    async function wrapSharedItemKeyForMember(sharedItemKey, publicKeyBase64) {
+        return await encryptSharedItemKeyForPublicKey(sharedItemKey, publicKeyBase64);
+    }
+
+    async function createRotatedSharedItemPayload(title, content, members) {
+        let newSharedItemKey = await generateSharedItemKey();
+
+        try {
+            const encryptedPayload = await encryptItemPayload(title, content, newSharedItemKey);
+            const memberKeyWrappers = [];
+
+            for (const member of members || []) {
+                memberKeyWrappers.push({
+                    memberId: member.memberId,
+                    recipientKeyVersion: member.publicKeyVersion,
+                    encryptedItemKeyBase64: await wrapSharedItemKeyForMember(
+                        newSharedItemKey,
+                        member.publicKeyBase64
+                    )
+                });
+            }
+
+            return {
+                titleCipherBase64: encryptedPayload.titleCipherBase64,
+                itemCipherBase64: encryptedPayload.itemCipherBase64,
+                memberKeyWrappers
+            };
+        } finally {
+            newSharedItemKey = null;
+        }
+    }
+
     async function createOwnerSharedItemPayload(title, content) {
         const shareKey = await getMyShareKey();
         const sharedItemKey = await generateSharedItemKey();
@@ -183,10 +215,12 @@
         encryptSharedItemText,
         decryptSharedItemText,
         encryptSharedItemKeyForPublicKey,
+        wrapSharedItemKeyForMember,
         decryptSharedItemKeyWithPrivateKey,
         loadMySharePrivateKey,
         decryptMySharePrivateKey,
         encryptItemPayload,
+        createRotatedSharedItemPayload,
         createOwnerSharedItemPayload,
         decryptSharedItem
     };

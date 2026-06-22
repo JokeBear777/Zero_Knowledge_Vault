@@ -693,6 +693,132 @@ button:disabled {
     font: inherit;
 }
 
+.shared-detail-card {
+    display: grid;
+    gap: 16px;
+    padding: 22px;
+    border-color: #bdebdc;
+    border-radius: 24px;
+    background:
+        radial-gradient(circle at 92% 8%, rgba(221, 247, 238, 0.82), transparent 26%),
+        linear-gradient(180deg, #ffffff 0%, #f7fcfa 100%);
+    box-shadow: var(--shadow);
+}
+
+.shared-detail-card .detail-title-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 10px;
+    margin-bottom: 0;
+}
+
+.shared-detail-card .home-card-title {
+    margin: 0;
+    font-size: 21px;
+    line-height: 1.25;
+    font-weight: 950;
+    overflow-wrap: anywhere;
+}
+
+.shared-detail-card .pill-badge {
+    align-self: start;
+    padding: 6px 9px;
+    font-size: 11px;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+
+.shared-detail-meta {
+    display: grid;
+    gap: 3px;
+    margin-top: 8px;
+}
+
+.shared-detail-meta .detail-meta-line {
+    margin: 0;
+    color: #84938f;
+    font-size: 12.5px;
+    line-height: 1.35;
+}
+
+.shared-detail-card .shared-item-content {
+    min-height: 116px;
+    max-height: 286px;
+    margin: 0;
+    padding: 18px;
+    border-color: rgba(184, 229, 215, 0.86);
+    border-radius: 20px;
+    overflow: auto;
+    background:
+        linear-gradient(180deg, #f8fcfa 0%, #f1f8f5 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    line-height: 1.68;
+}
+
+.shared-detail-actions {
+    display: grid;
+    gap: 10px;
+    margin-top: 0;
+}
+
+.shared-detail-card .copy-button {
+    min-height: 44px;
+    margin-top: 0;
+    background: transparent;
+}
+
+.shared-primary-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.shared-primary-actions:has(.hidden) {
+    grid-template-columns: 1fr;
+}
+
+.shared-primary-actions .button {
+    min-height: 46px;
+    padding-inline: 12px;
+}
+
+.shared-primary-actions .button:only-child {
+    grid-column: 1 / -1;
+}
+
+.shared-danger-zone {
+    display: grid;
+    margin-top: 2px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(225, 106, 91, 0.18);
+}
+
+.shared-danger-zone:has(.hidden) {
+    display: none;
+}
+
+.shared-danger-zone #delete-shared-item-btn {
+    min-height: 42px;
+    border-color: #fac8c0;
+    background: var(--danger-bg);
+    color: var(--danger-dark);
+    box-shadow: none;
+}
+
+.shared-danger-zone #delete-shared-item-btn:hover {
+    background: #ffe6e1;
+}
+
+.shared-management-sheet {
+    display: grid;
+    gap: 14px;
+}
+
+.shared-management-sheet .shared-management-block {
+    margin-top: 0;
+}
+
 .shared-management-block {
     display: grid;
     gap: 10px;
@@ -1412,7 +1538,22 @@ button:disabled {
 }
 
 .share-screen .app-content {
-    padding-bottom: 18px;
+    padding-bottom: 24px;
+}
+
+.share-screen .share-vault-card {
+    margin-bottom: 14px;
+    border-color: #bdebdc;
+    border-radius: 20px;
+    background:
+        radial-gradient(circle at 92% 16%, rgba(221, 247, 238, 0.88), transparent 30%),
+        linear-gradient(145deg, #ffffff 0%, #f1fbf7 100%);
+    box-shadow: var(--soft-shadow);
+}
+
+.share-screen .share-vault-card .storage-button {
+    margin-top: 2px;
+    min-height: 48px;
 }
 
 .share-screen .shared-hero-card {
@@ -2022,7 +2163,7 @@ code {
     }
 
     .share-screen .app-content {
-        padding: 14px 12px 14px;
+        padding: 14px 12px 22px;
     }
 
     .share-screen .shared-hero-card {
