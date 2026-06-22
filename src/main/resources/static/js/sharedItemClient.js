@@ -549,11 +549,11 @@
     function renderSharedItemDetail(item) {
         byId("detail-title").textContent = state.decryptedTitle || "열 수 없는 비밀";
         byId("detail-content").textContent = state.decryptedContent || "";
-        byId("detail-meta").textContent = [
+        byId("detail-permission").textContent = [
             item.role,
-            item.permission,
-            "수정 " + formatDate(item.updatedAt || item.createdAt)
-        ].filter(Boolean).join(" / ");
+            item.permission
+        ].filter(Boolean).join(" · ");
+        byId("detail-meta").textContent = "수정 " + formatDate(item.updatedAt || item.createdAt);
 
         setElementVisible("edit-shared-item-btn", canEdit(item));
         resetEditFormFromDetail();

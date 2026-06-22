@@ -50,16 +50,23 @@
                 <div class="detail-title-row">
                     <div>
                         <h2 id="detail-title" class="home-card-title">-</h2>
-                        <p id="detail-meta" class="muted detail-meta-line"></p>
+                        <div class="shared-detail-meta">
+                            <p id="detail-permission" class="muted detail-meta-line"></p>
+                            <p id="detail-meta" class="muted detail-meta-line"></p>
+                        </div>
                     </div>
                     <span class="pill-badge">보안 메모</span>
                 </div>
                 <pre id="detail-content" class="shared-item-content secret-preview"></pre>
-                <div class="button-row shared-detail-actions">
+                <div class="shared-detail-actions">
                     <button type="button" class="button button-secondary copy-button" id="copy-detail-content-btn">내용 복사</button>
-                    <button type="button" class="button button-primary hidden" id="edit-shared-item-btn">수정하기</button>
-                    <button type="button" class="button button-secondary hidden" id="open-owner-management-btn">공유 관리</button>
-                    <button type="button" class="button button-danger hidden storage-button" id="delete-shared-item-btn">공유 비밀 삭제</button>
+                    <div class="shared-primary-actions">
+                        <button type="button" class="button button-primary hidden" id="edit-shared-item-btn">수정하기</button>
+                        <button type="button" class="button button-secondary hidden" id="open-owner-management-btn">공유 관리</button>
+                    </div>
+                    <div class="shared-danger-zone">
+                        <button type="button" class="button hidden" id="delete-shared-item-btn">공유 비밀 삭제</button>
+                    </div>
                 </div>
                 <p id="read-only-note" class="readonly-note hidden">읽기 전용 공유는 수정할 수 없어요.</p>
             </section>
