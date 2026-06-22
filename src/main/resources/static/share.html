@@ -21,6 +21,17 @@
 
             <div id="share-message" class="message message-info">공유키 상태를 확인하고 있어요.</div>
 
+            <section class="app-card hero-card share-vault-card">
+                <div class="card-header-row">
+                    <div>
+                        <h2 class="home-card-title">공유 금고</h2>
+                        <p class="muted">승인된 사람끼리만 공유 비밀을 열어볼 수 있어요.</p>
+                    </div>
+                    <span class="hero-emoji">금고</span>
+                </div>
+                <button type="button" class="button button-primary storage-button" id="sharedItemsBtn">공유 금고 보기</button>
+            </section>
+
             <section class="status-card share-key-card">
                 <div class="card-header-row">
                     <div>
@@ -43,17 +54,6 @@
                     <button type="button" class="button button-danger hidden" id="deleteShareKeyBtn">공유키 삭제</button>
                 </div>
                 <p class="muted security-note">공유키를 재생성하면 앞으로 나에게 공유되는 비밀은 새 공개키로 보호돼요. 기존 공유 비밀을 계속 열 수 있도록, 브라우저에서 기존 공유 비밀 열쇠를 새 공개키로 다시 감싸요.</p>
-            </section>
-
-            <section class="app-card hero-card">
-                <div class="card-header-row">
-                    <div>
-                        <h2 class="home-card-title">공유 금고</h2>
-                        <p class="muted">승인된 사람끼리만 공유 비밀을 열어볼 수 있어요.</p>
-                    </div>
-                    <span class="hero-emoji">금고</span>
-                </div>
-                <button type="button" class="button button-primary storage-button" id="sharedItemsBtn">공유 금고 보기</button>
             </section>
 
             <div class="modal-backdrop hidden" id="share-key-regenerate-modal" role="dialog" aria-modal="true" aria-labelledby="shareKeyRegenerateTitle">

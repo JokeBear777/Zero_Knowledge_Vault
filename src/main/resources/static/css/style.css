@@ -1412,7 +1412,22 @@ button:disabled {
 }
 
 .share-screen .app-content {
-    padding-bottom: 18px;
+    padding-bottom: 24px;
+}
+
+.share-screen .share-vault-card {
+    margin-bottom: 14px;
+    border-color: #bdebdc;
+    border-radius: 20px;
+    background:
+        radial-gradient(circle at 92% 16%, rgba(221, 247, 238, 0.88), transparent 30%),
+        linear-gradient(145deg, #ffffff 0%, #f1fbf7 100%);
+    box-shadow: var(--soft-shadow);
+}
+
+.share-screen .share-vault-card .storage-button {
+    margin-top: 2px;
+    min-height: 48px;
 }
 
 .share-screen .shared-hero-card {
@@ -2022,7 +2037,7 @@ code {
     }
 
     .share-screen .app-content {
-        padding: 14px 12px 14px;
+        padding: 14px 12px 22px;
     }
 
     .share-screen .shared-hero-card {
